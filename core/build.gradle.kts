@@ -1,6 +1,7 @@
 plugins {
     kotlin("multiplatform")
     id("org.jetbrains.kotlinx.benchmark") version "0.4.15"
+    id("maven-publish")
 }
 
 group = "dev.skynomads.beerouter"
@@ -58,7 +59,6 @@ kotlin {
         }
     }
 }
-
 
 tasks.withType<Test> {
     testLogging {
