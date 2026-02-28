@@ -536,7 +536,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) : Thread(
             } catch (rie: RoutingIslandException) {
                 if (routingContext.global.useDynamicDistance) {
                     for (mwp in matchedWaypoints) {
-                        if (mwp.name!!.contains("_add")) {
+                        if (mwp.name?.contains("_add") == true) {
                             val n1 = mwp.node1!!.idFromPos
                             val n2 = mwp.node2!!.idFromPos
                             islandNodePairs.addTempPair(n1, n2)
@@ -565,7 +565,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) : Thread(
             // add extra waypoints from the last broken round
             for (wp in extraWaypoints) {
                 if (wp.type == MatchedWaypoint.Type.DIRECT) hasDirectRouting = true
-                if (wp.name!!.startsWith("from")) {
+                if (wp.name?.startsWith("from") == true) {
                     waypoints.add(1, wp)
                     waypoints[0].type = MatchedWaypoint.Type.DIRECT
                     nUnmatched++
@@ -975,7 +975,13 @@ public class RoutingEngine(private val routingContext: RoutingContext) : Thread(
         t: OsmTrack,
         startWp: MatchedWaypoint
     ): Boolean {
-        if (!startWp.name!!.startsWith("via") && !startWp.name!!.startsWith("rt")) return false
+        if (
+            startWp.name?.startsWith("via") != true &&
+            startWp.name?.startsWith("rt") != true
+        ) {
+            return false
+        }
+
 
         val ourSize = tt.nodes.size
         if (ourSize > 0) {

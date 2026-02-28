@@ -77,7 +77,7 @@ class RoutingTest {
             }
         }
 
-        assertEquals(btrack.nodes.mapIndexed { idx, node ->
+        assertEquals(List(btrack.nodes.size) { idx ->
             btrack.getVoiceHint(idx)
         }.filterNotNull().size, beetrack.voiceHints.size)
 
@@ -140,7 +140,7 @@ class RoutingTest {
 
         val ctx = RoutingContext(
             profile,
-            segmentFile.getParentFile()
+            segmentFile.parentFile
         ).apply {
             global.turnInstructionMode = 2
         }
