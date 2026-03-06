@@ -305,7 +305,7 @@ public class Rd5DiffTool : ProgressListener {
                         val mc: MicroCache = MicroCache2(mc1.size + mc2.size, abBuf2, 0, 0, 32)
                         mc.addDelta(mc1, mc2, false)
 
-                        if (mc.size() == 0) {
+                        if (mc.size == 0) {
                             if (targetSize != 0) {
                                 throw RuntimeException("size mismatch at $subFileIdx/$tileIdx $targetSize>0")
                             }

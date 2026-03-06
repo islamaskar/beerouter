@@ -5,22 +5,13 @@
  */
 package dev.skynomads.beerouter.util
 
-
-public open class ByteDataReader {
-    protected var ab: ByteArray = ByteArray(0)
-    protected var aboffset: Int = 0
-    protected var aboffsetEnd: Int
-
-    public constructor(byteArray: ByteArray = ByteArray(0)) {
-        ab = byteArray
-        aboffsetEnd = ab.size
-    }
-
-    public constructor(byteArray: ByteArray, offset: Int) {
-        ab = byteArray
-        aboffset = offset
-        aboffsetEnd = ab.size
-    }
+public open class ByteDataReader(
+    byteArray: ByteArray = ByteArray(0),
+    offset: Int = 0
+) {
+    protected var ab: ByteArray = byteArray
+    protected var aboffset: Int = offset
+    protected var aboffsetEnd: Int = byteArray.size
 
     public fun reset(byteArray: ByteArray) {
         ab = byteArray
@@ -55,8 +46,7 @@ public open class ByteDataReader {
     }
 
     public fun readByte(): Byte {
-        val i0 = ab[aboffset++].toInt() and 0xff
-        return (i0).toByte()
+        return (ab[aboffset++].toInt() and 0xff).toByte()
     }
 
     public fun readShort(): Short {

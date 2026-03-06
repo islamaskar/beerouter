@@ -3,25 +3,22 @@ package dev.skynomads.beerouter.osm
 import org.maplibre.spatialk.geojson.Position
 import kotlin.math.roundToInt
 
-public fun Double.toIntLongitude(): Int {
-    return ((this + 180.0) / 1e-6).roundToInt()
-}
+private const val COORDINATE_SCALE = 1e-6
+private const val LONGITUDE_OFFSET = 180.0
+private const val LATITUDE_OFFSET = 90.0
+private const val ELEVATION_SCALE = 4.0
 
-public fun Double.toIntLatitude(): Int {
-    return ((this + 90.0) / 1e-6).roundToInt()
-}
+public fun Double.toIntLongitude(): Int = ((this + LONGITUDE_OFFSET) / COORDINATE_SCALE).roundToInt()
 
-public fun Int.toDoubleLongitude(): Double {
-    return (this * 1e-6) - 180.0
-}
+public fun Double.toIntLatitude(): Int = ((this + LATITUDE_OFFSET) / COORDINATE_SCALE).roundToInt()
 
-public fun Int.toDoubleLatitude(): Double {
-    return (this * 1e-6) - 90.0
-}
+public fun Int.toDoubleLongitude(): Double = (this * COORDINATE_SCALE) - LONGITUDE_OFFSET
+
+public fun Int.toDoubleLatitude(): Double = (this * COORDINATE_SCALE) - LATITUDE_OFFSET
 
 public fun Position.toOsmId(): Long {
     return (longitude.toIntLongitude().toLong()) shl 32 or latitude.toIntLatitude().toLong()
 }
 
 public fun toSElev(altitude: Double?): Short =
-    altitude?.times(4.0)?.toInt()?.toShort() ?: Short.MIN_VALUE
+    altitude?.times(ELEVATION_SCALE)?.toInt()?.toShort() ?: Short.MIN_VALUE

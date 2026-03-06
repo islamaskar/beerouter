@@ -139,7 +139,5 @@ public open class ByteDataWriter(byteArray: ByteArray = ByteArray(0)) : ByteData
         ab[aboffset++] = (v).toByte()
     }
 
-    public fun size(): Int {
-        return aboffset
-    }
+    public fun writtenSize(): Int = aboffset
 }

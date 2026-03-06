@@ -27,8 +27,9 @@ public class AreaInfo(public val direction: Int) {
     public fun checkAreaInfo(expctxWay: BExpressionContext, elev: Double, ab: ByteArray) {
         ways++
 
-        val test = elevStart - elev
-        if (abs(test) < 50) elev50++
+        if (abs(elevStart - elev) < 50) {
+            elev50++
+        }
 
         val lookupData = requireNotNull(expctxWay.createNewLookupData())
         expctxWay.decode(lookupData, false, ab)
