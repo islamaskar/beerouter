@@ -28,7 +28,7 @@ internal class VoiceHintProcessor // this.catchingRange = catchingRange;
         var angle = 0f
         while (offset >= 0 && distance < range) {
             val input = inputs[offset--]
-            if (input.turnAngleConsumed || input.command == VoiceHint.BL || input.command == VoiceHint.END) {
+            if (input.turnAngleConsumed || input.command == VoiceHint.Command.BL || input.command == VoiceHint.Command.END) {
                 break
             }
             angle += input.goodWay!!.turnangle
@@ -69,7 +69,7 @@ internal class VoiceHintProcessor // this.catchingRange = catchingRange;
         for (hintIdx in inputs.indices) {
             val input = inputs[hintIdx]
 
-            if (input.command == VoiceHint.BL) {
+            if (input.command == VoiceHint.Command.BL) {
                 results.add(input)
                 continue
             }
@@ -282,16 +282,16 @@ internal class VoiceHintProcessor // this.catchingRange = catchingRange;
             if (unconditionalTrigger || conditionalTrigger) {
                 input.angle = turnAngle
                 input.calcCommand()
-                val isStraight = input.command == VoiceHint.C
+                val isStraight = input.command == VoiceHint.Command.C
                 input.needsRealTurn = (!unconditionalTrigger) && isStraight
 
                 // check for KR/KL
                 if (abs(turnAngle) > 5.0) { // don't use too small angles
                     if (maxAngle < turnAngle && maxAngle > turnAngle - 45f - (max(turnAngle, 0f))) {
-                        input.command = VoiceHint.KR
+                        input.command = VoiceHint.Command.KR
                     }
                     if (minAngle > turnAngle && minAngle < turnAngle + 45f - (min(turnAngle, 0f))) {
-                        input.command = VoiceHint.KL
+                        input.command = VoiceHint.Command.KL
                     }
                 }
 
@@ -316,14 +316,14 @@ internal class VoiceHintProcessor // this.catchingRange = catchingRange;
         var i = results.size
         while (i > 0) {
             var hint = results[--i]
-            if (hint.command == 0) {
+            if (hint.command == VoiceHint.Command.UNSET) {
                 hint.calcCommand()
             }
-            if (hint.command == VoiceHint.END) {
+            if (hint.command == VoiceHint.Command.END) {
                 results2.add(hint)
                 continue
             }
-            if (!(hint.needsRealTurn && (hint.command == VoiceHint.C || hint.command == VoiceHint.BL))) {
+            if (!(hint.needsRealTurn && (hint.command == VoiceHint.Command.C || hint.command == VoiceHint.Command.BL))) {
                 var dist = hint.distanceToNext
                 // sum up other hints within the catching range (e.g. 40m)
                 while (dist < internalCatchingRangeNear && i > 0) {
@@ -344,7 +344,7 @@ internal class VoiceHintProcessor // this.catchingRange = catchingRange;
                 }
                 hint.calcCommand()
                 results2.add(hint)
-            } else if (hint.command == VoiceHint.BL) {
+            } else if (hint.command == VoiceHint.Command.BL) {
                 results2.add(hint)
             } else {
                 if (results2.isNotEmpty()) results2[results2.size - 1].distanceToNext += hint.distanceToNext
@@ -369,17 +369,17 @@ internal class VoiceHintProcessor // this.catchingRange = catchingRange;
                 nextInput = inputs[hintIdx + 1]
             }
 
-            if (input.command == VoiceHint.BL) {
+            if (input.command == VoiceHint.Command.BL) {
                 results.add(input)
                 hintIdx++
                 continue
             }
 
             if (nextInput == null) {
-                if (input.command == VoiceHint.END) {
+                if (input.command == VoiceHint.Command.END) {
                     hintIdx++
                     continue
-                } else if ((input.command == VoiceHint.C || input.command == VoiceHint.KR || input.command == VoiceHint.KL)
+                } else if ((input.command == VoiceHint.Command.C || input.command == VoiceHint.Command.KR || input.command == VoiceHint.Command.KL)
                     && !input.goodWay!!.isLinktType
                 ) {
                     if (checkStraightHold(input, inputLastSaved, minRange)) {
@@ -396,7 +396,7 @@ internal class VoiceHintProcessor // this.catchingRange = catchingRange;
                 }
             } else {
                 if ((inputLastSaved != null && inputLastSaved.distanceToNext > catchingRange) || input.distanceToNext > catchingRange) {
-                    if ((input.command == VoiceHint.C || input.command == VoiceHint.KR || input.command == VoiceHint.KL)
+                    if ((input.command == VoiceHint.Command.C || input.command == VoiceHint.Command.KR || input.command == VoiceHint.Command.KL)
                         && !input.goodWay!!.isLinktType
                     ) {
                         if (checkStraightHold(input, inputLastSaved, minRange)) {
@@ -412,10 +412,10 @@ internal class VoiceHintProcessor // this.catchingRange = catchingRange;
                         checkForNextNoneMotorway(inputs, hintIdx, 3)
                     ) {
                         // leave motorway
-                        if (input.command == VoiceHint.KR || input.command == VoiceHint.TSLR) {
-                            input.command = VoiceHint.ER
-                        } else if (input.command == VoiceHint.KL || input.command == VoiceHint.TSLL) {
-                            input.command = VoiceHint.EL
+                        if (input.command == VoiceHint.Command.KR || input.command == VoiceHint.Command.TSLR) {
+                            input.command = VoiceHint.Command.ER
+                        } else if (input.command == VoiceHint.Command.KL || input.command == VoiceHint.Command.TSLL) {
+                            input.command = VoiceHint.Command.EL
                         }
                         results.add(input)
                         inputLastSaved = input
@@ -444,18 +444,18 @@ internal class VoiceHintProcessor // this.catchingRange = catchingRange;
                     dist += nextInput.distanceToNext
                     angles += nextInput.angle
 
-                    if ((input.command == VoiceHint.C || input.command == VoiceHint.KR || input.command == VoiceHint.KL)
+                    if ((input.command == VoiceHint.Command.C || input.command == VoiceHint.Command.KR || input.command == VoiceHint.Command.KL)
                         && !input.goodWay!!.isLinktType
                     ) {
                         if (input.goodWay!!.priorityclassifier < input.maxBadPrio) {
-                            if (inputLastSaved != null && inputLastSaved.command != VoiceHint.C && inputLastSaved.distanceToNext > minRange
+                            if (inputLastSaved != null && inputLastSaved.command != VoiceHint.Command.C && inputLastSaved.distanceToNext > minRange
                                 && transportMode != VoiceHintList.TransportMode.CAR
                             ) {
                                 // add when straight and not linktype
                                 // and last vh not straight
                                 save = true
                                 // remove when next straight and not linktype
-                                if (nextInput.command == VoiceHint.C && !nextInput.goodWay!!.isLinktType) {
+                                if (nextInput.command == VoiceHint.Command.C && !nextInput.goodWay!!.isLinktType) {
                                     input.distanceToNext += nextInput.distanceToNext
                                     hintIdx++
                                 }
@@ -467,10 +467,10 @@ internal class VoiceHintProcessor // this.catchingRange = catchingRange;
                         }
                     } else if ((input.goodWay!!.priorityclassifier == 29 && input.maxBadPrio == 30)) {
                         // leave motorway
-                        if (input.command == VoiceHint.KR || input.command == VoiceHint.TSLR) {
-                            input.command = VoiceHint.ER
-                        } else if (input.command == VoiceHint.KL || input.command == VoiceHint.TSLL) {
-                            input.command = VoiceHint.EL
+                        if (input.command == VoiceHint.Command.KR || input.command == VoiceHint.Command.TSLR) {
+                            input.command = VoiceHint.Command.ER
+                        } else if (input.command == VoiceHint.Command.KL || input.command == VoiceHint.Command.TSLL) {
+                            input.command = VoiceHint.Command.EL
                         }
                         save = true
                     } else if (VoiceHint.is180DegAngle(input.angle)) {
@@ -516,7 +516,7 @@ internal class VoiceHintProcessor // this.catchingRange = catchingRange;
         }
         if (results.isNotEmpty()) {
             // don't use END tag
-            if (results.last().command == VoiceHint.END) results.removeAt(results.size - 1)
+            if (results.last().command == VoiceHint.Command.END) results.removeAt(results.size - 1)
         }
 
         return results

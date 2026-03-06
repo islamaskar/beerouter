@@ -307,7 +307,7 @@ public class OsmTrack {
                     input.goodWay = node.message
                     input.oldWay = node.message
                     input.indexInTrack = nodes.size - 1
-                    input.command = VoiceHint.END
+                    input.command = VoiceHint.Command.END
                 }
                 val input = VoiceHint()
                 inputs.add(input)
@@ -321,7 +321,7 @@ public class OsmTrack {
                 if (rc.global.turnInstructionMode == 8 || rc.global.turnInstructionMode == 4 || rc.global.turnInstructionMode == 2 || rc.global.turnInstructionMode == 9) {
                     val mwpt = getMatchedWaypoint(nodeNr)
                     if (mwpt != null && mwpt.type == MatchedWaypoint.Type.DIRECT) {
-                        input.command = VoiceHint.BL
+                        input.command = VoiceHint.Command.BL
                         input.angle =
                             (if (nodeNr == 0) origin.message!!.turnangle else node.message!!.turnangle)
                         input.distanceToNext = node.calcDistance(origin).toDouble()
