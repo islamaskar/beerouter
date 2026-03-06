@@ -1656,6 +1656,8 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
     ): OsmTrack? {
         var fastPartialRecalc = fastPartialRecalc
         val verbose = guideTrack != null
+        val supportsGuideTrackDetours =
+            guideTrack != null && TurnInstructionMode.supportsGuideTrackDetours(routingContext.global.turnInstructionMode)
 
         var maxTotalCost = if (guideTrack != null) guideTrack!!.cost + 5000 else 1000000000
         var firstMatchCost = 1000000000
@@ -1679,26 +1681,27 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
         var end2: OsmNode?
         var endPos: OsmNodeNamed? = null
 
+        val cache = nodesCache ?: return null
         var sameSegmentSearch = false
-        val start1 = nodesCache!!.getGraphNode(startWp.node1!!)
-        val start2 = nodesCache!!.getGraphNode(startWp.node2!!)
+        val start1 = cache.getGraphNode(startWp.node1!!)
+        val start2 = cache.getGraphNode(startWp.node2!!)
         if (endWp != null) {
-            end1 = nodesCache!!.getGraphNode(endWp.node1!!)
-            end2 = nodesCache!!.getGraphNode(endWp.node2!!)
-            nodesCache!!.nodesMap.endNode1 = end1
-            nodesCache!!.nodesMap.endNode2 = end2
+            end1 = cache.getGraphNode(endWp.node1!!)
+            end2 = cache.getGraphNode(endWp.node2!!)
+            cache.nodesMap.endNode1 = end1
+            cache.nodesMap.endNode2 = end2
             endPos = OsmNodeNamed(endWp.crosspoint!!)
             sameSegmentSearch =
                 (start1 === end1 && start2 === end2) || (start1 === end2 && start2 === end1)
         }
-        if (!nodesCache!!.obtainNonHollowNode(start1)) {
+        if (!cache.obtainNonHollowNode(start1)) {
             return null
         }
-        nodesCache!!.expandHollowLinkTargets(start1)
-        if (!nodesCache!!.obtainNonHollowNode(start2)) {
+        cache.expandHollowLinkTargets(start1)
+        if (!cache.obtainNonHollowNode(start2)) {
             return null
         }
-        nodesCache!!.expandHollowLinkTargets(start2)
+        cache.expandHollowLinkTargets(start2)
 
 
         routingContext.startDirectionValid =
@@ -1759,17 +1762,17 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
                 continue
             }
 
-            if (directWeaving && nodesCache!!.hasHollowLinkTargets(path.targetNode!!)) {
-                if (!nodesCache!!.nodesMap.isInMemoryBounds(openSet.size, false)) {
-                    nodesCache!!.nodesMap.collectOutreachers()
+            if (directWeaving && cache.hasHollowLinkTargets(path.targetNode!!)) {
+                if (!cache.nodesMap.isInMemoryBounds(openSet.size, false)) {
+                    cache.nodesMap.collectOutreachers()
                     while (true) {
                         val p3: OsmPath? = openSet.popLowestKeyValue()
                         if (p3 == null) break
-                        if (p3.airdistance != -1 && nodesCache!!.nodesMap.canEscape(p3.targetNode!!)) {
+                        if (p3.airdistance != -1 && cache.nodesMap.canEscape(p3.targetNode!!)) {
                             openBorderList.add(p3)
                         }
                     }
-                    nodesCache!!.nodesMap.clearTemp()
+                    cache.nodesMap.clearTemp()
                     for (p in openBorderList) {
                         openSet.add(
                             p.cost + (p.airdistance * airDistanceCostFactor).toInt(),
@@ -1887,9 +1890,9 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
                 continue
             }
 
-            nodesCache!!.nodesMap.currentMaxCost = maxTotalCost
-            nodesCache!!.nodesMap.currentPathCost = path.cost
-            nodesCache!!.nodesMap.destination = endPos
+            cache.nodesMap.currentMaxCost = maxTotalCost
+            cache.nodesMap.currentPathCost = path.cost
+            cache.nodesMap.destination = endPos
 
             routingContext.firstPrePath = null
 
@@ -1898,7 +1901,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
             while (link != null) {
                 val nextNode = link.getTarget(currentNode)
 
-                if (!nodesCache!!.obtainNonHollowNode(nextNode!!)) {
+                if (!cache.obtainNonHollowNode(nextNode!!)) {
                     link = link.getNext(currentNode)
                     continue  // border node?
                 }
@@ -1932,7 +1935,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
                     val nextId = nextNode.idFromPos
                     if (nextId != guideNode.idFromPos) {
                         // not along the guide-track, discard, but register for voice-hint processing
-                        if (TurnInstructionMode.supportsGuideTrackDetours(routingContext.global.turnInstructionMode)) {
+                        if (supportsGuideTrackDetours) {
                             val detour = routingContext.createPath(path, candidateLink, refTrack, true)
                             if (detour.cost >= 0.0 && nextId != startNodeId1 && nextId != startNodeId2) {
                                 guideTrack!!.registerDetourForId(
