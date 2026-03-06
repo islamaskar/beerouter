@@ -135,10 +135,7 @@ public class TagValueCoder {
 
         val accessType = validator?.accessType(res) ?: 2
         if (accessType > 0) {
-            val w = TagValueWrapper()
-            w.data = res
-            w.accessType = accessType
-            return w
+            return TagValueWrapper(res, accessType)
         }
         return null
     }

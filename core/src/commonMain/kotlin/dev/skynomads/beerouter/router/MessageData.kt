@@ -5,67 +5,36 @@
  */
 package dev.skynomads.beerouter.router
 
-
-public class MessageData {
-    public var linkdist: Int = 0
-    public var linkelevationcost: Int = 0
-    public var linkturncost: Int = 0
-    public var linknodecost: Int = 0
-    public var linkinitcost: Int = 0
-
-    public var costfactor: Float = 0f
-    public var priorityclassifier: Int = 0
-    public var classifiermask: Int = 0
-    public var turnangle: Float = 0f
-    public var wayTags: Map<String, String>? = null
-    public var nodeTags: Map<String, String>? = null
-
-    public var lon: Int = 0
-    public var lat: Int = 0
-    public var ele: Short = 0
-
-    public var time: Float = 0f
-    public var energy: Float = 0f
-
-    // speed profile
-    public var vmaxExplicit: Int = -1
-    public var vmax: Int = -1
-    public var vmin: Int = -1
-    public var vnode0: Int = 999
-    public var vnode1: Int = 999
+public data class MessageData(
+    public var linkdist: Int = 0,
+    public var linkelevationcost: Int = 0,
+    public var linkturncost: Int = 0,
+    public var linknodecost: Int = 0,
+    public var linkinitcost: Int = 0,
+    public var costfactor: Float = 0f,
+    public var priorityclassifier: Int = 0,
+    public var classifiermask: Int = 0,
+    public var turnangle: Float = 0f,
+    public var wayTags: Map<String, String>? = null,
+    public var nodeTags: Map<String, String>? = null,
+    public var lon: Int = 0,
+    public var lat: Int = 0,
+    public var ele: Short = 0,
+    public var time: Float = 0f,
+    public var energy: Float = 0f,
+    public var vmaxExplicit: Int = -1,
+    public var vmax: Int = -1,
+    public var vmin: Int = -1,
+    public var vnode0: Int = 999,
+    public var vnode1: Int = 999,
     public var extraTime: Int = 0
-
+) {
     public fun add(d: MessageData) {
         linkdist += d.linkdist
         linkelevationcost += d.linkelevationcost
         linkturncost += d.linkturncost
         linknodecost += d.linknodecost
         linkinitcost += d.linkinitcost
-    }
-
-    public fun copy(): MessageData = MessageData().also {
-        it.linkdist = linkdist
-        it.linkelevationcost = linkelevationcost
-        it.linkturncost = linkturncost
-        it.linknodecost = linknodecost
-        it.linkinitcost = linkinitcost
-        it.costfactor = costfactor
-        it.priorityclassifier = priorityclassifier
-        it.classifiermask = classifiermask
-        it.turnangle = turnangle
-        it.wayTags = wayTags
-        it.nodeTags = nodeTags
-        it.lon = lon
-        it.lat = lat
-        it.ele = ele
-        it.time = time
-        it.energy = energy
-        it.vmaxExplicit = vmaxExplicit
-        it.vmax = vmax
-        it.vmin = vmin
-        it.vnode0 = vnode0
-        it.vnode1 = vnode1
-        it.extraTime = extraTime
     }
 
     override fun toString(): String = "dist=$linkdist prio=$priorityclassifier turn=$turnangle"
