@@ -9,7 +9,7 @@ import dev.skynomads.beerouter.mapaccess.OsmNode
 import dev.skynomads.beerouter.osm.toIntLatitude
 import dev.skynomads.beerouter.osm.toIntLongitude
 
-internal class SearchBoundary(n: OsmNode, private val radius: Int, var direction: Int) {
+internal class SearchBoundary(n: OsmNode, private val radius: Int, val direction: Int) {
     private val minlon0: Int
     private val minlat0: Int
     private val maxlon0: Int

@@ -3,7 +3,7 @@ package dev.skynomads.beerouter.router
 import dev.skynomads.beerouter.expressions.BExpressionContext
 import kotlin.math.abs
 
-public class AreaInfo(public var direction: Int) {
+public class AreaInfo(public val direction: Int) {
     public enum class ResultType {
         ELEV50,
         GREEN,
