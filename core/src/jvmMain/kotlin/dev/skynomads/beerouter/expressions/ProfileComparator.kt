@@ -1,8 +1,7 @@
 package dev.skynomads.beerouter.expressions
 
-import kotlinx.io.buffered
+import dev.skynomads.beerouter.util.readUtf8
 import kotlinx.io.files.Path
-import kotlinx.io.files.SystemFileSystem
 import kotlin.random.Random
 
 public object ProfileComparator {
@@ -35,9 +34,9 @@ public object ProfileComparator {
             expctx2.skipConstantExpressionOptimizations = true
         }
 
-        val lookupContent = readUtf8(lookupPath)
-        val profile1Content = readUtf8(profile1Path)
-        val profile2Content = readUtf8(profile2Path)
+        val lookupContent = readUtf8(Path(lookupPath))
+        val profile1Content = readUtf8(Path(profile1Path))
+        val profile2Content = readUtf8(Path(profile2Path))
 
         meta1.readMetaData(lookupContent)
         meta2.readMetaData(lookupContent)
@@ -56,15 +55,5 @@ public object ProfileComparator {
             expctx1.assertAllVariablesEqual(expctx2)
         }
     }
-
-    private fun readUtf8(path: String): String =
-        SystemFileSystem.source(Path(path)).buffered().use { source ->
-            val bytes = mutableListOf<Byte>()
-            while (!source.exhausted()) {
-                bytes += source.readByte()
-            }
-            bytes.toByteArray().decodeToString()
-        }
-
     private fun fileName(path: String): String = path.substringAfterLast('/').substringAfterLast('\\')
 }

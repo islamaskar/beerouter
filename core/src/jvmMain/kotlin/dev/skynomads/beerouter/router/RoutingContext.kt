@@ -17,10 +17,9 @@ import dev.skynomads.beerouter.osm.toIntLatitude
 import dev.skynomads.beerouter.osm.toIntLongitude
 import dev.skynomads.beerouter.util.CheapAngleMeter
 import dev.skynomads.beerouter.util.CheapRuler.getLonLatToMeterScales
+import dev.skynomads.beerouter.util.readUtf8
 import java.io.File
-import kotlinx.io.buffered
 import kotlinx.io.files.Path
-import kotlinx.io.files.SystemFileSystem
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.roundToInt
@@ -226,14 +225,7 @@ public class RoutingContext(
 
     public var anglemeter: CheapAngleMeter = CheapAngleMeter()
 
-    private fun readUtf8(file: File): String =
-        SystemFileSystem.source(Path(file.path)).buffered().use { source ->
-            val bytes = mutableListOf<Byte>()
-            while (!source.exhausted()) {
-                bytes += source.readByte()
-            }
-            bytes.toByteArray().decodeToString()
-        }
+    private fun readUtf8(file: File): String = readUtf8(Path(file.path))
 
     public var nogoCost: Double = 0.0
     public var isEndpoint: Boolean = false
