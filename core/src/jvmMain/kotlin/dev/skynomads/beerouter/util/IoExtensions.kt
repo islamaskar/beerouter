@@ -9,9 +9,28 @@ public fun readUtf8(path: Path): String =
     SystemFileSystem.source(path).buffered().use { source -> source.readUtf8Fully() }
 
 private fun Source.readUtf8Fully(): String {
-    val bytes = mutableListOf<Byte>()
-    while (!exhausted()) {
-        bytes += readByte()
+    var result = ByteArray(DEFAULT_BUFFER_SIZE)
+    val scratch = ByteArray(DEFAULT_BUFFER_SIZE)
+    var size = 0
+
+    while (true) {
+        val read = readAtMostTo(scratch)
+        if (read <= 0) {
+            break
+        }
+
+        val required = size + read
+        if (required > result.size) {
+            var newCapacity = result.size * 2
+            while (newCapacity < required) {
+                newCapacity *= 2
+            }
+            result = result.copyOf(newCapacity)
+        }
+
+        scratch.copyInto(result, destinationOffset = size, endIndex = read)
+        size = required
     }
-    return bytes.toByteArray().decodeToString()
+
+    return result.copyOf(size).decodeToString()
 }
