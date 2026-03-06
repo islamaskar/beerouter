@@ -273,7 +273,6 @@ public class OsmTrack {
     public fun processVoiceHints(rc: RoutingContext) {
         voiceHints = VoiceHintList()
         voiceHints.setTransportMode(rc.global.carMode, rc.global.bikeMode)
-        voiceHints.turnInstructionMode = rc.global.turnInstructionMode
 
         if (detourMap.isEmpty() && !rc.global.hasDirectRouting) {
             // only when no direct way points

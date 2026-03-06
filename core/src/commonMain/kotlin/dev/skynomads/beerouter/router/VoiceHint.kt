@@ -38,7 +38,7 @@ public class VoiceHint {
     public var command: Command = Command.UNSET
     public var oldWay: MessageData? = null
     public var goodWay: MessageData? = null
-    public var badWays: MutableList<MessageData>? = null
+    public var badWays: MutableList<MessageData> = mutableListOf()
     public var distanceToNext: Double = 0.0
     public var indexInTrack: Int = 0
 
@@ -61,9 +61,9 @@ public class VoiceHint {
     private fun usesExplicitExitCommands(timode: Int): Boolean = timode == 2 || timode == 9
 
     public fun addBadWay(badWay: MessageData?) {
-        if (badWay == null) return
-        val list = badWays ?: mutableListOf<MessageData>().also { badWays = it }
-        list.add(badWay)
+        if (badWay != null) {
+            badWays.add(badWay)
+        }
     }
 
     public fun getJsonCommandIndex(timode: Int): Int {
@@ -333,17 +333,15 @@ public class VoiceHint {
         }
 
     public fun calcCommand() {
-        if (badWays != null) {
-            for (badWay in badWays) {
-                if (badWay.isBadOneway) {
-                    continue
-                }
-                if (lowerBadWayAngle < badWay.turnangle && badWay.turnangle < goodWay!!.turnangle) {
-                    lowerBadWayAngle = badWay.turnangle
-                }
-                if (higherBadWayAngle > badWay.turnangle && badWay.turnangle > goodWay!!.turnangle) {
-                    higherBadWayAngle = badWay.turnangle
-                }
+        for (badWay in badWays) {
+            if (badWay.isBadOneway) {
+                continue
+            }
+            if (lowerBadWayAngle < badWay.turnangle && badWay.turnangle < goodWay!!.turnangle) {
+                lowerBadWayAngle = badWay.turnangle
+            }
+            if (higherBadWayAngle > badWay.turnangle && badWay.turnangle > goodWay!!.turnangle) {
+                higherBadWayAngle = badWay.turnangle
             }
         }
 
@@ -444,11 +442,9 @@ public class VoiceHint {
         val sb = StringBuilder(30)
         sb.append(' ').append(oldPrio.toInt())
         appendTurnGeometry(sb, goodWay!!)
-        if (badWays != null) {
-            for (badWay in badWays) {
-                sb.append(" ")
-                appendTurnGeometry(sb, badWay)
-            }
+        for (badWay in badWays) {
+            sb.append(" ")
+            appendTurnGeometry(sb, badWay)
         }
         return sb.toString()
     }

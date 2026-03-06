@@ -92,7 +92,7 @@ internal class VoiceHintProcessor // this.catchingRange = catchingRange;
                     internalCatchingRangeNear
                 )
                 if (roundaboudStartIdx == hintIdx) {
-                    if (input.badWays != null) {
+                    if (input.badWays.isNotEmpty()) {
                         // remove goodWay
                         roundAboutTurnAngle -= input.goodWay!!.turnangle
                         // add a badWay
@@ -102,7 +102,7 @@ internal class VoiceHintProcessor // this.catchingRange = catchingRange;
                     }
                 }
                 var isExit = roundaboutExit == 0 // exit point is always exit
-                if (input.badWays != null) {
+                if (input.badWays.isNotEmpty()) {
                     for (badWay in input.badWays) {
                         if (!badWay.isBadOneway &&
                             badWay.isGoodForCars
@@ -131,7 +131,7 @@ internal class VoiceHintProcessor // this.catchingRange = catchingRange;
                 for (i in hintIdx - 1 downTo roundaboudStartIdx + 1) {
                     val vh = inputs[i]
                     tmpangle += inputs[i].goodWay!!.turnangle
-                    if (vh.badWays != null) {
+                    if (vh.badWays.isNotEmpty()) {
                         for (badWay in vh.badWays) {
                             if (!badWay.isBadOneway) {
                                 val md = MessageData()
@@ -165,7 +165,7 @@ internal class VoiceHintProcessor // this.catchingRange = catchingRange;
 
             var isBadwayLink = false
 
-            if (input.badWays != null) {
+            if (input.badWays.isNotEmpty()) {
                 for (badWay in input.badWays) {
                     val badPrio = badWay.priorityclassifier
                     val badTurn = badWay.turnangle
@@ -219,7 +219,7 @@ internal class VoiceHintProcessor // this.catchingRange = catchingRange;
 
             // has a significant angle and one or more bad ways around
             // https://brouter.de/brouter-test/#map=17/53.07509/-0.95780/standard&lonlats=-0.95757,53.073428;-0.95727,53.076064&profile=car-eco
-            val hasSomethingMoreStraight = (abs(turnAngle) > 35f) && input.badWays != null
+            val hasSomethingMoreStraight = (abs(turnAngle) > 35f) && input.badWays.isNotEmpty()
 
 
             // bad way has more prio, but is not a link
@@ -259,7 +259,7 @@ internal class VoiceHintProcessor // this.catchingRange = catchingRange;
             // way has prio, but has to give way
             // https://brouter.de/brouter-test/#map=15/54.1344/-4.6015/standard&lonlats=-4.605432,54.136747;-4.609336,54.130058&profile=car-eco
             val mustGiveWay =
-                transportMode != VoiceHintList.TransportMode.FOOT && input.badWays != null && !badWayHasPrio &&
+                transportMode != VoiceHintList.TransportMode.FOOT && input.badWays.isNotEmpty() && !badWayHasPrio &&
                         (input.hasGiveWay() || (inputNext != null && inputNext.hasGiveWay()))
 
 

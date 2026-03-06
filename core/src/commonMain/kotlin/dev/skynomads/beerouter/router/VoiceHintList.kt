@@ -18,8 +18,6 @@ public class VoiceHintList(
     public var transportMode: TransportMode = TransportMode.BIKE
         private set
 
-    public var turnInstructionMode: Int = 0
-
     public fun setTransportMode(isCar: Boolean, isBike: Boolean) {
         transportMode =
             if (isCar) TransportMode.CAR else (if (isBike) TransportMode.BIKE else TransportMode.FOOT)
