@@ -54,11 +54,7 @@ public class OsmNodesMap {
         for (n in nodes) { // loop over nodes again just for housekeeping
             if (n.firstlink != null) {
                 if (n.visitID == 1) {
-                    try {
-                        minVisitIdInSubtree(null, n)
-                    } catch (soe: StackOverflowError) {
-                        // System.out.println( "+++++++++++++++ StackOverflowError ++++++++++++++++" );
-                    }
+                    minVisitIdInSubtree(null, n)
                 }
             }
         }

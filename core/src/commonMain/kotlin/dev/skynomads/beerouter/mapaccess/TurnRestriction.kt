@@ -28,7 +28,6 @@ public data class TurnRestriction(
     }
 
     public companion object {
-        @JvmStatic
         public fun isTurnForbidden(
             first: TurnRestriction?,
             fromLon: Int,
