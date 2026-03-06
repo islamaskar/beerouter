@@ -10,13 +10,14 @@ public class CacheNode {
     }
 
     override fun equals(o: Any?): Boolean {
-        val n = o as CacheNode
+        if (this === o) return true
+        val n = o as? CacheNode ?: return false
         if (hash != n.hash) {
             return false
         }
-        if (ab == null) {
-            return true // hack: null = crc match only
-        }
-        return ab.contentEquals(n.ab)
+        val currentAb = ab ?: return true // hack: null = crc match only
+        val otherAb = n.ab ?: return false
+        if (currentAb === otherAb) return true
+        return currentAb.contentEquals(otherAb)
     }
 }

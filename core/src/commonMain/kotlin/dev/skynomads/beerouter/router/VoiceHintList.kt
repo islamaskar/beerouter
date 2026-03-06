@@ -9,40 +9,24 @@ package dev.skynomads.beerouter.router
 public class VoiceHintList(
     public val list: MutableList<VoiceHint> = mutableListOf()
 ) : MutableList<VoiceHint> by list {
-    public var transportMode: Int = TRANS_MODE_BIKE
+    public enum class TransportMode(public val value: String, public val locusRouteType: Int) {
+        FOOT("foot", 3),
+        BIKE("bike", 5),
+        CAR("car", 0)
+    }
+
+    public var transportMode: TransportMode = TransportMode.BIKE
         private set
 
     public var turnInstructionMode: Int = 0
 
     public fun setTransportMode(isCar: Boolean, isBike: Boolean) {
         transportMode =
-            if (isCar) TRANS_MODE_CAR else (if (isBike) TRANS_MODE_BIKE else TRANS_MODE_FOOT)
+            if (isCar) TransportMode.CAR else (if (isBike) TransportMode.BIKE else TransportMode.FOOT)
     }
 
-    public fun getTransportMode(): String {
-        return when (transportMode) {
-            TRANS_MODE_FOOT -> "foot"
-            TRANS_MODE_CAR -> "car"
-            TRANS_MODE_BIKE -> "bike"
-            else -> "bike"
-        }
-    }
+    public fun getTransportMode(): String = transportMode.value
 
     public val locusRouteType: Int
-        get() {
-            if (transportMode == TRANS_MODE_CAR) {
-                return 0
-            }
-            if (transportMode == TRANS_MODE_BIKE) {
-                return 5
-            }
-            return 3 // foot
-        }
-
-    public companion object {
-        public const val TRANS_MODE_NONE: Int = 0
-        public const val TRANS_MODE_FOOT: Int = 1
-        public const val TRANS_MODE_BIKE: Int = 2
-        public const val TRANS_MODE_CAR: Int = 3
-    }
+        get() = transportMode.locusRouteType
 }

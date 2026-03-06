@@ -4,6 +4,12 @@ import dev.skynomads.beerouter.expressions.BExpressionContext
 import kotlin.math.abs
 
 public class AreaInfo(public var direction: Int) {
+    public enum class ResultType {
+        ELEV50,
+        GREEN,
+        RIVER
+    }
+
     public var numForest: Int = -1
     public var numRiver: Int = -1
 
@@ -64,12 +70,5 @@ public class AreaInfo(public var direction: Int) {
                 .append("%")
         }
         return sb.toString()
-    }
-
-    public companion object {
-        public const val RESULT_TYPE_NONE: Int = 0
-        public const val RESULT_TYPE_ELEV50: Int = 1
-        public const val RESULT_TYPE_GREEN: Int = 4
-        public const val RESULT_TYPE_RIVER: Int = 5
     }
 }

@@ -276,11 +276,11 @@ public class RoutingEngine(private val routingContext: RoutingContext) : Thread(
         val consider_river = routingContext.way.getVariableValue("consider_river", 0f) == 1f
 
         val preferredRandomType = if (consider_elevation) {
-            AreaInfo.RESULT_TYPE_ELEV50
+            AreaInfo.ResultType.ELEV50
         } else if (consider_forest) {
-            AreaInfo.RESULT_TYPE_GREEN
+            AreaInfo.ResultType.GREEN
         } else if (consider_river) {
-            AreaInfo.RESULT_TYPE_RIVER
+            AreaInfo.ResultType.RIVER
         } else {
             return (kotlin.random.Random.nextDouble() * 360).toInt()
         }
@@ -397,9 +397,9 @@ public class RoutingEngine(private val routingContext: RoutingContext) : Thread(
         //  System.out.println("\n" + ai.toString());
         //}
         when (preferredRandomType) {
-            AreaInfo.RESULT_TYPE_ELEV50 -> ais.sortByDescending { it.elev50Weight }
-            AreaInfo.RESULT_TYPE_GREEN -> ais.sortByDescending { it.green }
-            AreaInfo.RESULT_TYPE_RIVER -> ais.sortByDescending { it.river }
+            AreaInfo.ResultType.ELEV50 -> ais.sortByDescending { it.elev50Weight }
+            AreaInfo.ResultType.GREEN -> ais.sortByDescending { it.green }
+            AreaInfo.ResultType.RIVER -> ais.sortByDescending { it.river }
             else -> return (kotlin.random.Random.nextDouble() * 360).toInt()
         }
 

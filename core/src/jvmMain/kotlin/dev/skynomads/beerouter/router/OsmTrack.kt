@@ -346,10 +346,9 @@ public class OsmTrack {
         get() {
             if (voiceHints.isNotEmpty()) {
                 return when (voiceHints.transportMode) {
-                    VoiceHintList.TRANS_MODE_CAR -> 20
-                    VoiceHintList.TRANS_MODE_FOOT -> 3
-                    VoiceHintList.TRANS_MODE_BIKE -> 5
-                    else -> 5
+                    VoiceHintList.TransportMode.CAR -> 20
+                    VoiceHintList.TransportMode.FOOT -> 3
+                    VoiceHintList.TransportMode.BIKE -> 5
                 }
             }
             return 2

@@ -12,7 +12,7 @@ import kotlin.math.min
 internal class VoiceHintProcessor // this.catchingRange = catchingRange;
     (
     catchingRange: Double, // private double catchingRange; // range to catch angles and merge turns
-    private val explicitRoundabouts: Boolean, private val transportMode: Int
+    private val explicitRoundabouts: Boolean, private val transportMode: VoiceHintList.TransportMode
 ) {
     var significantAngle: Double = 22.5
     var internalCatchingRangeNear: Double = 2.0
@@ -262,7 +262,7 @@ internal class VoiceHintProcessor // this.catchingRange = catchingRange;
             // way has prio, but has to give way
             // https://brouter.de/brouter-test/#map=15/54.1344/-4.6015/standard&lonlats=-4.605432,54.136747;-4.609336,54.130058&profile=car-eco
             val mustGiveWay =
-                transportMode != VoiceHintList.TRANS_MODE_FOOT && input.badWays != null && !badWayHasPrio &&
+                transportMode != VoiceHintList.TransportMode.FOOT && input.badWays != null && !badWayHasPrio &&
                         (input.hasGiveWay() || (inputNext != null && inputNext.hasGiveWay()))
 
 
@@ -452,7 +452,7 @@ internal class VoiceHintProcessor // this.catchingRange = catchingRange;
                     ) {
                         if (input.goodWay!!.priorityclassifier < input.maxBadPrio) {
                             if (inputLastSaved != null && inputLastSaved.command != VoiceHint.C && (inputLastSaved != null && inputLastSaved.distanceToNext > minRange)
-                                && transportMode != VoiceHintList.TRANS_MODE_CAR
+                                && transportMode != VoiceHintList.TransportMode.CAR
                             ) {
                                 // add when straight and not linktype
                                 // and last vh not straight
@@ -479,7 +479,7 @@ internal class VoiceHintProcessor // this.catchingRange = catchingRange;
                     } else if (VoiceHint.is180DegAngle(input.angle)) {
                         // add u-turn, 180 degree
                         save = true
-                    } else if (transportMode == VoiceHintList.TRANS_MODE_CAR && abs(angles) > 180 - significantAngle) {
+                    } else if (transportMode == VoiceHintList.TransportMode.CAR && abs(angles) > 180 - significantAngle) {
                         // add when inc car mode and u-turn, collects e.g. two left turns in range
                         input.angle = angles
                         input.calcCommand()
