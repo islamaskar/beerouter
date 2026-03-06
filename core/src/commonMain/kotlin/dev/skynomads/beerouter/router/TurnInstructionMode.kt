@@ -11,8 +11,10 @@ public enum class TurnInstructionMode(public val id: Int) {
     LOCUS_TRKPT_STYLE(9);
 
     public companion object {
+        private val byId: Map<Int, TurnInstructionMode> = entries.associateBy(TurnInstructionMode::id)
+
         public fun fromId(id: Int): TurnInstructionMode? =
-            entries.firstOrNull { it.id == id }
+            byId[id]
 
         public fun supportsGuideTrackDetours(mode: TurnInstructionMode): Boolean =
             mode != NONE
