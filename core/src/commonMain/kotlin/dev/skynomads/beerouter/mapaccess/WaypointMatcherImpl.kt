@@ -173,7 +173,7 @@ public class WaypointMatcherImpl(
         ilatTarget: Int,
         useAsStartWay: Boolean
     ): Boolean {
-        if (islandPairs.size() != 0) {
+        if (islandPairs.size != 0) {
             val n1 = (ilonStart.toLong()) shl 32 or ilatStart.toLong()
             val n2 = (ilonTarget.toLong()) shl 32 or ilatTarget.toLong()
             if (islandPairs.hasPair(n1, n2)) {

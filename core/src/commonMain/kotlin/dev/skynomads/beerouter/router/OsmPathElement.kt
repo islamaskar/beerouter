@@ -31,25 +31,19 @@ public class OsmPathElement protected constructor() : OsmPos {
     public var cost: Int = 0
 
     public var time: Float
-        get() = if (message == null) 0f else message!!.time
+        get() = message?.time ?: 0f
         set(t) {
-            if (message != null) {
-                message!!.time = t
-            }
+            message?.time = t
         }
 
     public var energy: Float
-        get() = if (message == null) 0f else message!!.energy
+        get() = message?.energy ?: 0f
         set(e) {
-            if (message != null) {
-                message!!.energy = e
-            }
+            message?.energy = e
         }
 
     public fun setAngle(e: Float) {
-        if (message != null) {
-            message!!.turnangle = e
-        }
+        message?.turnangle = e
     }
 
     public override val idFromPos: Long

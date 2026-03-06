@@ -53,9 +53,8 @@ public class OsmNodePairSet(maxTempNodeCount: Int) {
         targets.add(n2)
     }
 
-    public fun size(): Int {
-        return npairs
-    }
+    public val size: Int
+        get() = npairs
 
     public fun hasPair(n1: Long, n2: Long): Boolean {
         return containsPair(n1, n2) || containsPair(n2, n1)

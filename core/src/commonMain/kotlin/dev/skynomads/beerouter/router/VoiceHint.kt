@@ -62,9 +62,7 @@ public class VoiceHint {
         TurnInstructionMode.usesExplicitExitCommands(timode)
 
     public fun addBadWay(badWay: MessageData?) {
-        if (badWay != null) {
-            badWays.add(badWay)
-        }
+        badWay?.let(badWays::add)
     }
 
     public fun getJsonCommandIndex(timode: Int): Int {
