@@ -13,14 +13,12 @@ import dev.skynomads.beerouter.osm.toIntLatitude
 import dev.skynomads.beerouter.osm.toIntLongitude
 import org.maplibre.spatialk.geojson.Position
 import java.io.File
-import java.io.InputStream
-import java.io.OutputStream
 import kotlinx.io.EOFException
 import kotlinx.io.Sink
 import kotlinx.io.Source
-import kotlinx.io.asSink
-import kotlinx.io.asSource
 import kotlinx.io.buffered
+import kotlinx.io.files.Path
+import kotlinx.io.files.SystemFileSystem
 import kotlin.math.abs
 
 public class OsmTrack {
@@ -115,13 +113,7 @@ public class OsmTrack {
      * @param filename the filename to write to
      */
     public fun writeBinary(filename: String) {
-        File(filename).outputStream().asSink().buffered().use { sink ->
-            writeBinary(sink)
-        }
-    }
-
-    public fun writeBinary(stream: OutputStream) {
-        stream.asSink().buffered().use { sink ->
+        SystemFileSystem.sink(Path(filename)).buffered().use { sink ->
             writeBinary(sink)
         }
     }
@@ -418,8 +410,8 @@ public class OsmTrack {
                 val f = File(filename)
                 if (f.exists()) {
                     try {
-                        f.inputStream().use { stream ->
-                            t = readBinary(stream, newEp, nogoChecksums, profileChecksum, debugInfo)
+                        SystemFileSystem.source(Path(f.path)).buffered().use { source ->
+                            t = readBinary(source, newEp, nogoChecksums, profileChecksum, debugInfo)
                         }
                     } catch (e: Exception) {
                         debugInfo?.append("Error reading rawTrack: $e")
@@ -427,18 +419,6 @@ public class OsmTrack {
                 }
             }
             return t
-        }
-
-        public fun readBinary(
-            stream: InputStream,
-            newEp: OsmNodeNamed,
-            nogoChecksums: LongArray,
-            profileChecksum: Long,
-            debugInfo: StringBuilder?
-        ): OsmTrack? {
-            stream.asSource().buffered().use { source ->
-                return readBinary(source, newEp, nogoChecksums, profileChecksum, debugInfo)
-            }
         }
 
         public fun readBinary(

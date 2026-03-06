@@ -12,22 +12,16 @@ import dev.skynomads.beerouter.mapaccess.OsmNodesMap
 import dev.skynomads.beerouter.mapaccess.PhysicalFile
 import dev.skynomads.beerouter.osm.toIntLatitude
 import dev.skynomads.beerouter.osm.toIntLongitude
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 import java.io.File
-import java.io.InputStream
-import java.io.OutputStream
 import kotlinx.io.Sink
 import kotlinx.io.Source
-import kotlinx.io.asSink
-import kotlinx.io.asSource
 import kotlinx.io.buffered
+import kotlinx.io.files.Path
+import kotlinx.io.files.SystemFileSystem
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
 public class AreaReader {
-    private val logger: Logger = LoggerFactory.getLogger(AreaReader::class.java)
-
     public lateinit var segmentFolder: File
 
     public fun getDirectAllData(
@@ -166,7 +160,7 @@ public class AreaReader {
                 if (getDirectData(pf!!, dataBuffers!!, n.position.longitude.toIntLongitude(), n.position.latitude.toIntLatitude(), rc, expctxWay, ais)) used++
             }
         } catch (e: Exception) {
-            logger.error("error after used={} / count={}", used, count, e)
+            System.err.println("AreaReader error after used=$used / count=$count: ${e.message}")
             ais.clear()
         } finally {
             runCatching { pf?.close() }
@@ -264,13 +258,7 @@ public class AreaReader {
     }
 
     public fun writeAreaInfo(filename: String, wp: MatchedWaypoint, ais: MutableList<AreaInfo>) {
-        File(filename).outputStream().asSink().buffered().use { sink ->
-            writeAreaInfo(sink, wp, ais)
-        }
-    }
-
-    public fun writeAreaInfo(stream: OutputStream, wp: MatchedWaypoint, ais: MutableList<AreaInfo>) {
-        stream.asSink().buffered().use { sink ->
+        SystemFileSystem.sink(Path(filename)).buffered().use { sink ->
             writeAreaInfo(sink, wp, ais)
         }
     }
@@ -289,17 +277,11 @@ public class AreaReader {
 
     public fun readAreaInfo(fai: File, wp: MatchedWaypoint, ais: MutableList<AreaInfo>) {
         try {
-            fai.inputStream().use { stream ->
-                readAreaInfo(stream, wp, ais)
+            SystemFileSystem.source(Path(fai.path)).buffered().use { source ->
+                readAreaInfo(source, wp, ais)
             }
         } catch (e: Exception) {
             ais.clear()
-        }
-    }
-
-    public fun readAreaInfo(stream: InputStream, wp: MatchedWaypoint, ais: MutableList<AreaInfo>) {
-        stream.asSource().buffered().use { source ->
-            readAreaInfo(source, wp, ais)
         }
     }
 

@@ -17,8 +17,6 @@ import dev.skynomads.beerouter.util.CheapRuler.destination
 import dev.skynomads.beerouter.util.SortedHeap
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 import java.io.File
 import kotlin.math.abs
 import kotlin.math.max
@@ -26,8 +24,6 @@ import kotlin.math.min
 import kotlin.math.roundToInt
 
 public class RoutingEngine(private val routingContext: RoutingContext) {
-    private val logger: Logger = LoggerFactory.getLogger(RoutingEngine::class.java)
-
     private var nodesCache: NodesCache? = null
     private val openSet = SortedHeap<OsmPath?>()
 
@@ -107,7 +103,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
             return track
         } finally {
             nodesCache?.let {
-                logger.info("NodesCache status before close={}", it.formatStatus())
+                println("NodesCache status before close=${it.formatStatus()}")
                 it.close()
                 nodesCache = null
             }
@@ -405,10 +401,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
             rc.ai = null
         }
 
-        logger.info(
-            "round trip execution time={} seconds",
-            (System.currentTimeMillis() - start) / 1000.0
-        )
+        println("round trip execution time=${(System.currentTimeMillis() - start) / 1000.0} seconds")
 
         // for (AreaInfo ai: ais) {
         //  System.out.println("\n" + ai.toString());
@@ -607,7 +600,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
         // check for a track for that target
         var nearbyTrack: OsmTrack? = null
         if (!hasDirectRouting && lastTracks[waypoints.size - 2] == null) {
-            val debugInfo = if (logger.isInfoEnabled) StringBuilder() else null
+            val debugInfo = StringBuilder()
             nearbyTrack = OsmTrack.readBinary(
                 routingContext.rawTrackPath,
                 waypoints[waypoints.size - 1],
@@ -618,11 +611,9 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
             if (nearbyTrack != null) {
                 nUnmatched--
             }
-            if (logger.isInfoEnabled) {
-                val found = nearbyTrack != null
-                val dirty = found && nearbyTrack.isDirty
-                logger.info("read referenceTrack, found={} dirty={} {}", found, dirty, debugInfo)
-            }
+            val found = nearbyTrack != null
+            val dirty = found && nearbyTrack.isDirty
+            println("read referenceTrack, found=$found dirty=$dirty $debugInfo")
         }
 
         if (matchedWaypoints.isEmpty()) { // could exist from the previous alternative level
@@ -1311,7 +1302,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
         }
         t.energy = t.nodes[t.nodes.size - 1].energy.toInt()
 
-        logger.info("track total distance={} ascend={}", t.distance, t.ascend)
+        println("track total distance=${t.distance} ascend=${t.ascend}")
     }
 
     /**
@@ -1340,7 +1331,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
         var range = routingContext.global.waypointCatchingRange
         var ok = nodesCache!!.matchWaypointsToNodes(unmatchedWaypoints, range, islandNodePairs)
         if (!ok && useDynamicDistance) {
-            logger.info("second check for way points")
+            println("second check for way points")
             resetCache(false)
             range = -maxDynamicRange.toDouble()
             val tmp =
@@ -1464,7 +1455,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
                     track = mergeTrack(matchPath!!, nearbyTrack)
                     isDirty = true
                     dirtyMessage = iae
-                    logger.info("using fast partial recalc")
+                    println("using fast partial recalc")
                 }
             }
         }
@@ -1491,7 +1482,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
                 if (t == null && track != null && matchPath != null) {
                     // ups, didn't find it, use a merge
                     t = mergeTrack(matchPath!!, track)
-                    logger.info("using sloppy merge cause pass1 didn't reach destination")
+                    println("using sloppy merge cause pass1 didn't reach destination")
                 }
                 if (t != null) {
                     track = t
@@ -1504,7 +1495,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
 
         val wasClean = nearbyTrack != null && !nearbyTrack.isDirty
         if (refTrack == null && !(wasClean && isDirty)) { // do not overwrite a clean with a dirty track
-            logger.info("supplying new reference track, dirty={}", isDirty)
+            println("supplying new reference track, dirty=$isDirty")
             track.endPoint = endWp
             track.nogoChecksums = routingContext.nogoChecksums
             track.profileTimestamp = routingContext.profileTimestamp
@@ -1531,7 +1522,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
 
     private fun resetCache(detailed: Boolean) {
         if (nodesCache != null) {
-            logger.info("NodesCache status={} before reset", nodesCache!!.formatStatus())
+            println("NodesCache status=${nodesCache!!.formatStatus()} before reset")
         }
         val maxmem = routingContext.memoryclass * 1024L * 1024L // in MB
 
@@ -1664,8 +1655,8 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
         var maxTotalCost = if (guideTrack != null) guideTrack!!.cost + 5000 else 1000000000
         var firstMatchCost = 1000000000
 
-        logger.info("findtrack with airDistanceCostFactor={}", airDistanceCostFactor)
-        if (costCuttingTrack != null) logger.info("costCuttingTrack.cost={}", costCuttingTrack.cost)
+        println("findtrack with airDistanceCostFactor=$airDistanceCostFactor")
+        if (costCuttingTrack != null) println("costCuttingTrack.cost=${costCuttingTrack.cost}")
 
         matchPath = null
         var nodesVisited = 0
@@ -1705,7 +1696,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
         routingContext.startDirectionValid =
             routingContext.startDirectionValid and (routingContext.startDirection != null && !routingContext.inverseDirection)
         if (routingContext.startDirectionValid) {
-            logger.info("using start direction " + routingContext.startDirection)
+            println("using start direction " + routingContext.startDirection)
         }
 
         val startPath1 = getStartPath(start1, start2, startWp, endPos, sameSegmentSearch)
@@ -1715,7 +1706,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
         if (costCuttingTrack != null) {
             val pe1 = costCuttingTrack.getLink(startNodeId1, startNodeId2)
             if (pe1 != null) {
-                logger.debug("initialMatch pe1.cost={}", pe1.cost)
+                println("initialMatch pe1.cost=${pe1.cost}")
                 var c = startPath1!!.cost - pe1.cost
                 if (c < 0) c = 0
                 if (c < firstMatchCost) firstMatchCost = c
@@ -1723,7 +1714,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
 
             val pe2 = costCuttingTrack.getLink(startNodeId2, startNodeId1)
             if (pe2 != null) {
-                logger.debug("initialMatch pe2.cost={}", pe2.cost)
+                println("initialMatch pe2.cost=${pe2.cost}")
                 var c = startPath2!!.cost - pe2.cost
                 if (c < 0) c = 0
                 if (c < firstMatchCost) firstMatchCost = c
@@ -1781,15 +1772,11 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
 
 
             if (fastPartialRecalc && matchPath != null && path.cost > 30L * firstMatchCost && !costCuttingTrack!!.isDirty) {
-                logger.info(
-                    "early exit: firstMatchCost={} path.cost={}",
-                    firstMatchCost,
-                    path.cost
-                )
+                println("early exit: firstMatchCost=$firstMatchCost path.cost=${path.cost}")
 
                 // use an early exit, unless there's a realistc chance to complete within the timeout
                 //                    if (path.cost > maxTotalCost / 2 && System.currentTimeMillis() - startTime < maxRunningTime / 3) {
-                logger.info("early exit supressed, running for completion, resetting timeout")
+                println("early exit supressed, running for completion, resetting timeout")
                 //                    startTime = System.currentTimeMillis()
                 fastPartialRecalc = false
                 //                    } else {
@@ -1830,7 +1817,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
                     || (sourceNodeId == endNodeId2 && currentNodeId == endNodeId1)
                 ) {
                     // track found, compile
-                    logger.info("found track at cost " + path.cost + " nodesVisited = " + nodesVisited)
+                    println("found track at cost " + path.cost + " nodesVisited = " + nodesVisited)
                     val t = compileTrack(path, verbose)
                     t.showspeed = routingContext.global.showspeed
                     t.showSpeedProfile = routingContext.global.showSpeedProfile
@@ -1859,7 +1846,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
                             matchPath = path.toPathElement()
                         }
                         if (costEstimate < maxTotalCost) {
-                            logger.info("maxcost $maxTotalCost -> $costEstimate")
+                            println("maxcost $maxTotalCost -> $costEstimate")
                             maxTotalCost = costEstimate
                         }
                     }
@@ -2099,7 +2086,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
             element = nextElement
         }
         track.distance = distance
-        logger.info("track total distance={}", track.distance)
+        println("track total distance=${track.distance}")
         track.buildMap()
 
         // for final track..
@@ -2110,7 +2097,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
     }
 
     private fun mergeTrack(match: OsmPathElement, oldTrack: OsmTrack): OsmTrack {
-        logger.info("merging match={} with oldTrack={}", match.cost, oldTrack.cost)
+        println("merging match=${match.cost} with oldTrack=${oldTrack.cost}")
         var element: OsmPathElement? = match
         val track = OsmTrack()
         track.cost = oldTrack.cost
