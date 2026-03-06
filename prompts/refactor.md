@@ -17,7 +17,7 @@ tests and benchmarks are allowed direct file access.
 
 Use proper enum classes instead of consts where appropriate.
 
-Use the maplibre spatialk library for geospatial calculations where applicable.
+Prefer already included libraries over custom implementations. Use the maplibre spatialk library for geospatial calculations where applicable.
 
 You should create a Git commit for each major changeset. Before making a commit for a change, look
 for other files that need similar refactorings and include them in the commit. It is crucial that
