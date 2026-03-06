@@ -5,6 +5,8 @@
  */
 package dev.skynomads.beerouter.mapaccess
 
+import java.nio.file.Files
+import java.nio.file.Paths
 import java.security.MessageDigest
 import kotlinx.io.buffered
 import kotlinx.io.files.Path
@@ -51,6 +53,10 @@ public object Rd5DiffManager {
                 val oldDiffs = runCatching { SystemFileSystem.list(specificOldDiffs) }.getOrElse { emptyList() }
                 for (od in oldDiffs) {
                     if (!fileName(od).endsWith(".df5")) continue
+                    val modifiedAt = runCatching {
+                        Files.getLastModifiedTime(Paths.get(od.toString())).toMillis()
+                    }.getOrNull() ?: continue
+                    if (System.currentTimeMillis() - modifiedAt > 9 * 86400000L) continue
 
                     val updatedDiff = resolve(specificNewDiffs, fileName(od))
                     if (!SystemFileSystem.exists(updatedDiff)) {

@@ -11,11 +11,8 @@ import dev.skynomads.beerouter.codec.WaypointMatcher
 import dev.skynomads.beerouter.expressions.BExpressionContextWay
 import dev.skynomads.beerouter.osm.toIntLatitude
 import dev.skynomads.beerouter.osm.toIntLongitude
-import kotlinx.io.files.Path
-import kotlinx.io.files.SystemFileSystem
 
 public class NodesCache(
-    private val segmentDir: Path,
     private val mapAccessFileSystem: MapAccessFileSystem,
     private val ctxWay: BExpressionContextWay,
     forceSecondaryData: Boolean,
@@ -70,10 +67,6 @@ public class NodesCache(
 
         firstFileAccessFailed = false
         firstFileAccessName = null
-
-        if (SystemFileSystem.metadataOrNull(this.segmentDir)?.isDirectory != true) {
-            throw RuntimeException("segment directory ${segmentDir.toString()} does not exist")
-        }
 
         if (oldCache != null) {
             fileCache = oldCache.fileCache
@@ -363,11 +356,11 @@ public class NodesCache(
 
         val ra: PhysicalFile? = fileCache.getOrPut(filenameBase) {
             if (!forceSecondaryData) {
-                val primary = mapAccessFileSystem.resolve(segmentDir, "$filenameBase.rd5")
-                if (primary != null && mapAccessFileSystem.exists(primary)) {
+                val fileName = "$filenameBase.rd5"
+                if (mapAccessFileSystem.exists(fileName)) {
                     currentFileName = "$filenameBase.rd5"
                     return@getOrPut PhysicalFile(
-                        primary,
+                        fileName,
                         mapAccessFileSystem,
                         dataBuffers,
                         lookupVersion,

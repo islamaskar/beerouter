@@ -29,7 +29,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
     private val openSet = SortedHeap<OsmPath?>()
 
     private val extraWaypoints: MutableList<OsmNodeNamed> = mutableListOf()
-    protected val matchedWaypoints: MutableList<MatchedWaypoint> = mutableListOf()
+    protected var matchedWaypoints: MutableList<MatchedWaypoint> = mutableListOf()
     private var linksProcessed: Int = 0
 
     private var nodeLimit = 0 // used for target island search
@@ -381,7 +381,6 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
             maxscale = max(1, (maxscale / 31250f / 2).roundToInt() + 1)
 
             areareader.getDirectAllData(
-                rc.segmentDir,
                 rc,
                 wp,
                 maxscale,
@@ -554,7 +553,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
                 }
                 islandNodePairs.freezeTempPairs()
                 nodesCache!!.clean(true)
-                matchedWaypoints.clear()
+                matchedWaypoints = mutableListOf()
             }
         }
     }
@@ -745,7 +744,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
         recalcTrack(totaltrack)
 
         matchedWaypoints[matchedWaypoints.size - 1].indexInTrack = totaltrack.nodes.size - 1
-        totaltrack.matchedWaypoints = matchedWaypoints
+        totaltrack.matchedWaypoints = matchedWaypoints.toMutableList()
         totaltrack.processVoiceHints(routingContext)
         totaltrack.prepareSpeedProfile(routingContext)
 
@@ -1529,7 +1528,6 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
         val maxmem = routingContext.memoryclass * 1024L * 1024L // in MB
 
         nodesCache = NodesCache(
-            routingContext.segmentDir,
             routingContext.mapAccessFileSystem,
             routingContext.way,
             routingContext.global.forceSecondaryData,

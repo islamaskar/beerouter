@@ -33,14 +33,14 @@ public class RoutingContext(
     public val segmentDir: Path,
     private val profileContent: String,
     private val lookupContent: String,
-    public val mapAccessFileSystem: MapAccessFileSystem = DefaultMapAccessFileSystem
+    public val mapAccessFileSystem: MapAccessFileSystem
 ) {
     public constructor(
         profileName: String,
         segmentDir: Path,
         profileSource: Source,
         lookupSource: Source,
-        mapAccessFileSystem: MapAccessFileSystem = DefaultMapAccessFileSystem
+        mapAccessFileSystem: MapAccessFileSystem = DefaultMapAccessFileSystem(segmentDir)
     ) : this(
         profileName = profileName,
         segmentDir = segmentDir,

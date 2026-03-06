@@ -12,17 +12,16 @@ public interface RandomAccessReader {
 }
 
 public interface MapAccessFileSystem {
-    public fun resolve(segmentDir: Path, fileName: String): Path?
-    public fun exists(path: Path): Boolean
-    public fun openRandomAccess(path: Path): RandomAccessReader
+    public fun exists(fileName: String): Boolean
+    public fun open(fileName: String): RandomAccessReader
 }
 
-public object DefaultMapAccessFileSystem : MapAccessFileSystem {
-    override fun resolve(segmentDir: Path, fileName: String): Path = Path("${segmentDir.toString()}/$fileName")
+public class DefaultMapAccessFileSystem(private val segmentDir: Path) : MapAccessFileSystem {
+    private fun resolve(fileName: String): Path = Path("${segmentDir.toString()}/$fileName")
 
-    override fun exists(path: Path): Boolean = SystemFileSystem.exists(path)
+    override fun exists(fileName: String): Boolean = SystemFileSystem.exists(resolve(fileName))
 
-    override fun openRandomAccess(path: Path): RandomAccessReader = JvmRandomAccessReader(path)
+    override fun open(fileName: String): RandomAccessReader = JvmRandomAccessReader(resolve(fileName))
 }
 
 private class JvmRandomAccessReader(path: Path) : RandomAccessReader {

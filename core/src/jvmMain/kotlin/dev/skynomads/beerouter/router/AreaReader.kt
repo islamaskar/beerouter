@@ -22,7 +22,6 @@ import kotlin.math.roundToInt
 
 public class AreaReader {
     public fun getDirectAllData(
-        folder: Path,
         rc: RoutingContext,
         wp: OsmNodeNamed,
         maxscale: Int,
@@ -130,7 +129,6 @@ public class AreaReader {
         val maxmem = rc.memoryclass * 1024L * 1024L // in MB
         val nodesCache =
             NodesCache(
-                folder,
                 rc.mapAccessFileSystem,
                 expctxWay,
                 rc.global.forceSecondaryData,
@@ -148,10 +146,10 @@ public class AreaReader {
                 if (filenameBase != lastFilenameBase) {
                     currentPhysicalFile?.close()
                     lastFilenameBase = filenameBase
-                    val file = Path("${folder.toString()}/$filenameBase.rd5")
+                    val fileName = "$filenameBase.rd5"
                     currentDataBuffers = DataBuffers()
                     currentPhysicalFile = PhysicalFile(
-                        file,
+                        fileName,
                         rc.mapAccessFileSystem,
                         currentDataBuffers,
                         -1,
