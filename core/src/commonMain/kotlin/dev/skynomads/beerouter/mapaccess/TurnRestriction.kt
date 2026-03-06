@@ -5,17 +5,15 @@
  */
 package dev.skynomads.beerouter.mapaccess
 
-public class TurnRestriction {
-    public var isPositive: Boolean = false
-    public var exceptions: Short = 0
-
-    public var fromLon: Int = 0
-    public var fromLat: Int = 0
-
-    public var toLon: Int = 0
-    public var toLat: Int = 0
-
+public data class TurnRestriction(
+    public var isPositive: Boolean = false,
+    public var exceptions: Short = 0,
+    public var fromLon: Int = 0,
+    public var fromLat: Int = 0,
+    public var toLon: Int = 0,
+    public var toLat: Int = 0,
     public var next: TurnRestriction? = null
+) {
 
     public fun exceptBikes(): Boolean {
         return (exceptions.toInt() and 1) != 0

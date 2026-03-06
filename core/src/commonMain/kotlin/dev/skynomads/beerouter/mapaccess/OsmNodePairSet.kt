@@ -18,10 +18,10 @@ public class OsmNodePairSet(maxTempNodeCount: Int) {
     public var freezeCount: Int = 0
         private set
 
-    private class OsmNodePair {
-        public var node2: Long = 0
-        public var next: OsmNodePair? = null
-    }
+    private data class OsmNodePair(
+        var node2: Long = 0,
+        var next: OsmNodePair? = null
+    )
 
     private var map: MutableLongObjectMap<OsmNodePair> = MutableLongObjectMap()
 
