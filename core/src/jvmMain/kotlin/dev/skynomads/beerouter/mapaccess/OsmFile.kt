@@ -95,8 +95,8 @@ public class OsmFile(
     ): MicroCache {
         val lonIdx = ilon / cellsize
         val latIdx = ilat / cellsize
-        val segment = createMicroCache(
-            lonIdx, latIdx, dataBuffers, wayValidator, waypointMatcher, true, hollowNodes
+        val segment = createMicroCacheForCell(
+            lonIdx, latIdx, dataBuffers, wayValidator, waypointMatcher, hollowNodes
         )
         val subIdx = (latIdx - divisor * latDegree) * divisor + (lonIdx - divisor * lonDegree)
         microCaches!![subIdx] = segment
@@ -121,9 +121,9 @@ public class OsmFile(
         return size
     }
 
-    public fun createMicroCache(
+    public fun createMicroCacheForCell(
         lonIdx: Int, latIdx: Int, dataBuffers: DataBuffers, wayValidator: TagValueValidator?,
-        waypointMatcher: WaypointMatcher?, reallyDecode: Boolean, hollowNodes: OsmNodesMap?
+        waypointMatcher: WaypointMatcher?, hollowNodes: OsmNodesMap?
     ): MicroCache {
         val subIdx = (latIdx - divisor * latDegree) * divisor + (lonIdx - divisor * lonDegree)
 
@@ -141,9 +141,6 @@ public class OsmFile(
         val bc = StatCoderContext(ab)
 
         try {
-            if (!reallyDecode) {
-                TODO()
-            }
             if (hollowNodes == null) {
                 return MicroCache2(bc, dataBuffers, lonIdx, latIdx, divisor, wayValidator, waypointMatcher)
             }

@@ -106,10 +106,10 @@ public class PhysicalFile(f: File, dataBuffers: DataBuffers, lookupVersion: Int,
                         if (osmf.hasData()) {
                             for (lonIdx in 0..<div) {
                                 for (latIdx in 0..<div) {
-                                    osmf.createMicroCache(
+                                    osmf.createMicroCacheForCell(
                                         lonDegree * div + lonIdx,
                                         latDegree * div + latIdx,
-                                        dataBuffers, null, null, true, null
+                                        dataBuffers, null, null, null
                                     )
                                 }
                             }

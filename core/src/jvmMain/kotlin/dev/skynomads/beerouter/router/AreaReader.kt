@@ -190,7 +190,7 @@ public class AreaReader {
                 val latIdx = tmplat / cellsize
 
                 val segment =
-                    osmf.createMicroCache(lonIdx, latIdx, dataBuffers, expctxWay, null, true, null)
+                    osmf.createMicroCacheForCell(lonIdx, latIdx, dataBuffers, expctxWay, null, null)
 
                 val size = segment.size
                 for (i in 0..<size) {
