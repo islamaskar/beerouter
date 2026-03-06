@@ -189,6 +189,10 @@ public class RoutingContext(
 
     public var rawTrackPath: String? = null
     public var rawAreaPath: String? = null
+    public val rawTrack: Path?
+        get() = rawTrackPath?.let(::Path)
+    public val rawArea: Path?
+        get() = rawAreaPath?.let(::Path)
 
     public val global: Global
     public val way: BExpressionContextWay

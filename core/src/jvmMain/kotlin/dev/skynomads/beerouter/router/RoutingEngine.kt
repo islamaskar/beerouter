@@ -18,7 +18,6 @@ import dev.skynomads.beerouter.util.CheapRuler.destination
 import dev.skynomads.beerouter.util.SortedHeap
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
-import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
 import kotlin.math.abs
 import kotlin.math.max
@@ -291,8 +290,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
 
         val ais = mutableListOf<AreaInfo>()
         val areareader = AreaReader()
-        routingContext.rawAreaPath?.let { path ->
-            val areaPath = Path(path)
+        routingContext.rawArea?.let { areaPath ->
             if (SystemFileSystem.exists(areaPath)) {
                 areareader.readAreaInfo(areaPath, wpt1, ais)
             }
@@ -392,10 +390,10 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
                 ais
             )
 
-            routingContext.rawAreaPath?.let { path ->
+            routingContext.rawArea?.let { areaPath ->
                 try {
                     wpt1.radius = searchRadius * 1.5
-                    areareader.writeAreaInfo(Path(path), wpt1, ais)
+                    areareader.writeAreaInfo(areaPath, wpt1, ais)
                 } catch (e: Exception) {
                     // Silently ignore exceptions
                 }
@@ -603,13 +601,15 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
         var nearbyTrack: OsmTrack? = null
         if (!hasDirectRouting && lastTracks[waypoints.size - 2] == null) {
             val debugInfo = StringBuilder()
-            nearbyTrack = OsmTrack.readBinary(
-                routingContext.rawTrackPath,
-                waypoints[waypoints.size - 1],
-                routingContext.nogoChecksums,
-                routingContext.profileTimestamp,
-                debugInfo
-            )
+            nearbyTrack = routingContext.rawTrack?.let {
+                OsmTrack.readBinary(
+                    it,
+                    waypoints[waypoints.size - 1],
+                    routingContext.nogoChecksums,
+                    routingContext.profileTimestamp,
+                    debugInfo
+                )
+            }
             if (nearbyTrack != null) {
                 nUnmatched--
             }
