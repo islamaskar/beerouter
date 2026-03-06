@@ -9,10 +9,10 @@ import java.nio.file.StandardCopyOption
 import dev.skynomads.beerouter.osm.toIntLatitude
 import dev.skynomads.beerouter.osm.toIntLongitude
 import kotlin.test.BeforeTest
-import kotlin.test.DefaultAsserter.assertTrue
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.seconds
 
 class RoutingTest {
@@ -20,6 +20,12 @@ class RoutingTest {
 
     val segmentFile = File(
         File(System.getProperty("java.io.tmpdir")), "E5_N45.rd5"
+    )
+
+    private data class RouteScenario(
+        val name: String,
+        val profile: String,
+        val waypoints: List<OsmNodeNamed>
     )
 
     fun createWaypoint(name: String, lat: Double, lon: Double): OsmNodeNamed {
@@ -39,77 +45,199 @@ class RoutingTest {
     }
 
     @Test
-    fun routeEqualsBrouter() {
-        //brouter.de/brouter-web/#map=13/48.5010/8.9417/standard&lonlats=9.053596,48.520326;8.933679,48.47696
-
-        val waypoints = listOf(
-            createWaypoint(
-                "Tübingen",
-                48.5203263,
-                9.053596
+    fun routeEqualsBrouterComprehensive() {
+        val scenarios = listOf(
+            // trekking profile: short / medium / long / via route
+            RouteScenario(
+                name = "trekking-short-tuebingen-rottenburg",
+                profile = "trekking.brf",
+                waypoints = listOf(
+                    createWaypoint("Tübingen", 48.5203263, 9.053596),
+                    createWaypoint("Rottenburg", 48.47696, 8.9336788)
+                )
             ),
-            createWaypoint(
-                "Rottenburg",
-                48.47696,
-                8.9336788
-            )
+            RouteScenario(
+                name = "trekking-medium-tuebingen-horb",
+                profile = "trekking.brf",
+                waypoints = listOf(
+                    createWaypoint("Tübingen", 48.5203263, 9.053596),
+                    createWaypoint("Horb am Neckar", 48.4421, 8.6849)
+                )
+            ),
+            RouteScenario(
+                name = "trekking-long-stuttgart-freudenstadt",
+                profile = "trekking.brf",
+                waypoints = listOf(
+                    createWaypoint("Stuttgart", 48.7758, 9.1829),
+                    createWaypoint("Freudenstadt", 48.4642, 8.4112)
+                )
+            ),
+            RouteScenario(
+                name = "trekking-via-stuttgart-tuebingen-rottenburg",
+                profile = "trekking.brf",
+                waypoints = listOf(
+                    createWaypoint("Stuttgart", 48.7758, 9.1829),
+                    createWaypoint("Tübingen", 48.5203263, 9.053596),
+                    createWaypoint("Rottenburg", 48.47696, 8.9336788)
+                )
+            ),
+            // fastbike profile: short / medium / via route
+            RouteScenario(
+                name = "fastbike-short-tuebingen-reutlingen",
+                profile = "fastbike.brf",
+                waypoints = listOf(
+                    createWaypoint("Tübingen", 48.5203263, 9.053596),
+                    createWaypoint("Reutlingen", 48.4914, 9.2043)
+                )
+            ),
+            RouteScenario(
+                name = "fastbike-medium-tuebingen-boeblingen",
+                profile = "fastbike.brf",
+                waypoints = listOf(
+                    createWaypoint("Tübingen", 48.5203263, 9.053596),
+                    createWaypoint("Böblingen", 48.6835, 9.0110)
+                )
+            ),
+            RouteScenario(
+                name = "fastbike-via-tuebingen-reutlingen-stuttgart",
+                profile = "fastbike.brf",
+                waypoints = listOf(
+                    createWaypoint("Tübingen", 48.5203263, 9.053596),
+                    createWaypoint("Reutlingen", 48.4914, 9.2043),
+                    createWaypoint("Stuttgart", 48.7758, 9.1829)
+                )
+            ),
+            // shortest profile: short / long
+            RouteScenario(
+                name = "shortest-short-reutlingen-tuebingen",
+                profile = "shortest.brf",
+                waypoints = listOf(
+                    createWaypoint("Reutlingen", 48.4914, 9.2043),
+                    createWaypoint("Tübingen", 48.5203263, 9.053596)
+                )
+            ),
+            RouteScenario(
+                name = "shortest-long-stuttgart-balingen",
+                profile = "shortest.brf",
+                waypoints = listOf(
+                    createWaypoint("Stuttgart", 48.7758, 9.1829),
+                    createWaypoint("Balingen", 48.2768, 8.8554)
+                )
+            ),
+            // car profile: medium / long / via route
+            RouteScenario(
+                name = "car-medium-tuebingen-stuttgart",
+                profile = "car-vario.brf",
+                waypoints = listOf(
+                    createWaypoint("Tübingen", 48.5203263, 9.053596),
+                    createWaypoint("Stuttgart", 48.7758, 9.1829)
+                )
+            ),
+            RouteScenario(
+                name = "car-long-stuttgart-horb",
+                profile = "car-vario.brf",
+                waypoints = listOf(
+                    createWaypoint("Stuttgart", 48.7758, 9.1829),
+                    createWaypoint("Horb am Neckar", 48.4421, 8.6849)
+                )
+            ),
+            RouteScenario(
+                name = "car-via-boeblingen-tuebingen-balingen",
+                profile = "car-vario.brf",
+                waypoints = listOf(
+                    createWaypoint("Böblingen", 48.6835, 9.0110),
+                    createWaypoint("Tübingen", 48.5203263, 9.053596),
+                    createWaypoint("Balingen", 48.2768, 8.8554)
+                )
+            ),
+            // mtb profile: medium / long
+            RouteScenario(
+                name = "mtb-medium-tuebingen-balingen",
+                profile = "mtb.brf",
+                waypoints = listOf(
+                    createWaypoint("Tübingen", 48.5203263, 9.053596),
+                    createWaypoint("Balingen", 48.2768, 8.8554)
+                )
+            ),
+            RouteScenario(
+                name = "mtb-long-stuttgart-freudenstadt",
+                profile = "mtb.brf",
+                waypoints = listOf(
+                    createWaypoint("Stuttgart", 48.7758, 9.1829),
+                    createWaypoint("Freudenstadt", 48.4642, 8.4112)
+                )
+            ),
         )
 
-        val btrack = routeBrouter(waypoints)
-
-        val beetrack = runBlocking {
-            routeBeerouter(waypoints)
+        val failures = mutableListOf<String>()
+        scenarios.forEach { scenario ->
+            try {
+                val btrack = routeBrouter(scenario.waypoints, scenario.profile)
+                val beetrack = runBlocking { routeBeerouter(scenario.waypoints, scenario.profile) }
+                assertTracksEqual(scenario.name, btrack, beetrack)
+            } catch (t: Throwable) {
+                failures.add("${scenario.name}: ${t.message}")
+            }
         }
+        assertTrue(
+            failures.isEmpty(),
+            "Found ${failures.size} brouter parity mismatches:\n${failures.joinToString("\n")}"
+        )
+    }
 
-        assertNotNull(btrack)
-        assertNotNull(beetrack)
+    private fun assertTracksEqual(
+        scenario: String,
+        btrack: btools.router.OsmTrack?,
+        beetrack: OsmTrack?
+    ) {
+        assertNotNull(btrack, "$scenario: brouter returned null track")
+        assertNotNull(beetrack, "$scenario: beerouter returned null track")
 
-        assertEquals(btrack.nodes.size, beetrack.nodes.size)
+        assertEquals(btrack.distance, beetrack.distance, "$scenario: distance")
+        assertEquals(btrack.ascend, beetrack.ascend, "$scenario: ascend")
+        assertEquals(btrack.plainAscend, beetrack.plainAscend, "$scenario: plainAscend")
+        assertEquals(btrack.cost, beetrack.cost, "$scenario: cost")
+        assertEquals(btrack.energy, beetrack.energy, "$scenario: energy")
+        assertEquals(btrack.totalSeconds, beetrack.totalSeconds, "$scenario: totalSeconds")
+        assertEquals(btrack.nodes.size, beetrack.nodes.size, "$scenario: node count")
 
         btrack.nodes.forEachIndexed { idx, node ->
-            assertEquals(node.iLon, beetrack.nodes[idx].position.longitude.toIntLongitude())
-            assertEquals(node.iLat, beetrack.nodes[idx].position.latitude.toIntLatitude())
-            assertEquals(node.sElev, toSElev(beetrack.nodes[idx].position.altitude))
+            assertEquals(
+                node.iLon,
+                beetrack.nodes[idx].position.longitude.toIntLongitude(),
+                "$scenario: node[$idx].lon"
+            )
+            assertEquals(
+                node.iLat,
+                beetrack.nodes[idx].position.latitude.toIntLatitude(),
+                "$scenario: node[$idx].lat"
+            )
+            assertEquals(
+                node.sElev,
+                toSElev(beetrack.nodes[idx].position.altitude),
+                "$scenario: node[$idx].elev"
+            )
 
             val hint = btrack.getVoiceHint(idx)
             if (hint != null) {
                 val actual = beetrack.getVoiceHint(idx)
-                assertNotNull(actual)
-                assertEquals(hint.cruiserCommandString, actual.cruiserCommandString)
+                assertNotNull(actual, "$scenario: node[$idx] missing voice hint")
+                assertEquals(
+                    hint.cruiserCommandString,
+                    actual.cruiserCommandString,
+                    "$scenario: node[$idx] voice command"
+                )
             }
         }
 
         assertEquals(List(btrack.nodes.size) { idx ->
             btrack.getVoiceHint(idx)
-        }.filterNotNull().size, beetrack.voiceHints.size)
-
-
-        //val expected = GPX.parse(javaClass.getResource("/Tübingen-Rottenburg-Trekking.gpx")!!)
-        //val actual = GPX.parse(FormatGpx().format(beetrack)!!.trim().byteInputStream())
-        //Assert.assertEquals("distance", expected.distance, actual.distance)
-        //
-        //expected.tracks.forEachIndexed { idx, expected ->
-        //    val actual = actual.tracks[idx]
-        //    Assert.assertEquals("segments", expected.segments.size, actual.segments.size)
-        //
-        //    expected.segments.forEachIndexed { idx, expected ->
-        //        val actual = actual.segments[idx]
-        //        Assert.assertEquals("points", expected.points.size, actual.points.size)
-        //
-        //        expected.points.forEachIndexed { idx, expected ->
-        //            val actual = actual.points[idx]
-        //
-        //            Assert.assertEquals("point", expected.lat, actual.lat, 0.0)
-        //            Assert.assertEquals("point", expected.lon, actual.lon, 0.0)
-        //            Assert.assertEquals("point", expected.ele, actual.ele, 0.0)
-        //        }
-        //    }
-        //}
+        }.filterNotNull().size, beetrack.voiceHints.size, "$scenario: voice hint count")
     }
 
-    fun routeBrouter(waypoints: List<OsmNodeNamed>): btools.router.OsmTrack {
-        val profile = File(root, "../misc/profiles2/trekking.brf")
-        assertTrue("profile exists ${segmentFile.path}", profile.exists())
+    fun routeBrouter(waypoints: List<OsmNodeNamed>, profileName: String): btools.router.OsmTrack {
+        val profile = File(root, "../misc/profiles2/$profileName")
+        assertTrue(profile.exists(), "profile exists ${profile.path}")
 
         val rc = btools.router.RoutingContext().apply {
             turnInstructionMode = 2
@@ -135,9 +263,9 @@ class RoutingTest {
         return cr.foundTrack
     }
 
-    suspend fun routeBeerouter(waypoints: List<OsmNodeNamed>): OsmTrack? {
-        val profile = File(root, "../misc/profiles2/trekking.brf")
-        kotlin.test.assertTrue(profile.exists(), "profile exists ${segmentFile.path}")
+    suspend fun routeBeerouter(waypoints: List<OsmNodeNamed>, profileName: String): OsmTrack? {
+        val profile = File(root, "../misc/profiles2/$profileName")
+        assertTrue(profile.exists(), "profile exists ${profile.path}")
 
 
         val ctx = RoutingContext(
@@ -147,9 +275,7 @@ class RoutingTest {
             global.turnInstructionMode = 2
         }
 
-        val engine = RoutingEngine(
-            ctx
-        )
+        val engine = RoutingEngine(ctx)
 
         return engine.doRouting(waypoints)
     }
