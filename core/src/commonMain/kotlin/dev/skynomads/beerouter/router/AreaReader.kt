@@ -15,8 +15,6 @@ import dev.skynomads.beerouter.osm.toIntLongitude
 import kotlinx.io.Sink
 import kotlinx.io.Source
 import kotlinx.io.buffered
-import kotlinx.io.files.Path
-import kotlinx.io.files.SystemFileSystem
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
@@ -269,14 +267,6 @@ public class AreaReader {
                 searchRect.isWithin(p2x.toLong(), p2y.toLong())
     }
 
-    public fun writeAreaInfo(filename: String, wp: MatchedWaypoint, ais: MutableList<AreaInfo>) {
-        writeAreaInfo(Path(filename), wp, ais)
-    }
-
-    public fun writeAreaInfo(path: Path, wp: MatchedWaypoint, ais: MutableList<AreaInfo>) {
-        SystemFileSystem.sink(path).buffered().use { sink -> writeAreaInfo(sink, wp, ais) }
-    }
-
     public fun writeAreaInfo(sink: Sink, wp: MatchedWaypoint, ais: MutableList<AreaInfo>) {
         wp.writeToStream(sink)
         for (ai in ais) {
@@ -286,14 +276,6 @@ public class AreaReader {
             sink.writeInt(ai.greenWays)
             sink.writeInt(ai.riverWays)
             sink.writeInt(ai.elev50)
-        }
-    }
-
-    public fun readAreaInfo(path: Path, wp: MatchedWaypoint, ais: MutableList<AreaInfo>) {
-        runCatching {
-            SystemFileSystem.source(path).buffered().use { source -> readAreaInfo(source, wp, ais) }
-        }.onFailure {
-            ais.clear()
         }
     }
 

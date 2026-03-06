@@ -16,9 +16,6 @@ import org.maplibre.spatialk.geojson.Position
 import kotlinx.io.EOFException
 import kotlinx.io.Sink
 import kotlinx.io.Source
-import kotlinx.io.buffered
-import kotlinx.io.files.Path
-import kotlinx.io.files.SystemFileSystem
 import kotlin.math.abs
 
 public class OsmTrack {
@@ -104,17 +101,6 @@ public class OsmTrack {
             } else {
                 nodesMap.put(id, nh)
             }
-        }
-    }
-
-    /**
-     * writes the track in binary-format to a file
-     *
-     * @param filename the filename to write to
-     */
-    public fun writeBinary(filename: String) {
-        SystemFileSystem.sink(Path(filename)).buffered().use { sink ->
-            writeBinary(sink)
         }
     }
 
@@ -405,49 +391,6 @@ public class OsmTrack {
         TurnInstructionMode.supportsBeelineHints(turnInstructionMode)
 
     public companion object {
-        public fun readBinary(
-            filename: String?,
-            newEp: OsmNodeNamed,
-            nogoChecksums: LongArray,
-            profileChecksum: Long,
-            debugInfo: StringBuilder?
-        ): OsmTrack? {
-            var t: OsmTrack? = null
-            if (filename != null) {
-                val trackPath = Path(filename)
-                if (SystemFileSystem.exists(trackPath)) {
-                    try {
-                        SystemFileSystem.source(trackPath).buffered().use { source ->
-                            t = readBinary(source, newEp, nogoChecksums, profileChecksum, debugInfo)
-                        }
-                    } catch (e: Exception) {
-                        debugInfo?.append("Error reading rawTrack: $e")
-                    }
-                }
-            }
-            return t
-        }
-
-        public fun readBinary(
-            path: Path,
-            newEp: OsmNodeNamed,
-            nogoChecksums: LongArray,
-            profileChecksum: Long,
-            debugInfo: StringBuilder?
-        ): OsmTrack? {
-            if (!SystemFileSystem.exists(path)) {
-                return null
-            }
-            return try {
-                SystemFileSystem.source(path).buffered().use { source ->
-                    readBinary(source, newEp, nogoChecksums, profileChecksum, debugInfo)
-                }
-            } catch (e: Exception) {
-                debugInfo?.append("Error reading rawTrack: $e")
-                null
-            }
-        }
-
         public fun readBinary(
             source: Source,
             newEp: OsmNodeNamed,

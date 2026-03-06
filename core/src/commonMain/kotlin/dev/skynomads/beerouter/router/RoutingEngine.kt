@@ -18,6 +18,7 @@ import dev.skynomads.beerouter.util.CheapRuler.destination
 import dev.skynomads.beerouter.util.SortedHeap
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
+import kotlinx.io.buffered
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
@@ -294,8 +295,12 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
 
         val ais = mutableListOf<AreaInfo>()
         val areareader = AreaReader()
-        routingContext.rawArea?.let { areaPath ->
-            areareader.readAreaInfo(areaPath, wpt1, ais)
+        routingContext.rawAreaSourceFactory?.let { sourceFactory ->
+            runCatching {
+                sourceFactory().buffered().use { source ->
+                    areareader.readAreaInfo(source, wpt1, ais)
+                }
+            }
         }
 
         if (ais.isEmpty()) {
@@ -391,10 +396,12 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
                 ais
             )
 
-            routingContext.rawArea?.let { areaPath ->
+            routingContext.rawAreaSinkFactory?.let { sinkFactory ->
                 try {
                     wpt1.radius = searchRadius * 1.5
-                    areareader.writeAreaInfo(areaPath, wpt1, ais)
+                    sinkFactory().buffered().use { sink ->
+                        areareader.writeAreaInfo(sink, wpt1, ais)
+                    }
                 } catch (e: Exception) {
                     // Silently ignore exceptions
                 }
@@ -602,14 +609,18 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
         var nearbyTrack: OsmTrack? = null
         if (!hasDirectRouting && lastTracks[waypoints.size - 2] == null) {
             val debugInfo = StringBuilder()
-            nearbyTrack = routingContext.rawTrack?.let {
-                OsmTrack.readBinary(
-                    it,
-                    waypoints[waypoints.size - 1],
-                    routingContext.nogoChecksums,
-                    routingContext.profileTimestamp,
-                    debugInfo
-                )
+            nearbyTrack = routingContext.rawTrackSourceFactory?.let { sourceFactory ->
+                runCatching {
+                    sourceFactory().buffered().use { source ->
+                        OsmTrack.readBinary(
+                            source,
+                            waypoints[waypoints.size - 1],
+                            routingContext.nogoChecksums,
+                            routingContext.profileTimestamp,
+                            debugInfo
+                        )
+                    }
+                }.getOrNull()
             }
             if (nearbyTrack != null) {
                 nUnmatched--

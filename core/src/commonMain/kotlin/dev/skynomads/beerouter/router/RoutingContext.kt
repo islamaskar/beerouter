@@ -20,6 +20,7 @@ import dev.skynomads.beerouter.osm.toIntLongitude
 import dev.skynomads.beerouter.util.CheapAngleMeter
 import dev.skynomads.beerouter.util.CheapRuler.getLonLatToMeterScales
 import dev.skynomads.beerouter.util.readUtf8
+import kotlinx.io.Sink
 import kotlinx.io.Source
 import kotlinx.io.buffered
 import kotlinx.io.files.Path
@@ -51,7 +52,11 @@ public class RoutingContext(
         profileContent = template.profileContent,
         lookupContent = template.lookupContent,
         mapAccessFileSystem = template.mapAccessFileSystem
-    )
+    ) {
+        rawTrackSourceFactory = template.rawTrackSourceFactory
+        rawAreaSourceFactory = template.rawAreaSourceFactory
+        rawAreaSinkFactory = template.rawAreaSinkFactory
+    }
 
     public class Global(ctx: BExpressionContext) {
         public val carMode: Boolean
@@ -191,12 +196,9 @@ public class RoutingContext(
 
     public var keyValues: MutableMap<String, String>? = null
 
-    public var rawTrackPath: String? = null
-    public var rawAreaPath: String? = null
-    public val rawTrack: Path?
-        get() = rawTrackPath?.let(::Path)
-    public val rawArea: Path?
-        get() = rawAreaPath?.let(::Path)
+    public var rawTrackSourceFactory: (() -> Source)? = null
+    public var rawAreaSourceFactory: (() -> Source)? = null
+    public var rawAreaSinkFactory: (() -> Sink)? = null
 
     public val global: Global
     public val way: BExpressionContextWay
