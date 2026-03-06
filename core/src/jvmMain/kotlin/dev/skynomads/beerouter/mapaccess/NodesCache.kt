@@ -12,7 +12,6 @@ import dev.skynomads.beerouter.expressions.BExpressionContextWay
 import dev.skynomads.beerouter.osm.toIntLatitude
 import dev.skynomads.beerouter.osm.toIntLongitude
 import java.io.File
-import java.io.IOException
 
 public class NodesCache(
     private var segmentDir: File,
@@ -30,7 +29,7 @@ public class NodesCache(
     private val forceSecondaryData: Boolean
     private var currentFileName: String? = null
 
-    private var fileCache: MutableMap<String?, PhysicalFile?>? = null
+    private var fileCache: MutableMap<String, PhysicalFile?> = HashMap(4)
     private var dataBuffers: DataBuffers = DataBuffers()
 
     private var fileRows: Array<Array<OsmFile?>?>
@@ -70,7 +69,7 @@ public class NodesCache(
         firstFileAccessFailed = false
         firstFileAccessName = null
 
-        if (!this.segmentDir.isDirectory()) throw RuntimeException("segment directory " + segmentDir.absolutePath + " does not exist")
+        if (!this.segmentDir.isDirectory) throw RuntimeException("segment directory ${segmentDir.absolutePath} does not exist")
 
         if (oldCache != null) {
             fileCache = oldCache.fileCache
@@ -86,11 +85,10 @@ public class NodesCache(
                     }
                 }
             } else {
-                fileRows = arrayOfNulls<Array<OsmFile?>>(180)
+                fileRows = arrayOfNulls(180)
             }
         } else {
-            fileCache = HashMap<String?, PhysicalFile?>(4)
-            fileRows = arrayOfNulls<Array<OsmFile?>>(180)
+            fileRows = arrayOfNulls(180)
             dataBuffers = DataBuffers()
         }
         ghostSum = cacheSum
@@ -187,8 +185,6 @@ public class NodesCache(
                 ghostWakeup += segment.dataSize.toLong()
             }
             return segment
-        } catch (re: IOException) {
-            throw RuntimeException(re.message)
         } catch (re: RuntimeException) {
             throw re
         } catch (e: Exception) {
@@ -216,7 +212,7 @@ public class NodesCache(
 
         val id = node.idFromPos
         if (segment.getAndClear(id)) {
-            node.parseNodeBody(segment, nodesMap, ctxWay!!)
+            node.parseNodeBody(segment, nodesMap, ctxWay)
         }
 
         if (garbageCollectionEnabled) { // garbage collection
@@ -353,7 +349,6 @@ public class NodesCache(
         }
     }
 
-    @Throws(Exception::class)
     private fun fileForSegment(lonDegree: Int, latDegree: Int): OsmFile {
         val lonMod5 = lonDegree % 5
         val latMod5 = latDegree % 5
@@ -368,21 +363,17 @@ public class NodesCache(
         currentFileName = "$filenameBase.rd5"
 
         var ra: PhysicalFile? = null
-        if (!fileCache!!.containsKey(filenameBase)) {
-            var f: File? = null
+        if (!fileCache.containsKey(filenameBase)) {
             if (!forceSecondaryData) {
                 val primary = File(segmentDir, "$filenameBase.rd5")
                 if (primary.exists()) {
-                    f = primary
+                    currentFileName = primary.name
+                    ra = PhysicalFile(primary, dataBuffers, lookupVersion, lookupMinorVersion)
                 }
             }
-            if (f != null) {
-                currentFileName = f.getName()
-                ra = PhysicalFile(f, dataBuffers, lookupVersion, lookupMinorVersion)
-            }
-            fileCache!![filenameBase] = ra
+            fileCache[filenameBase] = ra
         }
-        ra = fileCache!![filenameBase]
+        ra = fileCache[filenameBase]
         val osmf = OsmFile(ra, lonDegree, latDegree, dataBuffers)
 
         if (firstFileAccessName == null) {
@@ -394,10 +385,10 @@ public class NodesCache(
     }
 
     public fun close() {
-        for (f in fileCache!!.values) {
+        for (f in fileCache.values) {
             try {
-                if (f != null) f.ra!!.close()
-            } catch (ioe: IOException) {
+                f?.ra?.close()
+            } catch (ioe: Exception) {
                 // ignore
             }
         }

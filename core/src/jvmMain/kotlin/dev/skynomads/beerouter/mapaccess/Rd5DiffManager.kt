@@ -8,13 +8,10 @@ package dev.skynomads.beerouter.mapaccess
 import java.io.BufferedInputStream
 import java.io.File
 import java.io.FileInputStream
-import java.io.IOException
 import java.security.DigestInputStream
 import java.security.MessageDigest
-import java.security.NoSuchAlgorithmException
 
 public object Rd5DiffManager {
-    @Throws(Exception::class)
     public fun main(args: Array<String>) {
         calcDiffs(File(args[0]), File(args[1]))
     }
@@ -22,30 +19,22 @@ public object Rd5DiffManager {
     /**
      * Compute diffs for all RD5 files
      */
-    @Throws(Exception::class)
     public fun calcDiffs(oldDir: File?, newDir: File) {
         val oldDiffDir = File(oldDir, "diff")
         val newDiffDir = File(newDir, "diff")
 
-        val filesNew = newDir.listFiles()
+        val filesNew = newDir.listFiles() ?: return
 
-        for (fn in filesNew!!) {
-            val name = fn.getName()
-            if (!name.endsWith(".rd5")) {
-                continue
-            }
-            if (fn.length() < 1024 * 1024) {
-                continue  // exclude very small files from diffing
-            }
-            val basename = name.take(name.length - 4)
+        for (fn in filesNew) {
+            val name = fn.name
+            if (!name.endsWith(".rd5")) continue
+            if (fn.length() < 1024 * 1024) continue  // exclude very small files from diffing
+
+            val basename = name.dropLast(4)
             val fo = File(oldDir, name)
-            if (!fo.isFile()) {
-                continue
-            }
+            if (!fo.isFile) continue
 
-            // calculate MD5 of old file
             val md5 = getMD5(fo)
-
             val md5New = getMD5(fn)
 
             println("name=$name md5=$md5")
@@ -53,29 +42,19 @@ public object Rd5DiffManager {
             val specificNewDiffs = File(newDiffDir, basename)
             specificNewDiffs.mkdirs()
 
-            val diffFileName = "$md5.df5"
-            val diffFile = File(specificNewDiffs, diffFileName)
+            val diffFile = File(specificNewDiffs, "$md5.df5")
+            File(specificNewDiffs, "$md5New.df5").createNewFile()
 
-            val dummyDiffFileName = "$md5New.df5"
-            val dummyDiffFile = File(specificNewDiffs, dummyDiffFileName)
-            dummyDiffFile.createNewFile()
-
-            // calc the new diff
             Rd5DiffTool.diff2files(fo, fn, diffFile)
 
-            // ... and add that to old diff files
             val specificOldDiffs = File(oldDiffDir, basename)
-            if (specificOldDiffs.isDirectory()) {
-                val oldDiffs = specificOldDiffs.listFiles()
-                for (od in oldDiffs!!) {
-                    if (!od.getName().endsWith(".df5")) {
-                        continue
-                    }
-                    if (System.currentTimeMillis() - od.lastModified() > 9 * 86400000L) {
-                        continue  // limit diff history to 9 days
-                    }
+            if (specificOldDiffs.isDirectory) {
+                val oldDiffs = specificOldDiffs.listFiles() ?: continue
+                for (od in oldDiffs) {
+                    if (!od.name.endsWith(".df5")) continue
+                    if (System.currentTimeMillis() - od.lastModified() > 9 * 86400000L) continue
 
-                    val updatedDiff = File(specificNewDiffs, od.getName())
+                    val updatedDiff = File(specificNewDiffs, od.name)
                     if (!updatedDiff.exists()) {
                         Rd5DiffTool.addDeltas(od, diffFile, updatedDiff)
                         updatedDiff.setLastModified(od.lastModified())
@@ -85,30 +64,19 @@ public object Rd5DiffManager {
         }
     }
 
-    @Throws(IOException::class)
     public fun getMD5(f: File): String {
-        try {
-            val md = MessageDigest.getInstance("MD5")
-            val bis = BufferedInputStream(FileInputStream(f))
-            val dis = DigestInputStream(bis, md)
+        val md = MessageDigest.getInstance("MD5")
+        DigestInputStream(BufferedInputStream(FileInputStream(f)), md).use { dis ->
             val buf = ByteArray(8192)
-            while (true) {
-                val len = dis.read(buf)
-                if (len <= 0) {
-                    break
-                }
+            while (dis.read(buf) > 0) { /* read all */ }
+        }
+        val bytes = md.digest()
+        return buildString {
+            for (b in bytes) {
+                val v = b.toInt() and 0xff
+                append(hexChar(v ushr 4))
+                append(hexChar(v and 0xf))
             }
-            dis.close()
-            val bytes = md.digest()
-
-            val sb = StringBuilder()
-            for (j in bytes.indices) {
-                val v = bytes[j].toInt() and 0xff
-                sb.append(hexChar(v ushr 4)).append(hexChar(v and 0xf))
-            }
-            return sb.toString()
-        } catch (e: NoSuchAlgorithmException) {
-            throw IOException("MD5 algorithm not available", e)
         }
     }
 

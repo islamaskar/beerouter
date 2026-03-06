@@ -22,8 +22,6 @@ import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
 import java.io.IOException
-import java.util.Collections
-import java.util.TreeMap
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
@@ -50,7 +48,7 @@ public class AreaReader {
         var used = 0
         val checkBorder = maxscale > 7
 
-        val tiles: MutableMap<Long?, String?> = TreeMap()
+        val tiles = mutableMapOf<Long, String>()
         for (idxLat in -scale..scale) {
             for (idxLon in -scale..scale) {
                 if (ignoreCenter(maxscale, idxLon, idxLat)) continue
@@ -138,11 +136,7 @@ public class AreaReader {
             }
         }
 
-        val list: MutableList<MutableMap.MutableEntry<Long?, String?>> =
-            ArrayList(tiles.entries)
-        Collections.sort(
-            list,
-            Comparator<MutableMap.MutableEntry<Long?, String?>> { e1, e2 -> e1.value!!.compareTo(e2.value!!) })
+        val list = tiles.entries.sortedBy { it.value }
 
         val maxmem = rc.memoryclass * 1024L * 1024L // in MB
         val nodesCache =
@@ -159,9 +153,8 @@ public class AreaReader {
         var dataBuffers: DataBuffers? = null
         try {
             for (entry in list) {
-                val n = OsmNode(entry.key!!)
-                // System.out.println("areareader set " + n.getILon() + "_" + n.getILat() + " " + entry.getValue());
-                val filenameBase: String = entry.value!!
+                val n = OsmNode(entry.key)
+                val filenameBase: String = entry.value
                 if (filenameBase != lastFilenameBase) {
                     pf?.close()
                     lastFilenameBase = filenameBase
@@ -256,7 +249,7 @@ public class AreaReader {
                 return true
             }
         } catch (e: Exception) {
-            System.err.println("AreaReader: " + e.message)
+            println("AreaReader: ${e.message}")
         }
         return false
     }
@@ -275,55 +268,45 @@ public class AreaReader {
                 searchRect.isWithin(p2x.toLong(), p2y.toLong())
     }
 
-    @Throws(Exception::class)
     public fun writeAreaInfo(filename: String, wp: MatchedWaypoint, ais: MutableList<AreaInfo>) {
-        val dos = DataOutputStream(BufferedOutputStream(FileOutputStream(filename)))
-
-        wp.writeToStream(dos)
-        for (ai in ais) {
-            dos.writeInt(ai.direction)
-            dos.writeDouble(ai.elevStart)
-            dos.writeInt(ai.ways)
-            dos.writeInt(ai.greenWays)
-            dos.writeInt(ai.riverWays)
-            dos.writeInt(ai.elev50)
+        DataOutputStream(BufferedOutputStream(FileOutputStream(filename))).use { dos ->
+            wp.writeToStream(dos)
+            for (ai in ais) {
+                dos.writeInt(ai.direction)
+                dos.writeDouble(ai.elevStart)
+                dos.writeInt(ai.ways)
+                dos.writeInt(ai.greenWays)
+                dos.writeInt(ai.riverWays)
+                dos.writeInt(ai.elev50)
+            }
         }
-        dos.close()
     }
 
     public fun readAreaInfo(fai: File, wp: MatchedWaypoint, ais: MutableList<AreaInfo>) {
-        var dis: DataInputStream? = null
-        var ep: MatchedWaypoint?
         try {
-            dis = DataInputStream(BufferedInputStream(FileInputStream(fai)))
-            ep = readFromStream(dis)
-            if (abs(ep.waypoint!!.position.longitude.toIntLongitude() - wp.waypoint!!.position.longitude.toIntLongitude()) > 500 &&
-                abs(ep.waypoint!!.position.latitude.toIntLatitude() - wp.waypoint!!.position.latitude.toIntLatitude()) > 500
-            ) {
-                return
-            }
-            if (abs(ep.radius - wp.radius) > 500) {
-                return
-            }
-            for (i in 0..3) {
-                val direction = dis.readInt()
-                val ai = AreaInfo(direction)
-                ai.elevStart = dis.readDouble()
-                ai.ways = dis.readInt()
-                ai.greenWays = dis.readInt()
-                ai.riverWays = dis.readInt()
-                ai.elev50 = dis.readInt()
-                ais.add(ai)
+            DataInputStream(BufferedInputStream(FileInputStream(fai))).use { dis ->
+                val ep = readFromStream(dis)
+                if (abs(ep.waypoint!!.position.longitude.toIntLongitude() - wp.waypoint!!.position.longitude.toIntLongitude()) > 500 &&
+                    abs(ep.waypoint!!.position.latitude.toIntLatitude() - wp.waypoint!!.position.latitude.toIntLatitude()) > 500
+                ) {
+                    return
+                }
+                if (abs(ep.radius - wp.radius) > 500) {
+                    return
+                }
+                for (i in 0..3) {
+                    val direction = dis.readInt()
+                    val ai = AreaInfo(direction)
+                    ai.elevStart = dis.readDouble()
+                    ai.ways = dis.readInt()
+                    ai.greenWays = dis.readInt()
+                    ai.riverWays = dis.readInt()
+                    ai.elev50 = dis.readInt()
+                    ais.add(ai)
+                }
             }
         } catch (e: IOException) {
             ais.clear()
-        } finally {
-            if (dis != null) {
-                try {
-                    dis.close()
-                } catch (e: IOException) {
-                }
-            }
         }
     }
 }

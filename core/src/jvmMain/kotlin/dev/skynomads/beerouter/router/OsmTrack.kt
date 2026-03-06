@@ -111,21 +111,19 @@ public class OsmTrack {
      *
      * @param filename the filename to write to
      */
-    @Throws(Exception::class)
     public fun writeBinary(filename: String) {
-        val dos = DataOutputStream(BufferedOutputStream(FileOutputStream(filename)))
-
-        endPoint!!.writeToStream(dos)
-        dos.writeInt(nodes.size)
-        for (node in nodes) {
-            node.writeToStream(dos)
+        DataOutputStream(BufferedOutputStream(FileOutputStream(filename))).use { dos ->
+            endPoint!!.writeToStream(dos)
+            dos.writeInt(nodes.size)
+            for (node in nodes) {
+                node.writeToStream(dos)
+            }
+            dos.writeLong(nogoChecksums[0])
+            dos.writeLong(nogoChecksums[1])
+            dos.writeLong(nogoChecksums[2])
+            dos.writeBoolean(isDirty)
+            dos.writeLong(profileTimestamp)
         }
-        dos.writeLong(nogoChecksums[0])
-        dos.writeLong(nogoChecksums[1])
-        dos.writeLong(nogoChecksums[2])
-        dos.writeBoolean(isDirty)
-        dos.writeLong(profileTimestamp)
-        dos.close()
     }
 
     public fun addNodes(t: OsmTrack) {
@@ -134,11 +132,11 @@ public class OsmTrack {
     }
 
     public fun containsNode(node: OsmPos): Boolean {
-        return nodesMap!!.contains(node.idFromPos)
+        return nodesMap.contains(node.idFromPos)
     }
 
     public fun getLink(n1: Long, n2: Long): OsmPathElement? {
-        var h = nodesMap!![n2]
+        var h = nodesMap[n2]
         while (h != null) {
             val e1 = h.node!!.origin
             if (e1 != null && e1.idFromPos == n1) {
@@ -188,12 +186,7 @@ public class OsmTrack {
             }
             voiceHints.addAll(t.voiceHints)
         } else {
-            if (detourMap == null) {
-                //copyDetours( t );
-                detourMap = t.detourMap
-            } else {
-                addDetours(t)
-            }
+            addDetours(t)
         }
 
         distance += t.distance
@@ -258,8 +251,7 @@ public class OsmTrack {
     }
 
     public fun getFromDetourMap(id: Long): OsmPathElementHolder? {
-        if (detourMap == null) return null
-        return detourMap!![id]
+        return detourMap[id]
     }
 
     public fun prepareSpeedProfile(rc: RoutingContext?) {
@@ -271,7 +263,7 @@ public class OsmTrack {
         voiceHints.setTransportMode(rc.global.carMode, rc.global.bikeMode)
         voiceHints.turnInstructionMode = rc.global.turnInstructionMode
 
-        if (detourMap == null && !rc.global.hasDirectRouting) {
+        if (detourMap.isEmpty() && !rc.global.hasDirectRouting) {
             // only when no direct way points
             return
         }
@@ -315,8 +307,8 @@ public class OsmTrack {
                         input.distanceToNext = node.calcDistance(origin).toDouble()
                     }
                 }
-                if (detourMap != null) {
-                    val detours = detourMap!![origin.idFromPos]
+                run {
+                    val detours = detourMap[origin.idFromPos]
                     if (nodeNr >= 0 && detours != null) {
                         var h: OsmPathElementHolder? = detours
                         while (h != null) {
@@ -413,61 +405,57 @@ public class OsmTrack {
                 val f = File(filename)
                 if (f.exists()) {
                     try {
-                        val dis = DataInputStream(BufferedInputStream(FileInputStream(f)))
-                        val ep = readFromStream(dis)
-                        val dlon: Int = ep.waypoint!!.iLon - newEp.iLon
-                        val dlat = ep.waypoint!!.iLat - newEp.iLat
-                        val targetMatch = dlon < 20 && dlon > -20 && dlat < 20 && dlat > -20
-                        debugInfo?.append("target-delta = $dlon/$dlat targetMatch=$targetMatch")
-                        if (targetMatch) {
-                            t = OsmTrack()
-                            t.endPoint = ep
-                            val n = dis.readInt()
-                            var lastPe: OsmPathElement? = null
-                            for (i in 0..<n) {
-                                val pe: OsmPathElement =
-                                    OsmPathElement.readFromStream(dis)
-                                pe.origin = lastPe
-                                lastPe = pe
-                                t.nodes.add(pe)
-                            }
-                            t.cost = lastPe!!.cost
-                            t.buildMap()
+                        DataInputStream(BufferedInputStream(FileInputStream(f))).use { dis ->
+                            val ep = readFromStream(dis)
+                            val dlon: Int = ep.waypoint!!.iLon - newEp.iLon
+                            val dlat = ep.waypoint!!.iLat - newEp.iLat
+                            val targetMatch = dlon < 20 && dlon > -20 && dlat < 20 && dlat > -20
+                            debugInfo?.append("target-delta = $dlon/$dlat targetMatch=$targetMatch")
+                            if (targetMatch) {
+                                t = OsmTrack()
+                                t.endPoint = ep
+                                val n = dis.readInt()
+                                var lastPe: OsmPathElement? = null
+                                for (i in 0..<n) {
+                                    val pe: OsmPathElement = OsmPathElement.readFromStream(dis)
+                                    pe.origin = lastPe
+                                    lastPe = pe
+                                    t.nodes.add(pe)
+                                }
+                                t.cost = lastPe!!.cost
+                                t.buildMap()
 
-                            // check cheecksums, too
-                            val al = LongArray(3)
-                            var pchecksum: Long = 0
-                            try {
-                                al[0] = dis.readLong()
-                                al[1] = dis.readLong()
-                                al[2] = dis.readLong()
-                            } catch (eof: EOFException) { /* kind of expected */
-                            }
-                            try {
-                                t.isDirty = dis.readBoolean()
-                            } catch (eof: EOFException) { /* kind of expected */
-                            }
-                            try {
-                                pchecksum = dis.readLong()
-                            } catch (eof: EOFException) { /* kind of expected */
-                            }
-                            val nogoCheckOk =
-                                abs(al[0] - nogoChecksums[0]) <= 20 && abs(al[1] - nogoChecksums[1]) <= 20 && abs(
-                                    al[2] - nogoChecksums[2]
-                                ) <= 20
-                            val profileCheckOk = pchecksum == profileChecksum
+                                val al = LongArray(3)
+                                var pchecksum: Long = 0
+                                try {
+                                    al[0] = dis.readLong()
+                                    al[1] = dis.readLong()
+                                    al[2] = dis.readLong()
+                                } catch (eof: EOFException) { /* kind of expected */
+                                }
+                                try {
+                                    t.isDirty = dis.readBoolean()
+                                } catch (eof: EOFException) { /* kind of expected */
+                                }
+                                try {
+                                    pchecksum = dis.readLong()
+                                } catch (eof: EOFException) { /* kind of expected */
+                                }
+                                val nogoCheckOk =
+                                    abs(al[0] - nogoChecksums[0]) <= 20 && abs(al[1] - nogoChecksums[1]) <= 20 && abs(
+                                        al[2] - nogoChecksums[2]
+                                    ) <= 20
+                                val profileCheckOk = pchecksum == profileChecksum
 
-                            if (debugInfo != null) {
-                                debugInfo.append(" nogoCheckOk=$nogoCheckOk profileCheckOk=$profileCheckOk")
-                                debugInfo.append(
-                                    " al=" + formatLongs(al) + " nogoChecksums=" + formatLongs(
-                                        nogoChecksums
+                                if (debugInfo != null) {
+                                    debugInfo.append(" nogoCheckOk=$nogoCheckOk profileCheckOk=$profileCheckOk")
+                                    debugInfo.append(
+                                        " al=" + formatLongs(al) + " nogoChecksums=" + formatLongs(nogoChecksums)
                                     )
-                                )
+                                }
+                                if (!(nogoCheckOk && profileCheckOk)) return null
                             }
-                            if (!(nogoCheckOk && profileCheckOk)) return null
                         }
-                        dis.close()
                     } catch (e: Exception) {
                         debugInfo?.append("Error reading rawTrack: $e")
                     }
