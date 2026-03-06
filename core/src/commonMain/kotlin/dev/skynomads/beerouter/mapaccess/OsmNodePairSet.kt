@@ -18,12 +18,7 @@ public class OsmNodePairSet(maxTempNodeCount: Int) {
     public var freezeCount: Int = 0
         private set
 
-    private data class OsmNodePair(
-        var node2: Long = 0,
-        var next: OsmNodePair? = null
-    )
-
-    private var map: MutableLongObjectMap<OsmNodePair> = MutableLongObjectMap()
+    private val pairMap: MutableLongObjectMap<MutableSet<Long>> = MutableLongObjectMap()
 
     init {
         this.maxTmpNodes = maxTempNodeCount
@@ -54,21 +49,8 @@ public class OsmNodePairSet(maxTempNodeCount: Int) {
     private fun addPair(n1: Long, n2: Long) {
         npairs++
 
-        var e = getElement(n1, n2)
-        if (e == null) {
-            e = OsmNodePair()
-            e.node2 = n2
-
-            var e0 = map[n1]
-            if (e0 != null) {
-                while (e0!!.next != null) {
-                    e0 = e0.next
-                }
-                e0.next = e
-            } else {
-                map.put(n1, e)
-            }
-        }
+        val targets = pairMap[n1] ?: mutableSetOf<Long>().also { pairMap[n1] = it }
+        targets.add(n2)
     }
 
     public fun size(): Int {
@@ -76,17 +58,8 @@ public class OsmNodePairSet(maxTempNodeCount: Int) {
     }
 
     public fun hasPair(n1: Long, n2: Long): Boolean {
-        return getElement(n1, n2) != null || getElement(n2, n1) != null
+        return containsPair(n1, n2) || containsPair(n2, n1)
     }
 
-    private fun getElement(n1: Long, n2: Long): OsmNodePair? {
-        var e = map[n1]
-        while (e != null) {
-            if (e.node2 == n2) {
-                return e
-            }
-            e = e.next
-        }
-        return null
-    }
+    private fun containsPair(n1: Long, n2: Long): Boolean = pairMap[n1]?.contains(n2) == true
 }
