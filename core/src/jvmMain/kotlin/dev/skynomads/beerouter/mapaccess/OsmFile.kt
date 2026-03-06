@@ -22,7 +22,7 @@ public class OsmFile(
     public var latDegree: Int,
     dataBuffers: DataBuffers
 ) {
-    private var `is`: RandomAccessFile? = null
+    private var raf: RandomAccessFile? = null
     private var fileOffset: Long = 0
 
     private var posIdx: IntArray = IntArray(0)
@@ -54,11 +54,11 @@ public class OsmFile(
             val index = rafile.fileIndex
             fileOffset = if (tileIndex > 0) index[tileIndex - 1] else 200L
             if (fileOffset != index[tileIndex]) {
-                `is` = rafile.ra
+                raf = rafile.ra
                 posIdx = IntArray(ncaches)
-                microCaches = arrayOfNulls<MicroCache>(ncaches)
-                `is`!!.seek(fileOffset)
-                `is`!!.readFully(iobuffer!!, 0, indexsize)
+                microCaches = arrayOfNulls(ncaches)
+                raf!!.seek(fileOffset)
+                raf!!.readFully(iobuffer!!, 0, indexsize)
 
                 val headerCrc = crc(iobuffer, 0, indexsize)
                 if (rafile.fileHeaderCrcs[tileIndex] != headerCrc) {
@@ -84,7 +84,6 @@ public class OsmFile(
         return microCaches!![subIdx]
     }
 
-    @Throws(Exception::class)
     public fun createMicroCache(
         ilon: Int,
         ilat: Int,
@@ -96,13 +95,7 @@ public class OsmFile(
         val lonIdx = ilon / cellsize
         val latIdx = ilat / cellsize
         val segment = createMicroCache(
-            lonIdx,
-            latIdx,
-            dataBuffers,
-            wayValidator,
-            waypointMatcher,
-            true,
-            hollowNodes
+            lonIdx, latIdx, dataBuffers, wayValidator, waypointMatcher, true, hollowNodes
         )
         val subIdx = (latIdx - divisor * latDegree) * divisor + (lonIdx - divisor * lonDegree)
         microCaches!![subIdx] = segment
@@ -113,21 +106,19 @@ public class OsmFile(
         return if (idx == -1) indexsize else posIdx[idx]
     }
 
-    @Throws(IOException::class)
     public fun getDataInputForSubIdx(subIdx: Int, iobuffer: ByteArray): Int {
         val startPos = getPosIdx(subIdx - 1)
         val endPos = getPosIdx(subIdx)
         val size = endPos - startPos
         if (size > 0) {
-            `is`!!.seek(fileOffset + startPos)
+            raf!!.seek(fileOffset + startPos)
             if (size <= iobuffer.size) {
-                `is`!!.readFully(iobuffer, 0, size)
+                raf!!.readFully(iobuffer, 0, size)
             }
         }
         return size
     }
 
-    @Throws(IOException::class)
     public fun createMicroCache(
         lonIdx: Int, latIdx: Int, dataBuffers: DataBuffers, wayValidator: TagValueValidator?,
         waypointMatcher: WaypointMatcher?, reallyDecode: Boolean, hollowNodes: OsmNodesMap?
@@ -150,29 +141,11 @@ public class OsmFile(
         try {
             if (!reallyDecode) {
                 TODO()
-                //                return null
             }
             if (hollowNodes == null) {
-                return MicroCache2(
-                    bc,
-                    dataBuffers,
-                    lonIdx,
-                    latIdx,
-                    divisor,
-                    wayValidator,
-                    waypointMatcher
-                )
+                return MicroCache2(bc, dataBuffers, lonIdx, latIdx, divisor, wayValidator, waypointMatcher)
             }
-            DirectWeaver(
-                bc,
-                dataBuffers,
-                lonIdx,
-                latIdx,
-                divisor,
-                wayValidator!!,
-                waypointMatcher,
-                hollowNodes
-            )
+            DirectWeaver(bc, dataBuffers, lonIdx, latIdx, divisor, wayValidator!!, waypointMatcher, hollowNodes)
             return MicroCache.emptyNonVirgin
         } finally {
             // crc check only if the buffer has not been fully read
@@ -183,7 +156,7 @@ public class OsmFile(
                 if (crcData == crcFooter) {
                     throw IOException("old, unsupported data-format")
                 } else if ((crcData xor 2) != crcFooter) {
-                    throw IOException("checkum error")
+                    throw IOException("checksum error")
                 }
             }
         }
@@ -191,27 +164,25 @@ public class OsmFile(
 
     // set this OsmFile to ghost-state:
     public fun setGhostState(): Long {
+        val caches = microCaches ?: return 0
         var sum: Long = 0
-        val nc = if (microCaches == null) 0 else microCaches!!.size
-        for (i in 0..<nc) {
-            val mc = microCaches!![i]
-            if (mc == null) continue
+        for (i in caches.indices) {
+            val mc = caches[i] ?: continue
             if (mc.virgin) {
                 mc.ghost = true
                 sum += mc.dataSize.toLong()
             } else {
-                microCaches!![i] = null
+                caches[i] = null
             }
         }
         return sum
     }
 
     public fun collectAll(): Long {
+        val caches = microCaches ?: return 0
         var deleted: Long = 0
-        val nc = if (microCaches == null) 0 else microCaches!!.size
-        for (i in 0..<nc) {
-            val mc = microCaches!![i] ?: continue
-            if (!mc.ghost) {
+        for (mc in caches) {
+            if (mc != null && !mc.ghost) {
                 deleted += mc.collect(0).toLong()
             }
         }
@@ -219,24 +190,21 @@ public class OsmFile(
     }
 
     public fun cleanGhosts(): Long {
-        val deleted: Long = 0
-        val nc = if (microCaches == null) 0 else microCaches!!.size
-        for (i in 0..<nc) {
-            val mc = microCaches!![i] ?: continue
-            if (mc.ghost) {
-                microCaches!![i] = null
+        val caches = microCaches ?: return 0
+        for (i in caches.indices) {
+            if (caches[i]?.ghost == true) {
+                caches[i] = null
             }
         }
-        return deleted
+        return 0
     }
 
     public fun clean(all: Boolean) {
-        val nc = if (microCaches == null) 0 else microCaches!!.size
-        for (i in 0..<nc) {
-            val mc = microCaches!![i]
-            if (mc == null) continue
+        val caches = microCaches ?: return
+        for (i in caches.indices) {
+            val mc = caches[i] ?: continue
             if (all || !mc.virgin) {
-                microCaches!![i] = null
+                caches[i] = null
             }
         }
     }
