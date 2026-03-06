@@ -274,6 +274,8 @@ class RoutingTest {
             },
             rc
         )
+        
+        cr.quite = true
 
         cr.doRouting(60.seconds.inWholeMilliseconds)
 

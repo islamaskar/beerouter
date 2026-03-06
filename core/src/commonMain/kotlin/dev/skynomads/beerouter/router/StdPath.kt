@@ -284,7 +284,10 @@ internal class StdPath : OsmPath() {
             speed = min(speed, maxSpeed)
         }
         val dt = (dist / speed).toFloat()
-        totalTime += dt
+
+        // hack: brouter compat, do not remove conversion
+        totalTime = (totalTime + dt).toFloat().toDouble()
+
         // Calc energy assuming biking (no good model yet for hiking)
         // (Count only positive, negative would mean braking to enforce maxspeed)
         val energy = dist * (rc.global.S_C_x * speed * speed + f_roll)

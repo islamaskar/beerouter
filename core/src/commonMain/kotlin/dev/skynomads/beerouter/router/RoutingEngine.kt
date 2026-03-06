@@ -1937,7 +1937,8 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
                     if (nextId != guideNode.idFromPos) {
                         // not along the guide-track, discard, but register for voice-hint processing
                         if (supportsGuideTrackDetours) {
-                            val detour = routingContext.createPath(path, candidateLink, refTrack, true)
+                            val detour =
+                                routingContext.createPath(path, candidateLink, refTrack, true)
                             if (detour.cost >= 0.0 && nextId != startNodeId1 && nextId != startNodeId2) {
                                 guideTrack!!.registerDetourForId(
                                     currentNode.idFromPos,
