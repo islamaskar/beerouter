@@ -11,6 +11,7 @@ import dev.skynomads.beerouter.mapaccess.MatchedWaypoint.Companion.readFromStrea
 import dev.skynomads.beerouter.mapaccess.OsmPos
 import dev.skynomads.beerouter.osm.toIntLatitude
 import dev.skynomads.beerouter.osm.toIntLongitude
+import dev.skynomads.beerouter.osm.toSElev
 import org.maplibre.spatialk.geojson.Position
 import kotlinx.io.EOFException
 import kotlinx.io.Sink
@@ -481,8 +482,5 @@ public class OsmTrack {
         }
 
         private fun formatLongs(al: LongArray): String = al.joinToString(" ", "{", "}")
-
-        private fun toSElev(altitude: Double?): Short =
-            altitude?.times(4.0)?.toInt()?.toShort() ?: Short.MIN_VALUE
     }
 }

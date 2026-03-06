@@ -22,3 +22,6 @@ public fun Int.toDoubleLatitude(): Double {
 public fun Position.toOsmId(): Long {
     return (longitude.toIntLongitude().toLong()) shl 32 or latitude.toIntLatitude().toLong()
 }
+
+public fun toSElev(altitude: Double?): Short =
+    altitude?.times(4.0)?.toInt()?.toShort() ?: Short.MIN_VALUE

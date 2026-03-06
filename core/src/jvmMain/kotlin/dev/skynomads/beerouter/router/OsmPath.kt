@@ -11,6 +11,7 @@ import dev.skynomads.beerouter.mapaccess.OsmNode
 import dev.skynomads.beerouter.mapaccess.TurnRestriction.Companion.isTurnForbidden
 import dev.skynomads.beerouter.osm.toIntLatitude
 import dev.skynomads.beerouter.osm.toIntLongitude
+import dev.skynomads.beerouter.osm.toSElev
 import dev.skynomads.beerouter.util.CheapRuler
 import dev.skynomads.beerouter.util.CheapRuler.getLonLatToMeterScales
 import kotlin.math.cos
@@ -481,9 +482,6 @@ public abstract class OsmPath : OsmLinkHolder {
 
     public open val totalEnergy: Double
         get() = 0.0
-
-    private fun toSElev(altitude: Double?): Short =
-        altitude?.times(4.0)?.toInt()?.toShort() ?: Short.MIN_VALUE
 
     public companion object {
         private const val PATH_START_BIT = 1

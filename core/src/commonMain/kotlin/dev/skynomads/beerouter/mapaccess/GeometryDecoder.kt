@@ -7,6 +7,7 @@ package dev.skynomads.beerouter.mapaccess
 
 import dev.skynomads.beerouter.osm.toIntLatitude
 import dev.skynomads.beerouter.osm.toIntLongitude
+import dev.skynomads.beerouter.osm.toSElev
 import dev.skynomads.beerouter.util.ByteDataReader
 
 public class GeometryDecoder {
@@ -69,7 +70,4 @@ public class GeometryDecoder {
 
         return firstTransferNode
     }
-
-    private fun toSElev(altitude: Double?): Short =
-        altitude?.times(4.0)?.toInt()?.toShort() ?: Short.MIN_VALUE
 }

@@ -6,6 +6,7 @@ import dev.skynomads.beerouter.osm.toIntLongitude
 import dev.skynomads.beerouter.osm.toOsmId
 import dev.skynomads.beerouter.osm.toDoubleLatitude
 import dev.skynomads.beerouter.osm.toDoubleLongitude
+import dev.skynomads.beerouter.osm.toSElev
 import dev.skynomads.beerouter.util.CheapRuler.distance
 import kotlinx.io.Sink
 import kotlinx.io.Source
@@ -77,9 +78,6 @@ public class OsmPathElement protected constructor() : OsmPos {
         sink.writeShort(toSElev(position.altitude))
         sink.writeInt(cost)
     }
-
-    private fun toSElev(altitude: Double?): Short =
-        altitude?.times(4.0)?.toInt()?.toShort() ?: Short.MIN_VALUE
 
     public companion object {
         public fun create(

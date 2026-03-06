@@ -9,6 +9,7 @@ import dev.skynomads.beerouter.mapaccess.OsmNodePairSet
 import dev.skynomads.beerouter.mapaccess.OsmPos
 import dev.skynomads.beerouter.osm.toIntLatitude
 import dev.skynomads.beerouter.osm.toIntLongitude
+import dev.skynomads.beerouter.osm.toSElev
 import dev.skynomads.beerouter.router.OsmTrack.OsmPathElementHolder
 import org.maplibre.spatialk.geojson.Position
 import dev.skynomads.beerouter.util.CheapAngleMeter.Companion.getDifferenceFromDirection
@@ -2126,7 +2127,4 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
         track.buildMap()
         return track
     }
-
-    private fun toSElev(altitude: Double?): Short =
-        altitude?.times(4.0)?.toInt()?.toShort() ?: Short.MIN_VALUE
 }
