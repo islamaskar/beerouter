@@ -223,7 +223,8 @@ public class RoutingContext(
 
     public var anglemeter: CheapAngleMeter = CheapAngleMeter()
 
-    private fun readUtf8(file: File): String = file.readText()
+    private fun readUtf8(file: File): String =
+        file.inputStream().bufferedReader(Charsets.UTF_8).use { it.readText() }
 
     public var nogoCost: Double = 0.0
     public var isEndpoint: Boolean = false
