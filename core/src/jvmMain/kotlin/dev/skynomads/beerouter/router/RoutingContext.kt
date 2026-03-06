@@ -184,10 +184,11 @@ public class RoutingContext(
         way = BExpressionContextWay(memoryclass * 512, meta)
         node.setForeignContext(way)
 
-        meta.readMetaData(lookupFile)
+        meta.readMetaData(lookupFile.readText())
 
-        way.parseFile(profile, "global", keyValues)
-        node.parseFile(profile, "global", keyValues)
+        val profileContent = profile.readText()
+        way.parseProfile(profileContent, profile.name, "global", keyValues)
+        node.parseProfile(profileContent, profile.name, "global", keyValues)
 
         setModel(way._modelClass)
         global = Global(way)
