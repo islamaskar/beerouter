@@ -58,6 +58,8 @@ public class VoiceHint {
     public val isRoundabout: Boolean
         get() = this.exitNumber != 0
 
+    private fun usesExplicitExitCommands(timode: Int): Boolean = timode == 2 || timode == 9
+
     public fun addBadWay(badWay: MessageData?) {
         if (badWay == null) return
         val list = badWays ?: mutableListOf<MessageData>().also { badWays = it }
@@ -81,8 +83,8 @@ public class VoiceHint {
             Command.RNDB -> 13
             Command.RNLB -> 14
             Command.BL -> 16
-            Command.EL -> if (timode == 2 || timode == 9) 17 else 8
-            Command.ER -> if (timode == 2 || timode == 9) 18 else 9
+            Command.EL -> if (usesExplicitExitCommands(timode)) 17 else 8
+            Command.ER -> if (usesExplicitExitCommands(timode)) 18 else 9
             Command.OFFR -> 12
             else -> throw IllegalArgumentException("unknown command: $command")
         }
@@ -108,8 +110,8 @@ public class VoiceHint {
             Command.RNDB -> "RNDB" + exitNumber
             Command.RNLB -> "RNLB" + (-exitNumber)
             Command.BL -> "BL"
-            Command.EL -> if (timode == 2 || timode == 9) "EL" else "KL"
-            Command.ER -> if (timode == 2 || timode == 9) "ER" else "KR"
+            Command.EL -> if (usesExplicitExitCommands(timode)) "EL" else "KL"
+            Command.ER -> if (usesExplicitExitCommands(timode)) "ER" else "KR"
             Command.OFFR -> "OFFR"
             Command.END -> "END"
             else -> throw IllegalArgumentException("unknown command: $command")
@@ -136,8 +138,8 @@ public class VoiceHint {
             Command.RNDB -> "RNDB" + exitNumber
             Command.RNLB -> "RNLB" + (-exitNumber)
             Command.BL -> "BL"
-            Command.EL -> if (timode == 2 || timode == 9) "EL" else "KL"
-            Command.ER -> if (timode == 2 || timode == 9) "ER" else "KR"
+            Command.EL -> if (usesExplicitExitCommands(timode)) "EL" else "KL"
+            Command.ER -> if (usesExplicitExitCommands(timode)) "ER" else "KR"
             Command.OFFR -> "OFFR"
             else -> "unknown command: $c"
         }
@@ -163,8 +165,8 @@ public class VoiceHint {
             Command.RNDB -> "RNDB" + exitNumber
             Command.RNLB -> "RNLB" + (-exitNumber)
             Command.BL -> "BL"
-            Command.EL -> if (timode == 2 || timode == 9) "EL" else "KL"
-            Command.ER -> if (timode == 2 || timode == 9) "ER" else "KR"
+            Command.EL -> if (usesExplicitExitCommands(timode)) "EL" else "KL"
+            Command.ER -> if (usesExplicitExitCommands(timode)) "ER" else "KR"
             Command.OFFR -> "OFFR"
             else -> throw IllegalArgumentException("unknown command: $command")
         }
@@ -216,8 +218,8 @@ public class VoiceHint {
             Command.TRU -> "u-turn" // should be changed to u-turn-right when osmand uses new voice hint constants
             Command.RNDB -> "Take exit " + exitNumber
             Command.RNLB -> "Take exit " + (-exitNumber)
-            Command.EL -> if (timode == 2 || timode == 9) "exit left" else "keep left"
-            Command.ER -> if (timode == 2 || timode == 9) "exit right" else "keep right"
+            Command.EL -> if (usesExplicitExitCommands(timode)) "exit left" else "keep left"
+            Command.ER -> if (usesExplicitExitCommands(timode)) "exit right" else "keep right"
             else -> throw IllegalArgumentException("unknown command: $command")
         }
     }

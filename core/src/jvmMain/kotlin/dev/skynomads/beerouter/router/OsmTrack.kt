@@ -309,7 +309,7 @@ public class OsmTrack {
                 input.goodWay = node.message
                 input.oldWay = if (origin.message == null) node.message else origin.message
 
-                if (rc.global.turnInstructionMode == 8 || rc.global.turnInstructionMode == 4 || rc.global.turnInstructionMode == 2 || rc.global.turnInstructionMode == 9) {
+                if (supportsBeelineCommand(rc.global.turnInstructionMode)) {
                     val mwpt = getMatchedWaypoint(nodeNr)
                     if (mwpt != null && mwpt.type == MatchedWaypoint.Type.DIRECT) {
                         input.command = VoiceHint.Command.BL
@@ -395,6 +395,10 @@ public class OsmTrack {
         }
         return null
     }
+
+    private fun supportsBeelineCommand(turnInstructionMode: Int): Boolean =
+        turnInstructionMode == 8 || turnInstructionMode == 4 ||
+            turnInstructionMode == 2 || turnInstructionMode == 9
 
     public companion object {
         public fun readBinary(
