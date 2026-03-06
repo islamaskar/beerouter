@@ -14,6 +14,9 @@ import java.io.RandomAccessFile
 import kotlinx.io.files.Path
 
 public class PhysicalFile(f: File, dataBuffers: DataBuffers, lookupVersion: Int, lookupMinorVersion: Int) {
+    public constructor(path: Path, dataBuffers: DataBuffers, lookupVersion: Int, lookupMinorVersion: Int) :
+        this(File(path.toString()), dataBuffers, lookupVersion, lookupMinorVersion)
+
     public val ra: RandomAccessFile = RandomAccessFile(f, "r")
     public val fileIndex: LongArray = LongArray(25)
     public var fileHeaderCrcs: IntArray = IntArray(0)
