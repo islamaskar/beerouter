@@ -22,7 +22,4 @@ for other files that need similar refactorings and include them in the commit. I
 the routing behavior does not change, so you should run RoutingTest before comitting to verify the
 code still works as intended. Every couple of commits, run all other tests as well.
 
-For commit messages, follow the conventional commits spec, e.g. "refactor: title". Add a
-Co-Authored-By with your name, including model version.
-
 Please do not stop until the code base is fully refactored. I repeat, do not stop early.
