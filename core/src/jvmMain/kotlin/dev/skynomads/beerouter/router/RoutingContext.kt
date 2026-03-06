@@ -571,10 +571,9 @@ public class RoutingContext(
 
     public companion object {
         private fun defaultLookupPath(profilePath: Path): Path {
-            val raw = profilePath.toString()
-            val unixBase = raw.substringBeforeLast('/', missingDelimiterValue = raw)
-            val platformBase = unixBase.substringBeforeLast('\\', missingDelimiterValue = unixBase)
-            return Path("$platformBase/lookups.dat")
+            val profileFile = File(profilePath.toString())
+            val parentDir = profileFile.parentFile ?: File(".")
+            return Path(File(parentDir, "lookups.dat").path)
         }
 
         public fun prepareNogoPoints(nogos: MutableList<OsmNodeNamed>) {
