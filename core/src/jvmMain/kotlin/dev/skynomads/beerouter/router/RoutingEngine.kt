@@ -2127,7 +2127,6 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
         return track
     }
 
-    @Deprecated("use altitude")
     private fun toSElev(altitude: Double?): Short =
         altitude?.times(4.0)?.toInt()?.toShort() ?: Short.MIN_VALUE
 }

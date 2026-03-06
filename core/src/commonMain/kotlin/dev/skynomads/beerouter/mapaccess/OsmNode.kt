@@ -23,7 +23,7 @@ public open class OsmNode : OsmLink, OsmPos {
      * The position
      */
     override var position: Position =
-        Position(0.0, 0.0, Short.MIN_VALUE.toDouble() / 4.0)
+        Position(0.0, 0.0, UNSET_ALTITUDE)
 
     /**
      * The elevation
@@ -57,7 +57,7 @@ public open class OsmNode : OsmLink, OsmPos {
         this.position = Position(
             ilon.toDoubleLongitude(),
             ilat.toDoubleLatitude(),
-            Short.MIN_VALUE.toDouble() / 4.0
+            UNSET_ALTITUDE
         )
     }
 
@@ -67,7 +67,7 @@ public open class OsmNode : OsmLink, OsmPos {
         this.position = Position(
             lon.toDoubleLongitude(),
             lat.toDoubleLatitude(),
-            Short.MIN_VALUE.toDouble() / 4.0
+            UNSET_ALTITUDE
         )
     }
 
@@ -204,10 +204,10 @@ public open class OsmNode : OsmLink, OsmPos {
 
 
     public val isHollow: Boolean
-        get() = sElev.toInt() == -12345
+        get() = position.altitude == HOLLOW_ALTITUDE
 
     public fun setHollow() {
-        position = Position(position.longitude, position.latitude, (-12345).toDouble() / 4.0)
+        position = Position(position.longitude, position.latitude, HOLLOW_ALTITUDE)
     }
 
     override val idFromPos: Long
@@ -270,6 +270,13 @@ public open class OsmNode : OsmLink, OsmPos {
 
     override fun hashCode(): Int {
         return position.toOsmId().hashCode()
+    }
+
+    private companion object {
+        private const val HOLLOW_SELEV: Short = -12345
+        private const val ALTITUDE_SCALE: Double = 4.0
+        private val UNSET_ALTITUDE: Double = Short.MIN_VALUE.toDouble() / ALTITUDE_SCALE
+        private val HOLLOW_ALTITUDE: Double = HOLLOW_SELEV.toDouble() / ALTITUDE_SCALE
     }
 
 }
