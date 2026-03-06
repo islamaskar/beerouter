@@ -400,7 +400,6 @@ public class RoutingEngine(private val routingContext: RoutingContext) : Thread(
             AreaInfo.ResultType.ELEV50 -> ais.sortByDescending { it.elev50Weight }
             AreaInfo.ResultType.GREEN -> ais.sortByDescending { it.green }
             AreaInfo.ResultType.RIVER -> ais.sortByDescending { it.river }
-            else -> return (kotlin.random.Random.nextDouble() * 360).toInt()
         }
 
         val angle = ais[0].direction

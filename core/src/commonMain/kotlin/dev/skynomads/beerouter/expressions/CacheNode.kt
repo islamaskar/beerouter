@@ -9,9 +9,9 @@ public class CacheNode {
         return hash
     }
 
-    override fun equals(o: Any?): Boolean {
-        if (this === o) return true
-        val n = o as? CacheNode ?: return false
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        val n = other as? CacheNode ?: return false
         if (hash != n.hash) {
             return false
         }

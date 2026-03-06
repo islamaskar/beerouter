@@ -21,10 +21,10 @@ public class BExpressionLookupValue(public val value: String) {
         aliases.add(alias)
     }
 
-    override fun equals(o: Any?): Boolean {
-        return when (o) {
-            is String -> value == o
-            is BExpressionLookupValue -> value == o.value
+    override fun equals(other: Any?): Boolean {
+        return when (other) {
+            is String -> value == other
+            is BExpressionLookupValue -> value == other.value
             else -> false
         }
     }

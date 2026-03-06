@@ -451,14 +451,14 @@ internal class VoiceHintProcessor // this.catchingRange = catchingRange;
                         && !input.goodWay!!.isLinktType
                     ) {
                         if (input.goodWay!!.priorityclassifier < input.maxBadPrio) {
-                            if (inputLastSaved != null && inputLastSaved.command != VoiceHint.C && (inputLastSaved != null && inputLastSaved.distanceToNext > minRange)
+                            if (inputLastSaved != null && inputLastSaved.command != VoiceHint.C && inputLastSaved.distanceToNext > minRange
                                 && transportMode != VoiceHintList.TransportMode.CAR
                             ) {
                                 // add when straight and not linktype
                                 // and last vh not straight
                                 save = true
                                 // remove when next straight and not linktype
-                                if (nextInput != null && nextInput.command == VoiceHint.C && !nextInput.goodWay!!.isLinktType) {
+                                if (nextInput.command == VoiceHint.C && !nextInput.goodWay!!.isLinktType) {
                                     input.distanceToNext += nextInput.distanceToNext
                                     hintIdx++
                                 }
