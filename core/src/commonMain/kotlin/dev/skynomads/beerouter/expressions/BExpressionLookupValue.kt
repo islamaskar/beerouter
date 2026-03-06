@@ -13,9 +13,7 @@ package dev.skynomads.beerouter.expressions
 public class BExpressionLookupValue(public val value: String) {
     private val aliases: MutableList<String> = mutableListOf()
 
-    override fun toString(): String {
-        return value
-    }
+    override fun toString(): String = value
 
     public fun addAlias(alias: String) {
         aliases.add(alias)
@@ -31,7 +29,5 @@ public class BExpressionLookupValue(public val value: String) {
 
     override fun hashCode(): Int = value.hashCode()
 
-    public fun matches(s: String?): Boolean {
-        return value == s || aliases.any { it == s }
-    }
+    public fun matches(s: String?): Boolean = value == s || aliases.any { it == s }
 }

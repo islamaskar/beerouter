@@ -4,9 +4,7 @@ public class VarWrapper {
     public var vars: FloatArray? = null
     public var hash: Int = 0
 
-    override fun hashCode(): Int {
-        return hash
-    }
+    override fun hashCode(): Int = hash
 
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
@@ -15,7 +13,5 @@ public class VarWrapper {
         return vars.contentEquals(other.vars)
     }
 
-    override fun toString(): String {
-        return "VarWrapper(vars=${vars?.contentToString()}, hash=$hash)"
-    }
+    override fun toString(): String = "VarWrapper(vars=${vars?.contentToString()}, hash=$hash)"
 }
