@@ -18,7 +18,8 @@ internal class SearchBoundary(n: OsmNode, private val radius: Int, val direction
 
         companion object {
             fun fromId(id: Int): Direction =
-                entries.firstOrNull { it.id == id }
+                entries.getOrNull(id)
+                    ?.takeIf { it.id == id }
                     ?: throw IllegalArgumentException("undefined direction: $id")
         }
     }
@@ -88,9 +89,9 @@ internal class SearchBoundary(n: OsmNode, private val radius: Int, val direction
             val dlon = lon / 1000000 - 180
             val dlat = lat / 1000000 - 90
 
-            val slon = if (dlon < 0) "W" + (-dlon) else "E$dlon"
-            val slat = if (dlat < 0) "S" + (-dlat) else "N$dlat"
-            return slon + "_" + slat + ".trf"
+            val slon = if (dlon < 0) "W${-dlon}" else "E$dlon"
+            val slat = if (dlat < 0) "S${-dlat}" else "N$dlat"
+            return "${slon}_${slat}.trf"
         }
     }
 }

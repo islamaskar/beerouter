@@ -17,24 +17,26 @@ public class BExpressionMetaData {
         for (rawLine in content.lineSequence()) {
             val line = rawLine.trim()
             if (line.isEmpty() || line.startsWith("#")) continue
-            if (line.startsWith(CONTEXT_TAG)) {
-                ctx = listeners[line.substring(CONTEXT_TAG.length)]
-                continue
+            when {
+                line.startsWith(CONTEXT_TAG) -> {
+                    ctx = listeners[line.substring(CONTEXT_TAG.length)]
+                }
+
+                line.startsWith(VERSION_TAG) -> {
+                    lookupVersion = line.substring(VERSION_TAG.length).toShort()
+                }
+
+                line.startsWith(MINOR_VERSION_TAG) -> {
+                    lookupMinorVersion = line.substring(MINOR_VERSION_TAG.length).toShort()
+                }
+
+                line.startsWith(MIN_APP_VERSION_TAG) -> {
+                    minAppVersion = line.substring(MIN_APP_VERSION_TAG.length).toShort()
+                }
+
+                line.startsWith(VARLENGTH_TAG) -> Unit
+                else -> ctx?.parseMetaLine(line)
             }
-            if (line.startsWith(VERSION_TAG)) {
-                lookupVersion = line.substring(VERSION_TAG.length).toShort()
-                continue
-            }
-            if (line.startsWith(MINOR_VERSION_TAG)) {
-                lookupMinorVersion = line.substring(MINOR_VERSION_TAG.length).toShort()
-                continue
-            }
-            if (line.startsWith(MIN_APP_VERSION_TAG)) {
-                minAppVersion = line.substring(MIN_APP_VERSION_TAG.length).toShort()
-                continue
-            }
-            if (line.startsWith(VARLENGTH_TAG)) continue
-            ctx?.parseMetaLine(line)
         }
 
         for (c in listeners.values) {
