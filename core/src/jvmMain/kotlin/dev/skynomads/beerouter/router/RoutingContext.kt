@@ -75,30 +75,30 @@ public class RoutingContext(
         public var hasDirectRouting: Boolean = false
 
         init {
-            carMode = 0f != ctx.getVariableValue("validForCars", 0f)
-            bikeMode = 0f != ctx.getVariableValue("validForBikes", 0f)
-            footMode = 0f != ctx.getVariableValue("validForFoot", 0f)
+            carMode = ctx.getVariableValue("validForCars", 0f) != 0f
+            bikeMode = ctx.getVariableValue("validForBikes", 0f) != 0f
+            footMode = ctx.getVariableValue("validForFoot", 0f) != 0f
 
             waypointCatchingRange = ctx.getVariableValue("waypointCatchingRange", 250f).toDouble()
 
             // turn-restrictions not used per default for foot profiles
-            considerTurnRestrictions = 0f != ctx.getVariableValue(
+            considerTurnRestrictions = ctx.getVariableValue(
                 "considerTurnRestrictions",
                 if (footMode) 0f else 1f
-            )
+            ) != 0f
 
             correctMisplacedViaPoints =
-                0f != ctx.getVariableValue("correctMisplacedViaPoints", 1f)
+                ctx.getVariableValue("correctMisplacedViaPoints", 1f) != 0f
             correctMisplacedViaPointsDistance =
                 ctx.getVariableValue("correctMisplacedViaPointsDistance", 0f)
                     .toDouble() // 0 == don't use distance
 
-            continueStraight = 0f != ctx.getVariableValue("continueStraight", 0f)
+            continueStraight = ctx.getVariableValue("continueStraight", 0f) != 0f
 
             // process tags not used in the profile (to have them in the data-tab)
-            processUnusedTags = 0f != ctx.getVariableValue("processUnusedTags", 0f)
+            processUnusedTags = ctx.getVariableValue("processUnusedTags", 0f) != 0f
 
-            forceSecondaryData = 0f != ctx.getVariableValue("forceSecondaryData", 0f)
+            forceSecondaryData = ctx.getVariableValue("forceSecondaryData", 0f) != 0f
             pass1coefficient = ctx.getVariableValue("pass1coefficient", 1.5f).toDouble()
             pass2coefficient = ctx.getVariableValue("pass2coefficient", 0f).toDouble()
             elevationpenaltybuffer =
@@ -120,10 +120,10 @@ public class RoutingContext(
             starttimeoffset = ctx.getVariableValue("starttimeoffset", 0f).toDouble()
             transitonly = ctx.getVariableValue("transitonly", 0f) != 0f
 
-            showspeed = 0f != ctx.getVariableValue("showspeed", 0f)
-            showSpeedProfile = 0f != ctx.getVariableValue("showSpeedProfile", 0f)
-            inverseRouting = 0f != ctx.getVariableValue("inverseRouting", 0f)
-            showTime = 0f != ctx.getVariableValue("showtime", 0f)
+            showspeed = ctx.getVariableValue("showspeed", 0f) != 0f
+            showSpeedProfile = ctx.getVariableValue("showSpeedProfile", 0f) != 0f
+            inverseRouting = ctx.getVariableValue("inverseRouting", 0f) != 0f
+            showTime = ctx.getVariableValue("showtime", 0f) != 0f
 
             turnInstructionMode = ctx.getVariableValue("turnInstructionMode", 0f).toInt()
 
@@ -248,7 +248,7 @@ public class RoutingContext(
      */
     public fun cleanNogoList(waypoints: MutableList<OsmNode>) {
         nogopoints_all = nogopoints
-        val nogos: MutableList<OsmNodeNamed> = ArrayList()
+        val nogos = mutableListOf<OsmNodeNamed>()
         for (nogo in nogopoints) {
             var goodGuy = true
             for (wp in waypoints) {
@@ -271,7 +271,7 @@ public class RoutingContext(
         val theSize = matchedWaypoints.size
         if (theSize < 2) return
         var removed = 0
-        val newMatchedWaypoints: MutableList<MatchedWaypoint> = ArrayList()
+        val newMatchedWaypoints = mutableListOf<MatchedWaypoint>()
         var prevMwp: MatchedWaypoint? = null
         var prevMwpIsInside = false
         for (i in 0..<theSize) {
@@ -356,25 +356,25 @@ public class RoutingContext(
 
     public fun setWaypoint(wp: OsmNodeNamed?, pendingEndpoint: OsmNodeNamed?, endpoint: Boolean) {
         keepnogopoints = nogopoints
-        nogopoints = ArrayList()
-        nogopoints.add(wp!!)
+        nogopoints = mutableListOf(wp!!)
         if (keepnogopoints.isNotEmpty()) nogopoints.addAll(keepnogopoints)
         isEndpoint = endpoint
         this.pendingEndpoint = pendingEndpoint
     }
 
     private fun setModel(className: String?) {
-        if (className == null) {
-            pm = StdModel()
+        val model = if (className == null) {
+            StdModel()
         } else {
             try {
                 val clazz = Class.forName(className)
-                pm = clazz.getDeclaredConstructor().newInstance() as OsmPathModel
+                clazz.getDeclaredConstructor().newInstance() as OsmPathModel
             } catch (e: Exception) {
                 throw RuntimeException("Cannot create path-model: $e")
             }
         }
-        pm!!.init(way, node, keyValues ?: mutableMapOf())
+        model.init(way, node, keyValues ?: mutableMapOf())
+        pm = model
     }
 
     public fun checkPendingEndpoint(): Boolean {
@@ -408,8 +408,7 @@ public class RoutingContext(
         shortestmatch = false
 
         if (nogopoints.isNotEmpty() && d > 0.0) {
-            for (ngidx in nogopoints.indices) {
-                val nogo = nogopoints[ngidx]
+            for (nogo in nogopoints) {
                 val nogoLon = nogo.position.longitude.toIntLongitude()
                 val nogoLat = nogo.position.latitude.toIntLatitude()
                 val x1: Double = (lon1 - nogoLon) * dlon2m

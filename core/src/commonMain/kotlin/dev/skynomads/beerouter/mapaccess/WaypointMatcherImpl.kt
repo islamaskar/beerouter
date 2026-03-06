@@ -40,22 +40,21 @@ public class WaypointMatcherImpl(
     private var maxDistance: Double
     public var useDynamicRange: Boolean = false
 
-    private val comparator: Comparator<MatchedWaypoint>?
+    private val comparator: Comparator<MatchedWaypoint> = compareBy({ it.radius }, { it.directionDiff })
 
     init {
-        var maxDistance = maxDistance
         this.waypoints = waypoints
         this.islandPairs = islandPairs
-        var last: MatchedWaypoint? = null
-        this.maxDistance = maxDistance
-        if (maxDistance < 0.0) {
-            this.maxDistance *= -1.0
-            maxDistance *= -1.0
+        var effectiveMaxDistance = maxDistance
+        if (effectiveMaxDistance < 0.0) {
+            effectiveMaxDistance *= -1.0
             useDynamicRange = true
         }
+        this.maxDistance = effectiveMaxDistance
 
+        var last: MatchedWaypoint? = null
         for (mwp in waypoints) {
-            mwp.radius = maxDistance
+            mwp.radius = effectiveMaxDistance
             if (last != null && mwp.directionToNext == -1.0) {
                 last.directionToNext = getDirection(
                     last.waypoint!!.position,
@@ -75,15 +74,6 @@ public class WaypointMatcherImpl(
             )
         }
         maxWptIdx = waypoints.size - 1
-
-        // sort result list
-        comparator = object : Comparator<MatchedWaypoint> {
-            override fun compare(mw1: MatchedWaypoint, mw2: MatchedWaypoint): Int {
-                val cmpDist = mw1.radius.compareTo(mw2.radius)
-                if (cmpDist != 0) return cmpDist
-                return mw1.directionDiff.compareTo(mw2.directionDiff)
-            }
-        }
     }
 
     private fun checkSegment(lon1: Int, lat1: Int, lon2: Int, lat2: Int) {
@@ -184,7 +174,7 @@ public class WaypointMatcherImpl(
         ilatTarget: Int,
         useAsStartWay: Boolean
     ): Boolean {
-        if (islandPairs.size() > 0) {
+        if (islandPairs.size() != 0) {
             val n1 = (ilonStart.toLong()) shl 32 or ilatStart.toLong()
             val n2 = (ilonTarget.toLong()) shl 32 or ilatTarget.toLong()
             if (islandPairs.hasPair(n1, n2)) {
@@ -275,7 +265,7 @@ public class WaypointMatcherImpl(
     public fun updateWayList(ways: MutableList<MatchedWaypoint>, mw: MatchedWaypoint?) {
         ways.add(mw!!)
         // use only shortest distances by smallest direction difference
-        ways.sortWith(comparator!!)
+        ways.sortWith(comparator)
         if (ways.size > MAX_POINTS) ways.removeAt(MAX_POINTS)
     }
 
