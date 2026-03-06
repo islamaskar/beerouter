@@ -23,6 +23,26 @@ import kotlin.math.roundToInt
 
 public class AreaReader {
     public fun getDirectAllData(
+        folderPath: Path,
+        rc: RoutingContext,
+        wp: OsmNodeNamed,
+        maxscale: Int,
+        expctxWay: BExpressionContextWay,
+        searchRect: OsmNogoPolygon,
+        ais: MutableList<AreaInfo>
+    ) {
+        getDirectAllData(
+            folder = File(folderPath.toString()),
+            rc = rc,
+            wp = wp,
+            maxscale = maxscale,
+            expctxWay = expctxWay,
+            searchRect = searchRect,
+            ais = ais
+        )
+    }
+
+    public fun getDirectAllData(
         folder: File,
         rc: RoutingContext,
         wp: OsmNodeNamed,
