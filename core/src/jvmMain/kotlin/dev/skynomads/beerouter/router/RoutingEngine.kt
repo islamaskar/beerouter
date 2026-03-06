@@ -29,7 +29,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
     private val openSet = SortedHeap<OsmPath?>()
 
     private val extraWaypoints: MutableList<OsmNodeNamed> = mutableListOf()
-    protected var matchedWaypoints: MutableList<MatchedWaypoint> = mutableListOf()
+    protected val matchedWaypoints: MutableList<MatchedWaypoint> = mutableListOf()
     private var linksProcessed: Int = 0
 
     private var nodeLimit = 0 // used for target island search
@@ -148,7 +148,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
             )
         }
 
-        matchedWaypoints = mutableListOf()
+        matchedWaypoints.clear()
         val wp1 = MatchedWaypoint().apply {
             crosspoint = OsmNode(wpt1.node1!!.position)
             node1 = OsmNode(wpt1.node1!!.position)
@@ -554,7 +554,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
                 }
                 islandNodePairs.freezeTempPairs()
                 nodesCache!!.clean(true)
-                matchedWaypoints = mutableListOf()
+                matchedWaypoints.clear()
             }
         }
     }
