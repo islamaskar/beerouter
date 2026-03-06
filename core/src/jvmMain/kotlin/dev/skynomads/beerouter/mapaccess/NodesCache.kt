@@ -379,11 +379,7 @@ public class NodesCache(
 
     public fun close() {
         for (f in fileCache.values) {
-            try {
-                f?.ra?.close()
-            } catch (ioe: Exception) {
-                // ignore
-            }
+            runCatching { f?.close() }
         }
     }
 

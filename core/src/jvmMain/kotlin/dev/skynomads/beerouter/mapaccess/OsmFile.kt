@@ -57,8 +57,9 @@ public class OsmFile(
                 raf = rafile.ra
                 posIdx = IntArray(ncaches)
                 microCaches = arrayOfNulls(ncaches)
-                raf!!.seek(fileOffset)
-                raf!!.readFully(iobuffer, 0, indexsize)
+                val randomAccessFile = requireNotNull(raf)
+                randomAccessFile.seek(fileOffset)
+                randomAccessFile.readFully(iobuffer, 0, indexsize)
 
                 val headerCrc = crc(iobuffer, 0, indexsize)
                 if (rafile.fileHeaderCrcs[tileIndex] != headerCrc) {
@@ -111,9 +112,10 @@ public class OsmFile(
         val endPos = getPosIdx(subIdx)
         val size = endPos - startPos
         if (size > 0) {
-            raf!!.seek(fileOffset + startPos)
+            val randomAccessFile = requireNotNull(raf)
+            randomAccessFile.seek(fileOffset + startPos)
             if (size <= iobuffer.size) {
-                raf!!.readFully(iobuffer, 0, size)
+                randomAccessFile.readFully(iobuffer, 0, size)
             }
         }
         return size

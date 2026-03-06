@@ -13,21 +13,20 @@ import java.io.IOException
 import java.io.RandomAccessFile
 
 public class PhysicalFile(f: File, dataBuffers: DataBuffers, lookupVersion: Int, lookupMinorVersion: Int) {
-    public var ra: RandomAccessFile? = null
+    public val ra: RandomAccessFile = RandomAccessFile(f, "r")
     public var fileIndex: LongArray = LongArray(25)
     public var fileHeaderCrcs: IntArray = IntArray(0)
 
     public var creationTime: Long = 0L
 
-    public var fileName: String? = f.name
+    public val fileName: String = f.name
 
     public var divisor: Int = 80
     public var elevationType: Byte = 3
 
     init {
         val iobuffer = dataBuffers.iobuffer
-        val raf = RandomAccessFile(f, "r")
-        ra = raf
+        val raf = ra
         raf.readFully(iobuffer, 0, 200)
         val fileIndexCrc = crc(iobuffer, 0, 200)
         var dis = ByteDataReader(iobuffer)
@@ -73,10 +72,7 @@ public class PhysicalFile(f: File, dataBuffers: DataBuffers, lookupVersion: Int,
     }
 
     public fun close() {
-        try {
-            ra?.close()
-        } catch (ee: Exception) {
-        }
+        runCatching { ra.close() }
     }
 
     public companion object {
