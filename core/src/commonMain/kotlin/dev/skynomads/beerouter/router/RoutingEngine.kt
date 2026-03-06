@@ -18,7 +18,6 @@ import dev.skynomads.beerouter.util.CheapRuler.destination
 import dev.skynomads.beerouter.util.SortedHeap
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
-import kotlinx.io.files.SystemFileSystem
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
@@ -296,9 +295,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
         val ais = mutableListOf<AreaInfo>()
         val areareader = AreaReader()
         routingContext.rawArea?.let { areaPath ->
-            if (SystemFileSystem.exists(areaPath)) {
-                areareader.readAreaInfo(areaPath, wpt1, ais)
-            }
+            areareader.readAreaInfo(areaPath, wpt1, ais)
         }
 
         if (ais.isEmpty()) {

@@ -242,7 +242,6 @@ public class AreaReader {
                                     }
                                 }
                                 break
-                                link = link.getNext(node)
                             }
                         }
                     }
@@ -257,8 +256,9 @@ public class AreaReader {
 
     public fun ignoreCenter(maxscale: Int, idxLon: Int, idxLat: Int): Boolean {
         val centerScale = (maxscale * .2).roundToInt() - 1
-        if (centerScale < 0) return false
-        return idxLon >= -centerScale && idxLon <= centerScale && idxLat >= -centerScale && idxLat <= centerScale
+        return centerScale >= 0 &&
+            idxLon >= -centerScale && idxLon <= centerScale &&
+            idxLat >= -centerScale && idxLat <= centerScale
     }
 
     /*
@@ -290,9 +290,9 @@ public class AreaReader {
     }
 
     public fun readAreaInfo(path: Path, wp: MatchedWaypoint, ais: MutableList<AreaInfo>) {
-        try {
+        runCatching {
             SystemFileSystem.source(path).buffered().use { source -> readAreaInfo(source, wp, ais) }
-        } catch (e: Exception) {
+        }.onFailure {
             ais.clear()
         }
     }
