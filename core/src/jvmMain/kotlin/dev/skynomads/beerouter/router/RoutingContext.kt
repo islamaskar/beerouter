@@ -183,9 +183,9 @@ public class RoutingContext(
         way = BExpressionContextWay(memoryclass * 512, meta)
         node.setForeignContext(way)
 
-        meta.readMetaData(lookupFile.readText())
+        meta.readMetaData(readUtf8(lookupFile))
 
-        val profileContent = profile.readText()
+        val profileContent = readUtf8(profile)
         way.parseProfile(profileContent, profile.name, "global", keyValues)
         node.parseProfile(profileContent, profile.name, "global", keyValues)
 
@@ -218,6 +218,8 @@ public class RoutingContext(
     public var allowSamewayback: Boolean = false
 
     public var anglemeter: CheapAngleMeter = CheapAngleMeter()
+
+    private fun readUtf8(file: File): String = file.inputStream().bufferedReader().use { it.readText() }
 
     public var nogoCost: Double = 0.0
     public var isEndpoint: Boolean = false
