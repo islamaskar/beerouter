@@ -11,13 +11,13 @@ import dev.skynomads.beerouter.codec.MicroCache2
 import dev.skynomads.beerouter.codec.StatCoderContext
 import dev.skynomads.beerouter.util.Crc32.crc
 import dev.skynomads.beerouter.util.ProgressListener
-import java.io.BufferedInputStream
-import java.io.BufferedOutputStream
-import java.io.DataInputStream
-import java.io.DataOutputStream
 import java.io.File
-import java.io.FileInputStream
-import java.io.FileOutputStream
+import kotlinx.io.EOFException
+import kotlinx.io.Sink
+import kotlinx.io.Source
+import kotlinx.io.buffered
+import kotlinx.io.files.Path
+import kotlinx.io.files.SystemFileSystem
 
 public class Rd5DiffTool : ProgressListener {
     override fun updateProgress(task: String?, progress: Int) {
@@ -28,7 +28,7 @@ public class Rd5DiffTool : ProgressListener {
         get() = false
 
     private class MCOutputStream(
-        private val dos: DataOutputStream,
+        private val sink: Sink,
         private val buffer: ByteArray?
     ) {
         private var skips: Short = 0
@@ -38,25 +38,25 @@ public class Rd5DiffTool : ProgressListener {
                 skips++
                 return 0
             }
-            dos.writeShort(skips.toInt())
+            sink.writeShort(skips)
             skips = 0
             val len = mc.encodeMicroCache(buffer!!)
             require(len != 0) { "encoded buffer of non-empty micro-cache cannot be empty" }
-            dos.writeInt(len)
-            dos.write(buffer, 0, len)
+            sink.writeInt(len)
+            sink.write(buffer, 0, len)
             return len
         }
 
         public fun finish() {
             if (skips > 0) {
-                dos.writeShort(skips.toInt())
+                sink.writeShort(skips)
                 skips = 0
             }
         }
     }
 
     private class MCInputStream(
-        private val dis: DataInputStream,
+        private val source: Source,
         private val dataBuffers: DataBuffers?
     ) {
         private var skips: Short = -1
@@ -64,13 +64,12 @@ public class Rd5DiffTool : ProgressListener {
 
         public fun readMC(): MicroCache {
             if (skips < 0) {
-                skips = dis.readShort()
+                skips = source.readShort()
             }
             var mc = empty
             if (skips.toInt() == 0) {
-                val size = dis.readInt()
-                val ab = ByteArray(size)
-                dis.readFully(ab)
+                val size = source.readInt()
+                val ab = source.readBytes(size)
                 val bc = StatCoderContext(ab)
                 mc = MicroCache2(bc, dataBuffers!!, 0, 0, 32, null, null)
             }
@@ -84,6 +83,17 @@ public class Rd5DiffTool : ProgressListener {
     }
 
     public companion object {
+        private fun Source.readBytes(count: Int): ByteArray {
+            val result = ByteArray(count)
+            var offset = 0
+            while (offset < count) {
+                val read = readAtMostTo(result, offset, result.size)
+                if (read < 0) throw EOFException("Source exhausted before reading $count bytes")
+                offset += read
+            }
+            return result
+        }
+
         public fun main(args: Array<String>) {
             if (args.size == 2) {
                 reEncode(File(args[0]), File(args[1]))
@@ -106,12 +116,12 @@ public class Rd5DiffTool : ProgressListener {
             }
         }
 
-        private fun readFileIndex(dis: DataInputStream, dos: DataOutputStream?): LongArray {
+        private fun readFileIndex(source: Source, sink: Sink?): LongArray {
             val fileIndex = LongArray(25)
             for (i in 0..24) {
-                val lv = dis.readLong()
+                val lv = source.readLong()
                 fileIndex[i] = lv and 0xffffffffffffL
-                dos?.writeLong(lv)
+                sink?.writeLong(lv)
             }
             return fileIndex
         }
@@ -124,12 +134,12 @@ public class Rd5DiffTool : ProgressListener {
             return index[tileIndex]
         }
 
-        private fun readPosIndex(dis: DataInputStream, dos: DataOutputStream?): IntArray {
+        private fun readPosIndex(source: Source, sink: Sink?): IntArray {
             val posIndex = IntArray(1024)
             for (i in 0..1023) {
-                val iv = dis.readInt()
+                val iv = source.readInt()
                 posIndex[i] = iv
-                dos?.writeInt(iv)
+                sink?.writeInt(iv)
             }
             return posIndex
         }
@@ -141,7 +151,7 @@ public class Rd5DiffTool : ProgressListener {
         private fun createMicroCache(
             posIdx: IntArray?,
             tileIdx: Int,
-            dis: DataInputStream,
+            source: Source,
             deltaMode: Boolean
         ): ByteArray? {
             if (posIdx == null) {
@@ -152,11 +162,9 @@ public class Rd5DiffTool : ProgressListener {
                 return null
             }
             if (deltaMode) {
-                size = dis.readInt()
+                size = source.readInt()
             }
-            val ab = ByteArray(size)
-            dis.readFully(ab)
-            return ab
+            return source.readBytes(size)
         }
 
         private fun createMicroCache(ab: ByteArray?, dataBuffers: DataBuffers?): MicroCache {
@@ -181,13 +189,13 @@ public class Rd5DiffTool : ProgressListener {
 
             val t0 = System.currentTimeMillis()
 
-            DataInputStream(BufferedInputStream(FileInputStream(f1))).use { dis1 ->
-            DataInputStream(BufferedInputStream(FileInputStream(f2))).use { dis2 ->
-            DataOutputStream(BufferedOutputStream(FileOutputStream(outFile))).use { dos ->
-                val mcOut = MCOutputStream(dos, abBuf1)
+            SystemFileSystem.source(Path(f1.path)).buffered().use { source1 ->
+            SystemFileSystem.source(Path(f2.path)).buffered().use { source2 ->
+            SystemFileSystem.sink(Path(outFile.path)).buffered().use { sink ->
+                val mcOut = MCOutputStream(sink, abBuf1)
 
-                val fileIndex1: LongArray = readFileIndex(dis1, null)
-                val fileIndex2: LongArray = readFileIndex(dis2, dos)
+                val fileIndex1: LongArray = readFileIndex(source1, null)
+                val fileIndex2: LongArray = readFileIndex(source2, sink)
 
                 val dataBuffers = DataBuffers()
                 for (subFileIdx in 0..24) {
@@ -196,12 +204,12 @@ public class Rd5DiffTool : ProgressListener {
                     val hasData2 =
                         getTileStart(fileIndex2, subFileIdx) < getTileEnd(fileIndex2, subFileIdx)
 
-                    val posIdx1: IntArray? = if (hasData1) readPosIndex(dis1, null) else null
-                    val posIdx2: IntArray? = if (hasData2) readPosIndex(dis2, dos) else null
+                    val posIdx1: IntArray? = if (hasData1) readPosIndex(source1, null) else null
+                    val posIdx2: IntArray? = if (hasData2) readPosIndex(source2, sink) else null
 
                     for (tileIdx in 0..1023) {
-                        val ab1: ByteArray? = createMicroCache(posIdx1, tileIdx, dis1, false)
-                        val ab2: ByteArray? = createMicroCache(posIdx2, tileIdx, dis2, false)
+                        val ab1: ByteArray? = createMicroCache(posIdx1, tileIdx, source1, false)
+                        val ab2: ByteArray? = createMicroCache(posIdx2, tileIdx, source2, false)
 
                         val mc: MicroCache
                         if (ab1.contentEquals(ab2)) {
@@ -223,11 +231,7 @@ public class Rd5DiffTool : ProgressListener {
                     mcOut.finish()
                 }
 
-                while (true) {
-                    val len = dis2.read(abBuf1)
-                    if (len < 0) break
-                    dos.write(abBuf1, 0, len)
-                }
+                source2.transferTo(sink)
                 val t1 = System.currentTimeMillis()
                 println("nodesDiff=$nodesDiff bytesDiff=$bytesDiff diffedTiles=$diffedTiles took ${t1 - t0}ms")
             }}}
@@ -249,23 +253,23 @@ public class Rd5DiffTool : ProgressListener {
 
             val t0 = System.currentTimeMillis()
 
-            DataInputStream(BufferedInputStream(FileInputStream(f1))).use { dis1 ->
-            DataInputStream(BufferedInputStream(FileInputStream(f2))).use { dis2 ->
-            DataOutputStream(BufferedOutputStream(FileOutputStream(outFile))).use { dos ->
-                val fileIndex1: LongArray = readFileIndex(dis1, null)
-                val fileIndex2: LongArray = readFileIndex(dis2, dos)
+            SystemFileSystem.source(Path(f1.path)).buffered().use { source1 ->
+            SystemFileSystem.source(Path(f2.path)).buffered().use { source2 ->
+            SystemFileSystem.sink(Path(outFile.path)).buffered().use { sink ->
+                val fileIndex1: LongArray = readFileIndex(source1, null)
+                val fileIndex2: LongArray = readFileIndex(source2, sink)
 
                 var lastPct = -1
 
                 val dataBuffers = DataBuffers()
-                val mcIn = MCInputStream(dis2, dataBuffers)
+                val mcIn = MCInputStream(source2, dataBuffers)
 
                 for (subFileIdx in 0..24) {
                     val hasData1 = getTileStart(fileIndex1, subFileIdx) < getTileEnd(fileIndex1, subFileIdx)
                     val hasData2 = getTileStart(fileIndex2, subFileIdx) < getTileEnd(fileIndex2, subFileIdx)
 
-                    val posIdx1: IntArray? = if (hasData1) readPosIndex(dis1, null) else null
-                    val posIdx2: IntArray? = if (hasData2) readPosIndex(dis2, dos) else null
+                    val posIdx1: IntArray? = if (hasData1) readPosIndex(source1, null) else null
+                    val posIdx2: IntArray? = if (hasData2) readPosIndex(source2, sink) else null
 
                     for (tileIdx in 0..1023) {
                         if (progress.isCanceled) {
@@ -281,14 +285,14 @@ public class Rd5DiffTool : ProgressListener {
                             lastPct = pct
                         }
 
-                        val ab1: ByteArray? = createMicroCache(posIdx1, tileIdx, dis1, false)
+                        val ab1: ByteArray? = createMicroCache(posIdx1, tileIdx, source1, false)
                         val mc2 = mcIn.readMC()
                         val targetSize =
                             if (posIdx2 == null) 0 else getPosIdx(posIdx2, tileIdx) - getPosIdx(posIdx2, tileIdx - 1)
 
                         if (mc2.size == 0) {
                             if (ab1 != null) {
-                                dos.write(ab1)
+                                sink.write(ab1)
                             }
                             val newTargetSize = ab1?.size ?: 0
                             if (targetSize != newTargetSize) {
@@ -309,19 +313,15 @@ public class Rd5DiffTool : ProgressListener {
                         }
 
                         val len = mc.encodeMicroCache(abBuf1)
-                        dos.write(abBuf1, 0, len)
-                        dos.writeInt(crc(abBuf1, 0, len) xor 2)
+                        sink.write(abBuf1, 0, len)
+                        sink.writeInt(crc(abBuf1, 0, len) xor 2)
                         if (targetSize != len + 4) {
                             throw RuntimeException("size mismatch at $subFileIdx/$tileIdx $targetSize<>${len + 4}")
                         }
                     }
                     mcIn.finish()
                 }
-                while (true) {
-                    val len = dis2.read(abBuf1)
-                    if (len < 0) break
-                    dos.write(abBuf1, 0, len)
-                }
+                source2.transferTo(sink)
                 val t1 = System.currentTimeMillis()
                 println("recovering from diffs took ${t1 - t0}ms")
             }}}
@@ -333,8 +333,8 @@ public class Rd5DiffTool : ProgressListener {
             var sizeRead = 0L
             var lastPct = -1
 
-            DataInputStream(BufferedInputStream(FileInputStream(f1))).use { dis1 ->
-            DataOutputStream(BufferedOutputStream(FileOutputStream(outFile))).use { dos ->
+            SystemFileSystem.source(Path(f1.path)).buffered().use { source ->
+            SystemFileSystem.sink(Path(outFile.path)).buffered().use { sink ->
                 val buf = ByteArray(65536)
                 while (true) {
                     if (progress.isCanceled) {
@@ -345,10 +345,10 @@ public class Rd5DiffTool : ProgressListener {
                         progress.updateProgress("Copying", pct)
                         lastPct = pct
                     }
-                    val len = dis1.read(buf)
-                    if (len <= 0) break
+                    val len = source.readAtMostTo(buf)
+                    if (len < 0) break
                     sizeRead += len.toLong()
-                    dos.write(buf, 0, len)
+                    sink.write(buf, 0, len)
                 }
             }}
             if (progress.isCanceled) outFile.delete()
@@ -360,24 +360,24 @@ public class Rd5DiffTool : ProgressListener {
 
             val t0 = System.currentTimeMillis()
 
-            DataInputStream(BufferedInputStream(FileInputStream(f1))).use { dis1 ->
-            DataInputStream(BufferedInputStream(FileInputStream(f2))).use { dis2 ->
-            DataOutputStream(BufferedOutputStream(FileOutputStream(outFile))).use { dos ->
-                val fileIndex1: LongArray = readFileIndex(dis1, null)
-                val fileIndex2: LongArray = readFileIndex(dis2, dos)
+            SystemFileSystem.source(Path(f1.path)).buffered().use { source1 ->
+            SystemFileSystem.source(Path(f2.path)).buffered().use { source2 ->
+            SystemFileSystem.sink(Path(outFile.path)).buffered().use { sink ->
+                val fileIndex1: LongArray = readFileIndex(source1, null)
+                val fileIndex2: LongArray = readFileIndex(source2, sink)
 
                 val dataBuffers = DataBuffers()
-                val mcIn1 = MCInputStream(dis1, dataBuffers)
-                val mcIn2 = MCInputStream(dis2, dataBuffers)
-                val mcOut = MCOutputStream(dos, abBuf1)
+                val mcIn1 = MCInputStream(source1, dataBuffers)
+                val mcIn2 = MCInputStream(source2, dataBuffers)
+                val mcOut = MCOutputStream(sink, abBuf1)
 
                 for (subFileIdx in 0..24) {
                     val hasData1 =
                         getTileStart(fileIndex1, subFileIdx) < getTileEnd(fileIndex1, subFileIdx)
                     val hasData2 =
                         getTileStart(fileIndex2, subFileIdx) < getTileEnd(fileIndex2, subFileIdx)
-                    val posIdx1: IntArray? = if (hasData1) readPosIndex(dis1, null) else null
-                    val posIdx2: IntArray? = if (hasData2) readPosIndex(dis2, dos) else null
+                    val posIdx1: IntArray? = if (hasData1) readPosIndex(source1, null) else null
+                    val posIdx2: IntArray? = if (hasData2) readPosIndex(source2, sink) else null
 
                     for (tileIdx in 0..1023) {
                         val mc1 = mcIn1.readMC()
@@ -393,11 +393,7 @@ public class Rd5DiffTool : ProgressListener {
                     mcIn2.finish()
                     mcOut.finish()
                 }
-                while (true) {
-                    val len = dis2.read(abBuf1)
-                    if (len < 0) break
-                    dos.write(abBuf1, 0, len)
-                }
+                source2.transferTo(sink)
                 val t1 = System.currentTimeMillis()
                 println("adding diffs took ${t1 - t0}ms")
             }}}
@@ -408,32 +404,28 @@ public class Rd5DiffTool : ProgressListener {
 
             val t0 = System.currentTimeMillis()
 
-            DataInputStream(BufferedInputStream(FileInputStream(f1))).use { dis1 ->
-            DataOutputStream(BufferedOutputStream(FileOutputStream(outFile))).use { dos ->
-                val fileIndex1: LongArray = readFileIndex(dis1, dos)
+            SystemFileSystem.source(Path(f1.path)).buffered().use { source ->
+            SystemFileSystem.sink(Path(outFile.path)).buffered().use { sink ->
+                val fileIndex1: LongArray = readFileIndex(source, sink)
 
                 val dataBuffers = DataBuffers()
                 for (subFileIdx in 0..24) {
                     val hasData1 =
                         getTileStart(fileIndex1, subFileIdx) < getTileEnd(fileIndex1, subFileIdx)
 
-                    val posIdx1: IntArray? = if (hasData1) readPosIndex(dis1, dos) else null
+                    val posIdx1: IntArray? = if (hasData1) readPosIndex(source, sink) else null
 
                     for (tileIdx in 0..1023) {
-                        val ab1: ByteArray? = createMicroCache(posIdx1, tileIdx, dis1, false)
+                        val ab1: ByteArray? = createMicroCache(posIdx1, tileIdx, source, false)
                         if (ab1 == null) continue
 
                         val mc1: MicroCache = createMicroCache(ab1, dataBuffers)
                         val len = mc1.encodeMicroCache(abBuf1)
-                        dos.write(abBuf1, 0, len)
-                        dos.writeInt(crc(abBuf1, 0, len) xor 2)
+                        sink.write(abBuf1, 0, len)
+                        sink.writeInt(crc(abBuf1, 0, len) xor 2)
                     }
                 }
-                while (true) {
-                    val len = dis1.read(abBuf1)
-                    if (len < 0) break
-                    dos.write(abBuf1, 0, len)
-                }
+                source.transferTo(sink)
                 val t1 = System.currentTimeMillis()
                 println("re-encoding took ${t1 - t0}ms")
             }}
