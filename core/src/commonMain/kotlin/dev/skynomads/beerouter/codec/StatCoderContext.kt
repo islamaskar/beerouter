@@ -1,7 +1,6 @@
 package dev.skynomads.beerouter.codec
 
 import dev.skynomads.beerouter.util.BitCoderContext
-import java.util.TreeMap
 
 public class StatCoderContext(ab: ByteArray) : BitCoderContext(ab) {
     private var lastbitpos: Long = 0
@@ -16,7 +15,7 @@ public class StatCoderContext(ab: ByteArray) : BitCoderContext(ab) {
     public fun assignBits(name: String?) {
         val bitpos = writingBitPosition.toLong()
         if (statsPerName == null) {
-            statsPerName = TreeMap()
+            statsPerName = mutableMapOf()
         }
         var stats: LongArray? = statsPerName!![name]
         if (stats == null) {
@@ -130,17 +129,7 @@ public class StatCoderContext(ab: ByteArray) : BitCoderContext(ab) {
     }
 
     /**
-     * encode an integer-array making use of the fact that it is sorted. This is
-     * done, starting with the most significant bit, by recursively encoding the
-     * number of values with the current bit being 0. This yields an number of
-     * bits per value that only depends on the typical distance between subsequent
-     * values and also benefits
-     *
-     * @param values  the array to encode
-     * @param offset  position in this array where to start
-     * @param subsize number of values to encode
-     * @param nextbit bitmask with the most significant bit set to 1
-     * @param mask    should be 0
+     * encode an integer-array making use of the fact that it is sorted.
      */
     public fun encodeSortedArray(values: IntArray, offset: Int, subsize: Int, nextbit: Int, mask: Int) {
         var nextbit = nextbit
@@ -179,14 +168,6 @@ public class StatCoderContext(ab: ByteArray) : BitCoderContext(ab) {
         }
     }
 
-    /**
-     * @param values  the array to encode
-     * @param offset  position in this array where to start
-     * @param subsize number of values to encode
-     * @param nextbit bitmask with the most significant bit set to 1
-     * @param value   should be 0
-     * @see .encodeSortedArray
-     */
     public fun decodeSortedArray(
         values: IntArray,
         offset: Int,
@@ -247,11 +228,6 @@ public class StatCoderContext(ab: ByteArray) : BitCoderContext(ab) {
 
 
         public val bitReport: String
-            /**
-             * Get a textual report on the bit-statistics
-             *
-             * @see .assignBits
-             */
             get() {
                 if (statsPerName == null) {
                     return "<empty bit report>"

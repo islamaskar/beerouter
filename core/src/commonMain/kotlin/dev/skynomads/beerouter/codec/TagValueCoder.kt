@@ -1,9 +1,6 @@
 package dev.skynomads.beerouter.codec
 
-import dev.skynomads.beerouter.codec.TagValueCoder.TagValueSet.FrequencyComparator
 import dev.skynomads.beerouter.util.BitCoderContext
-import java.util.PriorityQueue
-import java.util.Queue
 
 /**
  * Encoder/Decoder for way-/node-descriptions
@@ -11,7 +8,7 @@ import java.util.Queue
  * It detects identical descriptions and sorts them
  * into a huffman-tree according to their frequencies
  *
- * Adapted for 3-pass encoding (counters -&gt; statistics -&gt; encoding )
+ * Adapted for 3-pass encoding (counters -> statistics -> encoding )
  * but doesn't do anything at pass1
  */
 public class TagValueCoder {
@@ -56,17 +53,19 @@ public class TagValueCoder {
                 val dummy = TagValueSet(nextTagValueSetId++)
                 identityMap!![dummy] = dummy
             }
-            val queue: Queue<TagValueSet> =
-                PriorityQueue(2 * identityMap!!.size, FrequencyComparator())
-            queue.addAll(identityMap!!.values)
+            val comparator = TagValueSet.FrequencyComparator()
+            val queue = ArrayDeque<TagValueSet>()
+            queue.addAll(identityMap!!.values.filterNotNull())
+            queue.sortWith(comparator)
             while (queue.size > 1) {
                 val node = TagValueSet(nextTagValueSetId++)
-                node.child1 = queue.poll()
-                node.child2 = queue.poll()
+                node.child1 = queue.removeFirst()
+                node.child2 = queue.removeFirst()
                 node.frequency = node.child1!!.frequency + node.child2!!.frequency
-                queue.add(node)
+                val insertIdx = queue.indexOfFirst { comparator.compare(node, it) <= 0 }
+                if (insertIdx == -1) queue.addLast(node) else queue.add(insertIdx, node)
             }
-            val root = queue.poll()
+            val root = queue.removeFirst()
             root.encode(bc, 1, 0)
         }
         this.bc = bc
@@ -78,7 +77,7 @@ public class TagValueCoder {
     }
 
     public constructor() {
-        identityMap = HashMap<TagValueSet?, TagValueSet?>()
+        identityMap = HashMap()
     }
 
     private fun decodeTree(
@@ -149,7 +148,7 @@ public class TagValueCoder {
         public var child2: Any? = null
     }
 
-    public class TagValueSet( // serial number to make the comparator well defined in case of equal frequencies
+    public class TagValueSet(
         private val id: Int
     ) {
         public var data: ByteArray? = null
