@@ -13,9 +13,11 @@ import dev.skynomads.beerouter.osm.toIntLatitude
 import dev.skynomads.beerouter.osm.toIntLongitude
 import org.maplibre.spatialk.geojson.Position
 import java.io.File
-import java.io.FileInputStream
-import java.io.FileOutputStream
+import java.io.InputStream
+import java.io.OutputStream
 import kotlinx.io.EOFException
+import kotlinx.io.Sink
+import kotlinx.io.Source
 import kotlinx.io.asSink
 import kotlinx.io.asSource
 import kotlinx.io.buffered
@@ -111,18 +113,28 @@ public class OsmTrack {
      * @param filename the filename to write to
      */
     public fun writeBinary(filename: String) {
-        FileOutputStream(filename).asSink().buffered().use { sink ->
-            endPoint!!.writeToStream(sink)
-            sink.writeInt(nodes.size)
-            for (node in nodes) {
-                node.writeToStream(sink)
-            }
-            sink.writeLong(nogoChecksums[0])
-            sink.writeLong(nogoChecksums[1])
-            sink.writeLong(nogoChecksums[2])
-            sink.writeByte(if (isDirty) 1 else 0)
-            sink.writeLong(profileTimestamp)
+        File(filename).outputStream().asSink().buffered().use { sink ->
+            writeBinary(sink)
         }
+    }
+
+    public fun writeBinary(stream: OutputStream) {
+        stream.asSink().buffered().use { sink ->
+            writeBinary(sink)
+        }
+    }
+
+    public fun writeBinary(sink: Sink) {
+        endPoint!!.writeToStream(sink)
+        sink.writeInt(nodes.size)
+        for (node in nodes) {
+            node.writeToStream(sink)
+        }
+        sink.writeLong(nogoChecksums[0])
+        sink.writeLong(nogoChecksums[1])
+        sink.writeLong(nogoChecksums[2])
+        sink.writeByte(if (isDirty) 1 else 0)
+        sink.writeLong(profileTimestamp)
     }
 
     public fun addNodes(t: OsmTrack) {
@@ -403,56 +415,8 @@ public class OsmTrack {
                 val f = File(filename)
                 if (f.exists()) {
                     try {
-                        FileInputStream(f).asSource().buffered().use { source ->
-                            val ep = readFromStream(source)
-                            val dlon: Int = ep.waypoint!!.iLon - newEp.iLon
-                            val dlat = ep.waypoint!!.iLat - newEp.iLat
-                            val targetMatch = dlon < 20 && dlon > -20 && dlat < 20 && dlat > -20
-                            debugInfo?.append("target-delta = $dlon/$dlat targetMatch=$targetMatch")
-                            if (targetMatch) {
-                                t = OsmTrack()
-                                t.endPoint = ep
-                                val n = source.readInt()
-                                var lastPe: OsmPathElement? = null
-                                for (i in 0..<n) {
-                                    val pe: OsmPathElement = OsmPathElement.readFromStream(source)
-                                    pe.origin = lastPe
-                                    lastPe = pe
-                                    t.nodes.add(pe)
-                                }
-                                t.cost = lastPe!!.cost
-                                t.buildMap()
-
-                                val al = LongArray(3)
-                                var pchecksum: Long = 0
-                                try {
-                                    al[0] = source.readLong()
-                                    al[1] = source.readLong()
-                                    al[2] = source.readLong()
-                                } catch (eof: EOFException) { /* kind of expected */
-                                }
-                                try {
-                                    t.isDirty = source.readByte().toInt() != 0
-                                } catch (eof: EOFException) { /* kind of expected */
-                                }
-                                try {
-                                    pchecksum = source.readLong()
-                                } catch (eof: EOFException) { /* kind of expected */
-                                }
-                                val nogoCheckOk =
-                                    abs(al[0] - nogoChecksums[0]) <= 20 && abs(al[1] - nogoChecksums[1]) <= 20 && abs(
-                                        al[2] - nogoChecksums[2]
-                                    ) <= 20
-                                val profileCheckOk = pchecksum == profileChecksum
-
-                                if (debugInfo != null) {
-                                    debugInfo.append(" nogoCheckOk=$nogoCheckOk profileCheckOk=$profileCheckOk")
-                                    debugInfo.append(
-                                        " al=" + formatLongs(al) + " nogoChecksums=" + formatLongs(nogoChecksums)
-                                    )
-                                }
-                                if (!(nogoCheckOk && profileCheckOk)) return null
-                            }
+                        f.inputStream().use { stream ->
+                            t = readBinary(stream, newEp, nogoChecksums, profileChecksum, debugInfo)
                         }
                     } catch (e: Exception) {
                         debugInfo?.append("Error reading rawTrack: $e")
@@ -460,6 +424,74 @@ public class OsmTrack {
                 }
             }
             return t
+        }
+
+        public fun readBinary(
+            stream: InputStream,
+            newEp: OsmNodeNamed,
+            nogoChecksums: LongArray,
+            profileChecksum: Long,
+            debugInfo: StringBuilder?
+        ): OsmTrack? {
+            stream.asSource().buffered().use { source ->
+                return readBinary(source, newEp, nogoChecksums, profileChecksum, debugInfo)
+            }
+        }
+
+        public fun readBinary(
+            source: Source,
+            newEp: OsmNodeNamed,
+            nogoChecksums: LongArray,
+            profileChecksum: Long,
+            debugInfo: StringBuilder?
+        ): OsmTrack? {
+            val ep = readFromStream(source)
+            val dlon: Int = ep.waypoint!!.iLon - newEp.iLon
+            val dlat = ep.waypoint!!.iLat - newEp.iLat
+            val targetMatch = dlon < 20 && dlon > -20 && dlat < 20 && dlat > -20
+            debugInfo?.append("target-delta = $dlon/$dlat targetMatch=$targetMatch")
+            if (!targetMatch) return null
+
+            val track = OsmTrack()
+            track.endPoint = ep
+            val n = source.readInt()
+            var lastPe: OsmPathElement? = null
+            for (i in 0..<n) {
+                val pe: OsmPathElement = OsmPathElement.readFromStream(source)
+                pe.origin = lastPe
+                lastPe = pe
+                track.nodes.add(pe)
+            }
+            track.cost = lastPe!!.cost
+            track.buildMap()
+
+            val al = LongArray(3)
+            var pchecksum: Long = 0
+            try {
+                al[0] = source.readLong()
+                al[1] = source.readLong()
+                al[2] = source.readLong()
+            } catch (_: EOFException) { /* kind of expected */
+            }
+            try {
+                track.isDirty = source.readByte().toInt() != 0
+            } catch (_: EOFException) { /* kind of expected */
+            }
+            try {
+                pchecksum = source.readLong()
+            } catch (_: EOFException) { /* kind of expected */
+            }
+            val nogoCheckOk =
+                abs(al[0] - nogoChecksums[0]) <= 20 &&
+                        abs(al[1] - nogoChecksums[1]) <= 20 &&
+                        abs(al[2] - nogoChecksums[2]) <= 20
+            val profileCheckOk = pchecksum == profileChecksum
+
+            if (debugInfo != null) {
+                debugInfo.append(" nogoCheckOk=$nogoCheckOk profileCheckOk=$profileCheckOk")
+                debugInfo.append(" al=${formatLongs(al)} nogoChecksums=${formatLongs(nogoChecksums)}")
+            }
+            return if (nogoCheckOk && profileCheckOk) track else null
         }
 
         private fun formatLongs(al: LongArray): String {

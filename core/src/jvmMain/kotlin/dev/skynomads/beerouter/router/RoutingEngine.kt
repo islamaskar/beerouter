@@ -25,7 +25,7 @@ import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
 
-public class RoutingEngine(private val routingContext: RoutingContext) : Thread() {
+public class RoutingEngine(private val routingContext: RoutingContext) {
     private val logger: Logger = LoggerFactory.getLogger(RoutingEngine::class.java)
 
     private var nodesCache: NodesCache? = null

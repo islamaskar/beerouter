@@ -15,8 +15,10 @@ import dev.skynomads.beerouter.osm.toIntLongitude
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.File
-import java.io.FileInputStream
-import java.io.FileOutputStream
+import java.io.InputStream
+import java.io.OutputStream
+import kotlinx.io.Sink
+import kotlinx.io.Source
 import kotlinx.io.asSink
 import kotlinx.io.asSource
 import kotlinx.io.buffered
@@ -267,43 +269,67 @@ public class AreaReader {
     }
 
     public fun writeAreaInfo(filename: String, wp: MatchedWaypoint, ais: MutableList<AreaInfo>) {
-        FileOutputStream(filename).asSink().buffered().use { sink ->
-            wp.writeToStream(sink)
-            for (ai in ais) {
-                sink.writeInt(ai.direction)
-                sink.writeLong(ai.elevStart.toBits())
-                sink.writeInt(ai.ways)
-                sink.writeInt(ai.greenWays)
-                sink.writeInt(ai.riverWays)
-                sink.writeInt(ai.elev50)
-            }
+        File(filename).outputStream().asSink().buffered().use { sink ->
+            writeAreaInfo(sink, wp, ais)
+        }
+    }
+
+    public fun writeAreaInfo(stream: OutputStream, wp: MatchedWaypoint, ais: MutableList<AreaInfo>) {
+        stream.asSink().buffered().use { sink ->
+            writeAreaInfo(sink, wp, ais)
+        }
+    }
+
+    public fun writeAreaInfo(sink: Sink, wp: MatchedWaypoint, ais: MutableList<AreaInfo>) {
+        wp.writeToStream(sink)
+        for (ai in ais) {
+            sink.writeInt(ai.direction)
+            sink.writeLong(ai.elevStart.toBits())
+            sink.writeInt(ai.ways)
+            sink.writeInt(ai.greenWays)
+            sink.writeInt(ai.riverWays)
+            sink.writeInt(ai.elev50)
         }
     }
 
     public fun readAreaInfo(fai: File, wp: MatchedWaypoint, ais: MutableList<AreaInfo>) {
         try {
-            FileInputStream(fai).asSource().buffered().use { source ->
-                val ep = readFromStream(source)
-                if (abs(ep.waypoint!!.position.longitude.toIntLongitude() - wp.waypoint!!.position.longitude.toIntLongitude()) > 500 &&
-                    abs(ep.waypoint!!.position.latitude.toIntLatitude() - wp.waypoint!!.position.latitude.toIntLatitude()) > 500
-                ) {
-                    return
-                }
-                if (abs(ep.radius - wp.radius) > 500) {
-                    return
-                }
-                for (i in 0..3) {
-                    val direction = source.readInt()
-                    val ai = AreaInfo(direction)
-                    ai.elevStart = Double.fromBits(source.readLong())
-                    ai.ways = source.readInt()
-                    ai.greenWays = source.readInt()
-                    ai.riverWays = source.readInt()
-                    ai.elev50 = source.readInt()
-                    ais.add(ai)
-                }
+            fai.inputStream().use { stream ->
+                readAreaInfo(stream, wp, ais)
             }
         } catch (e: Exception) {
+            ais.clear()
+        }
+    }
+
+    public fun readAreaInfo(stream: InputStream, wp: MatchedWaypoint, ais: MutableList<AreaInfo>) {
+        stream.asSource().buffered().use { source ->
+            readAreaInfo(source, wp, ais)
+        }
+    }
+
+    public fun readAreaInfo(source: Source, wp: MatchedWaypoint, ais: MutableList<AreaInfo>) {
+        try {
+            val ep = readFromStream(source)
+            if (abs(ep.waypoint!!.position.longitude.toIntLongitude() - wp.waypoint!!.position.longitude.toIntLongitude()) > 500 &&
+                abs(ep.waypoint!!.position.latitude.toIntLatitude() - wp.waypoint!!.position.latitude.toIntLatitude()) > 500
+            ) {
+                return
+            }
+            if (abs(ep.radius - wp.radius) > 500) {
+                return
+            }
+            for (i in 0..3) {
+                val direction = source.readInt()
+                val ai = AreaInfo(direction)
+                ai.elevStart = Double.fromBits(source.readLong())
+                ai.ways = source.readInt()
+                ai.greenWays = source.readInt()
+                ai.riverWays = source.readInt()
+                ai.elev50 = source.readInt()
+                ais.add(ai)
+            }
+        } catch (_: Exception) {
             ais.clear()
         }
     }
