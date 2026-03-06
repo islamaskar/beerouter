@@ -44,17 +44,34 @@ public data class TurnRestriction(
             bikeMode: Boolean,
             carMode: Boolean
         ): Boolean {
-            val matchingRestrictions = generateSequence(first) { it.next }
-                .filterNot { (it.exceptBikes() && bikeMode) || (it.exceptMotorcars() && carMode) }
-                .filter { it.fromLon == fromLon && it.fromLat == fromLat }
-                .toList()
+            var hasAnyPositive = false
+            var hasPositive = false
+            var hasNegative = false
+            var restriction = first
 
-            val hasAnyPositive = matchingRestrictions.any(TurnRestriction::isPositive)
-            val hasPositive = matchingRestrictions.any {
-                it.isPositive && it.toLon == toLon && it.toLat == toLat
-            }
-            val hasNegative = matchingRestrictions.any {
-                !it.isPositive && it.toLon == toLon && it.toLat == toLat
+            while (restriction != null) {
+                if ((restriction.exceptBikes() && bikeMode) ||
+                    (restriction.exceptMotorcars() && carMode)
+                ) {
+                    restriction = restriction.next
+                    continue
+                }
+
+                if (restriction.fromLon == fromLon && restriction.fromLat == fromLat) {
+                    if (restriction.isPositive) {
+                        hasAnyPositive = true
+                    }
+
+                    if (restriction.toLon == toLon && restriction.toLat == toLat) {
+                        if (restriction.isPositive) {
+                            hasPositive = true
+                        } else {
+                            hasNegative = true
+                        }
+                    }
+                }
+
+                restriction = restriction.next
             }
 
             return !hasPositive && (hasAnyPositive || hasNegative)

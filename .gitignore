@@ -21,3 +21,4 @@ misc/customprofiles
 .project
 !/.idea/runConfigurations
 .kotlin
+.code/agents/
