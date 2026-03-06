@@ -1893,33 +1893,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
 
             routingContext.firstPrePath = null
 
-            run {
-                var link = currentNode.firstlink
-                while (link != null) {
-                    val nextNode = link.getTarget(currentNode)
-
-                    if (!nodesCache!!.obtainNonHollowNode(nextNode!!)) {
-                        link = link.getNext(currentNode)
-                        continue  // border node?
-                    }
-                    if (nextNode.firstlink == null) {
-                        link = link.getNext(currentNode)
-                        continue  // don't care about dead ends
-                    }
-                    if (nextNode === sourceNode) {
-                        link = link.getNext(currentNode)
-                        continue  // border node?
-                    }
-
-                    val prePath = routingContext.createPrePath(path, link)
-                    if (prePath != null) {
-                        prePath.next = routingContext.firstPrePath
-                        routingContext.firstPrePath = prePath
-                    }
-                    link = link.getNext(currentNode)
-                }
-            }
-
+            val candidateEdges = ArrayList<Pair<OsmLink, OsmNode>>(8)
             var link = currentNode.firstlink
             while (link != null) {
                 val nextNode = link.getTarget(currentNode)
@@ -1937,10 +1911,20 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
                     continue  // border node?
                 }
 
+                val prePath = routingContext.createPrePath(path, link)
+                if (prePath != null) {
+                    prePath.next = routingContext.firstPrePath
+                    routingContext.firstPrePath = prePath
+                }
+                candidateEdges.add(link to nextNode)
+                link = link.getNext(currentNode)
+            }
+
+            for ((candidateLink, nextNode) in candidateEdges) {
+
                 if (guideTrack != null) {
                     val gidx = path.treedepth + 1
                     if (gidx >= guideTrack!!.nodes.size) {
-                        link = link.getNext(currentNode)
                         continue
                     }
                     val guideNode =
@@ -1949,7 +1933,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
                     if (nextId != guideNode.idFromPos) {
                         // not along the guide-track, discard, but register for voice-hint processing
                         if (TurnInstructionMode.supportsGuideTrackDetours(routingContext.global.turnInstructionMode)) {
-                            val detour = routingContext.createPath(path, link, refTrack, true)
+                            val detour = routingContext.createPath(path, candidateLink, refTrack, true)
                             if (detour.cost >= 0.0 && nextId != startNodeId1 && nextId != startNodeId2) {
                                 guideTrack!!.registerDetourForId(
                                     currentNode.idFromPos,
@@ -1957,7 +1941,6 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
                                 )
                             }
                         }
-                        link = link.getNext(currentNode)
                         continue
                     }
                 }
@@ -1983,7 +1966,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
                         }
                         val testPath = routingContext.createPath(
                             otherPath,
-                            link,
+                            candidateLink,
                             refTrack,
                             guideTrack != null
                         )
@@ -2008,7 +1991,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
 
                     if (inRadius && (isFinalLink || bestPath.cost + bestPath.airdistance <= (if (lastAirDistanceCostFactor != 0.0) maxTotalCost * lastAirDistanceCostFactor else maxTotalCost.toDouble()) + addDiff)) {
                         // add only if this may beat an existing path for that link
-                        var dominator = link.getFirstLinkHolder(currentNode)
+                        var dominator = candidateLink.getFirstLinkHolder(currentNode)
                         while (dominator != null) {
                             val dp = dominator as OsmPath
                             if (dp.airdistance != -1 && bestPath.definitlyWorseThan(dp)) {
@@ -2019,12 +2002,11 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
 
                         if (dominator == null) {
                             bestPath.treedepth = path.treedepth + 1
-                            link.addLinkHolder(bestPath, currentNode)
+                            candidateLink.addLinkHolder(bestPath, currentNode)
                             addToOpenset(bestPath)
                         }
                     }
                 }
-                link = link.getNext(currentNode)
             }
         }
 
