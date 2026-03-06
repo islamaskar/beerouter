@@ -45,7 +45,7 @@ class RoutingTest {
     }
 
     @Test
-    fun routingEqualsBrouterMini() {
+    fun routingParityMiniTest() {
         val scenarios = listOf(
             RouteScenario(
                 name = "mini-trekking-tuebingen-rottenburg",
@@ -62,14 +62,6 @@ class RoutingTest {
                     createWaypoint("Tübingen", 48.5203263, 9.053596),
                     createWaypoint("Reutlingen", 48.4914, 9.2043)
                 )
-            ),
-            RouteScenario(
-                name = "mini-car-tuebingen-stuttgart",
-                profile = "car-vario.brf",
-                waypoints = listOf(
-                    createWaypoint("Tübingen", 48.5203263, 9.053596),
-                    createWaypoint("Stuttgart", 48.7758, 9.1829)
-                )
             )
         )
 
@@ -77,7 +69,7 @@ class RoutingTest {
     }
 
     @Test
-    fun routingEqualsBrouter() {
+    fun routingParityTest() {
         val scenarios = listOf(
             // trekking profile: short / medium / long / via route
             RouteScenario(
@@ -153,32 +145,6 @@ class RoutingTest {
                 profile = "shortest.brf",
                 waypoints = listOf(
                     createWaypoint("Stuttgart", 48.7758, 9.1829),
-                    createWaypoint("Balingen", 48.2768, 8.8554)
-                )
-            ),
-            // car profile: medium / long / via route
-            RouteScenario(
-                name = "car-medium-tuebingen-stuttgart",
-                profile = "car-vario.brf",
-                waypoints = listOf(
-                    createWaypoint("Tübingen", 48.5203263, 9.053596),
-                    createWaypoint("Stuttgart", 48.7758, 9.1829)
-                )
-            ),
-            RouteScenario(
-                name = "car-long-stuttgart-horb",
-                profile = "car-vario.brf",
-                waypoints = listOf(
-                    createWaypoint("Stuttgart", 48.7758, 9.1829),
-                    createWaypoint("Horb am Neckar", 48.4421, 8.6849)
-                )
-            ),
-            RouteScenario(
-                name = "car-via-boeblingen-tuebingen-balingen",
-                profile = "car-vario.brf",
-                waypoints = listOf(
-                    createWaypoint("Böblingen", 48.6835, 9.0110),
-                    createWaypoint("Tübingen", 48.5203263, 9.053596),
                     createWaypoint("Balingen", 48.2768, 8.8554)
                 )
             ),

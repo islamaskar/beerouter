@@ -80,6 +80,6 @@ tasks.register<Test>("routingParityMiniTest") {
     testClassesDirs = jvmTestTask.testClassesDirs
     classpath = jvmTestTask.classpath
     filter {
-        includeTestsMatching("dev.skynomads.beerouter.router.RoutingTest.routingEqualsBrouterMini")
+        includeTestsMatching("dev.skynomads.beerouter.router.RoutingTest.routingParityMiniTest")
     }
 }
