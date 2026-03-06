@@ -19,8 +19,11 @@ public class VoiceHintList(
         private set
 
     public fun setTransportMode(isCar: Boolean, isBike: Boolean) {
-        transportMode =
-            if (isCar) TransportMode.CAR else (if (isBike) TransportMode.BIKE else TransportMode.FOOT)
+        transportMode = when {
+            isCar -> TransportMode.CAR
+            isBike -> TransportMode.BIKE
+            else -> TransportMode.FOOT
+        }
     }
 
     public fun getTransportMode(): String = transportMode.value

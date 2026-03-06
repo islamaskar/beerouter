@@ -12,18 +12,12 @@ import dev.skynomads.beerouter.util.ByteDataReader
 
 public class GeometryDecoder {
     private val r = ByteDataReader()
-    private val cachedNodes: Array<OsmTransferNode>
-    private val nCachedNodes = 128
+    private val cachedNodes: Array<OsmTransferNode> = Array(CACHED_NODE_COUNT) { OsmTransferNode() }
 
     // result-cache
     private var firstTransferNode: OsmTransferNode? = null
     private var lastReverse = false
     private var lastGeometry: ByteArray? = null
-
-    init {
-        // create some caches
-        cachedNodes = (0 until nCachedNodes).map { OsmTransferNode() }.toTypedArray()
-    }
 
     public fun decodeGeometry(
         geometry: ByteArray,
@@ -44,7 +38,7 @@ public class GeometryDecoder {
         var oselev = toSElev(startnode.position.altitude).toInt()
         var idx = 0
         while (r.hasMoreData()) {
-            val trans = if (idx < nCachedNodes) cachedNodes[idx++] else OsmTransferNode()
+            val trans = cachedNodes.getOrNull(idx++) ?: OsmTransferNode()
             trans.ilon = olon + r.readVarLengthSigned()
             trans.ilat = olat + r.readVarLengthSigned()
             trans.selev = (oselev + r.readVarLengthSigned()).toShort()
@@ -69,5 +63,9 @@ public class GeometryDecoder {
         lastGeometry = geometry
 
         return firstTransferNode
+    }
+
+    private companion object {
+        private const val CACHED_NODE_COUNT = 128
     }
 }

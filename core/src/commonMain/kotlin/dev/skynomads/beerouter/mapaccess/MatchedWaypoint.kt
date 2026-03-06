@@ -58,9 +58,7 @@ public class MatchedWaypoint {
 
     public companion object {
         private fun nodeFromCoordinates(lon: Int, lat: Int): OsmNode =
-            OsmNode().also {
-                it.position = Position(lon.toDoubleLongitude(), lat.toDoubleLatitude(), 0.0)
-            }
+            OsmNode(Position(lon.toDoubleLongitude(), lat.toDoubleLatitude(), 0.0))
 
         public fun readFromStream(source: Source): MatchedWaypoint {
             val node1Lat = source.readInt()
