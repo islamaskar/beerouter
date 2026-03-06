@@ -41,7 +41,7 @@ class RoutingContextParityTest {
         engine.doRouting(60_000)
 
         val beerouterContext = routingContextFromFiles(profile, segmentFile.parentFile).apply {
-            global.turnInstructionMode = 2
+            global.turnInstructionMode = TurnInstructionMode.LOCUS
         }
 
         assertEquals(brouterContext.carMode, beerouterContext.global.carMode, "carMode")

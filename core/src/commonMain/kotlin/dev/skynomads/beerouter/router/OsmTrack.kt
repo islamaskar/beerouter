@@ -401,7 +401,7 @@ public class OsmTrack {
         return null
     }
 
-    private fun supportsBeelineCommand(turnInstructionMode: Int): Boolean =
+    private fun supportsBeelineCommand(turnInstructionMode: TurnInstructionMode): Boolean =
         TurnInstructionMode.supportsBeelineHints(turnInstructionMode)
 
     public companion object {

@@ -82,7 +82,7 @@ public class RoutingContext(
         public var useDynamicDistance: Boolean
         public val buildBeelineOnRange: Boolean
 
-        public var turnInstructionMode: Int = TurnInstructionMode.NONE.id
+        public var turnInstructionMode: TurnInstructionMode = TurnInstructionMode.NONE
         public val turnInstructionCatchingRange: Double
         public val turnInstructionRoundabouts: Boolean
 
@@ -153,7 +153,7 @@ public class RoutingContext(
             val tiMode = ctx.getVariableValue("turnInstructionMode", 0f).toInt()
             if (tiMode != TurnInstructionMode.AUTO.id) {
                 // Preserve externally provided mode for profile auto mode ("1"), as in brouter.
-                turnInstructionMode = tiMode
+                turnInstructionMode = TurnInstructionMode.fromId(tiMode) ?: TurnInstructionMode.NONE
             }
 
             turnInstructionCatchingRange =

@@ -288,7 +288,7 @@ class RoutingTest {
 
 
         val ctx = routingContextFromFiles(profile, segmentFile.parentFile).apply {
-            global.turnInstructionMode = 2
+            global.turnInstructionMode = TurnInstructionMode.LOCUS
         }
 
         val engine = RoutingEngine(ctx)
