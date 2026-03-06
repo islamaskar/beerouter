@@ -20,7 +20,7 @@ import kotlinx.io.files.SystemFileSystem
 import kotlin.time.TimeSource
 
 public class Rd5DiffTool : ProgressListener {
-    override fun updateProgress(task: String?, progress: Int) {
+    override fun updateProgress(task: String, progress: Int) {
         println("$task: $progress%")
     }
 
