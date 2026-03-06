@@ -3,9 +3,11 @@ package dev.skynomads.beerouter.router
 import kotlinx.coroutines.runBlocking
 import org.maplibre.spatialk.geojson.Position
 import java.io.File
-import java.net.URL
+import java.net.URI
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
+import dev.skynomads.beerouter.osm.toIntLatitude
+import dev.skynomads.beerouter.osm.toIntLongitude
 import kotlin.test.BeforeTest
 import kotlin.test.DefaultAsserter.assertTrue
 import kotlin.test.Test
@@ -30,7 +32,7 @@ class RoutingTest {
     @BeforeTest
     fun before() {
         if (!segmentFile.exists()) {
-            val url = URL("https://brouter.de/brouter/segments4/E5_N45.rd5")
+            val url = URI("https://brouter.de/brouter/segments4/E5_N45.rd5").toURL()
             url.openStream()
                 .use { Files.copy(it, segmentFile.toPath(), StandardCopyOption.REPLACE_EXISTING) }
         }
@@ -65,9 +67,9 @@ class RoutingTest {
         assertEquals(btrack.nodes.size, beetrack.nodes.size)
 
         btrack.nodes.forEachIndexed { idx, node ->
-            assertEquals(node.iLon, beetrack.nodes[idx].iLon)
-            assertEquals(node.iLat, beetrack.nodes[idx].iLat)
-            assertEquals(node.sElev, beetrack.nodes[idx].sElev)
+            assertEquals(node.iLon, beetrack.nodes[idx].position.longitude.toIntLongitude())
+            assertEquals(node.iLat, beetrack.nodes[idx].position.latitude.toIntLatitude())
+            assertEquals(node.sElev, toSElev(beetrack.nodes[idx].position.altitude))
 
             val hint = btrack.getVoiceHint(idx)
             if (hint != null) {
@@ -121,8 +123,8 @@ class RoutingTest {
             waypoints.map {
                 btools.router.OsmNodeNamed().apply {
                     name = it.name
-                    ilon = it.iLon
-                    ilat = it.iLat
+                    ilon = it.position.longitude.toIntLongitude()
+                    ilat = it.position.latitude.toIntLatitude()
                 }
             },
             rc
@@ -151,4 +153,6 @@ class RoutingTest {
 
         return engine.doRouting(waypoints)
     }
+
+    private fun toSElev(altitude: Double?): Short = (altitude ?: 0.0).times(4.0).toInt().toShort()
 }
