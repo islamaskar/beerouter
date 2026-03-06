@@ -96,23 +96,23 @@ public class Rd5DiffTool : ProgressListener {
 
         public fun main(args: Array<String>) {
             if (args.size == 2) {
-                reEncode(File(args[0]), File(args[1]))
+                reEncode(Path(args[0]), Path(args[1]))
                 return
             }
 
             if (args[1].endsWith(".df5")) {
                 if (args[0].endsWith(".df5")) {
-                    addDeltas(File(args[0]), File(args[1]), File(args[2]))
+                    addDeltas(Path(args[0]), Path(args[1]), Path(args[2]))
                 } else {
                     recoverFromDelta(
-                        File(args[0]),
-                        File(args[1]),
-                        File(args[2]),
+                        Path(args[0]),
+                        Path(args[1]),
+                        Path(args[2]),
                         Rd5DiffTool()
                     )
                 }
             } else {
-                diff2files(File(args[0]), File(args[1]), File(args[2]))
+                diff2files(Path(args[0]), Path(args[1]), Path(args[2]))
             }
         }
 
