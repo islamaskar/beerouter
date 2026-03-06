@@ -422,6 +422,26 @@ public class OsmTrack {
         }
 
         public fun readBinary(
+            path: Path,
+            newEp: OsmNodeNamed,
+            nogoChecksums: LongArray,
+            profileChecksum: Long,
+            debugInfo: StringBuilder?
+        ): OsmTrack? {
+            if (!SystemFileSystem.exists(path)) {
+                return null
+            }
+            return try {
+                SystemFileSystem.source(path).buffered().use { source ->
+                    readBinary(source, newEp, nogoChecksums, profileChecksum, debugInfo)
+                }
+            } catch (e: Exception) {
+                debugInfo?.append("Error reading rawTrack: $e")
+                null
+            }
+        }
+
+        public fun readBinary(
             source: Source,
             newEp: OsmNodeNamed,
             nogoChecksums: LongArray,
