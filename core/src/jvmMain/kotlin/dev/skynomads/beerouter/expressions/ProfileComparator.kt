@@ -1,6 +1,8 @@
 package dev.skynomads.beerouter.expressions
 
-import java.io.File
+import kotlinx.io.buffered
+import kotlinx.io.files.Path
+import kotlinx.io.files.SystemFileSystem
 import kotlin.random.Random
 
 public object ProfileComparator {
@@ -10,18 +12,15 @@ public object ProfileComparator {
             return
         }
 
-        val lookupFile = File(args[0])
-        val profile1File = File(args[1])
-        val profile2File = File(args[2])
         val nsamples = args[3].toInt()
-        testContext(lookupFile, profile1File, profile2File, nsamples, false)
-        testContext(lookupFile, profile1File, profile2File, nsamples, true)
+        testContext(args[0], args[1], args[2], nsamples, false)
+        testContext(args[0], args[1], args[2], nsamples, true)
     }
 
     private fun testContext(
-        lookupFile: File,
-        profile1File: File,
-        profile2File: File,
+        lookupPath: String,
+        profile1Path: String,
+        profile2Path: String,
         nsamples: Int,
         nodeContext: Boolean
     ) {
@@ -32,16 +31,19 @@ public object ProfileComparator {
         val expctx2 =
             if (nodeContext) BExpressionContextNode(meta2) else BExpressionContextWay(meta2)
 
-        if (profile1File.name == profile2File.name) {
+        if (fileName(profile1Path) == fileName(profile2Path)) {
             expctx2.skipConstantExpressionOptimizations = true
         }
 
-        val lookupContent = lookupFile.readText()
+        val lookupContent = readUtf8(lookupPath)
+        val profile1Content = readUtf8(profile1Path)
+        val profile2Content = readUtf8(profile2Path)
+
         meta1.readMetaData(lookupContent)
         meta2.readMetaData(lookupContent)
-        expctx1.parseProfile(profile1File.readText(), profile1File.name, "global")
+        expctx1.parseProfile(profile1Content, fileName(profile1Path), "global")
         println("usedTags1=" + expctx1.usedTagList())
-        expctx2.parseProfile(profile2File.readText(), profile2File.name, "global")
+        expctx2.parseProfile(profile2Content, fileName(profile2Path), "global")
         println("usedTags2=" + expctx2.usedTagList())
 
         println("nodeContext=$nodeContext nodeCount1=${expctx1.expressionNodeCount} nodeCount2=${expctx2.expressionNodeCount}")
@@ -54,4 +56,15 @@ public object ProfileComparator {
             expctx1.assertAllVariablesEqual(expctx2)
         }
     }
+
+    private fun readUtf8(path: String): String =
+        SystemFileSystem.source(Path(path)).buffered().use { source ->
+            val bytes = mutableListOf<Byte>()
+            while (!source.exhausted()) {
+                bytes += source.readByte()
+            }
+            bytes.toByteArray().decodeToString()
+        }
+
+    private fun fileName(path: String): String = path.substringAfterLast('/').substringAfterLast('\\')
 }
