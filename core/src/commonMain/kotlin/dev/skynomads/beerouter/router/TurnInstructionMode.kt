@@ -14,13 +14,25 @@ public enum class TurnInstructionMode(public val id: Int) {
         public fun fromId(id: Int): TurnInstructionMode? =
             entries.firstOrNull { it.id == id }
 
+        public fun supportsGuideTrackDetours(mode: TurnInstructionMode): Boolean =
+            mode != NONE
+
         public fun supportsGuideTrackDetours(id: Int): Boolean = id > NONE.id
+
+        public fun supportsBeelineHints(mode: TurnInstructionMode): Boolean =
+            mode == TRKPT_STYLE ||
+                mode == COMMENT_STYLE ||
+                mode == LOCUS ||
+                mode == LOCUS_TRKPT_STYLE
 
         public fun supportsBeelineHints(id: Int): Boolean =
             id == TRKPT_STYLE.id ||
                 id == COMMENT_STYLE.id ||
                 id == LOCUS.id ||
                 id == LOCUS_TRKPT_STYLE.id
+
+        public fun usesExplicitExitCommands(mode: TurnInstructionMode): Boolean =
+            mode == LOCUS || mode == LOCUS_TRKPT_STYLE
 
         public fun usesExplicitExitCommands(id: Int): Boolean =
             id == LOCUS.id || id == LOCUS_TRKPT_STYLE.id
