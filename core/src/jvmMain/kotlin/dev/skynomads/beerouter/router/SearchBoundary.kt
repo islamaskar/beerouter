@@ -6,6 +6,8 @@
 package dev.skynomads.beerouter.router
 
 import dev.skynomads.beerouter.mapaccess.OsmNode
+import dev.skynomads.beerouter.osm.toIntLatitude
+import dev.skynomads.beerouter.osm.toIntLongitude
 
 internal class SearchBoundary(n: OsmNode, private val radius: Int, var direction: Int) {
     private val minlon0: Int
@@ -17,15 +19,15 @@ internal class SearchBoundary(n: OsmNode, private val radius: Int, var direction
     private val minlat: Int
     private val maxlon: Int
     private val maxlat: Int
-    private val p: OsmNode = OsmNode(n.iLon, n.iLat)
+    private val p: OsmNode = OsmNode(n.position)
 
     /**
      * @param radius Search radius in meters.
      */
     init {
 
-        val lon: Int = (n.iLon / 5000000) * 5000000
-        val lat = (n.iLat / 5000000) * 5000000
+        val lon: Int = (n.position.longitude.toIntLongitude() / 5000000) * 5000000
+        val lat = (n.position.latitude.toIntLatitude() / 5000000) * 5000000
 
         minlon0 = lon - 5000000
         minlat0 = lat - 5000000
@@ -42,26 +44,30 @@ internal class SearchBoundary(n: OsmNode, private val radius: Int, var direction
         if (radius > 0) {
             return n.calcDistance(p) < radius
         }
+        val nLon = n.position.longitude.toIntLongitude()
+        val nLat = n.position.latitude.toIntLatitude()
         if (cost == 0) {
-            return n.iLon in (minlon0 + 1)..<maxlon0 && n.iLat > minlat0 && n.iLat < maxlat0
+            return nLon in (minlon0 + 1)..<maxlon0 && nLat > minlat0 && nLat < maxlat0
         }
-        return n.iLon in (minlon + 1)..<maxlon && n.iLat > minlat && n.iLat < maxlat
+        return nLon in (minlon + 1)..<maxlon && nLat > minlat && nLat < maxlat
     }
 
     fun getBoundaryDistance(n: OsmNode): Int {
+        val nLon = n.position.longitude.toIntLongitude()
+        val nLat = n.position.latitude.toIntLatitude()
         return when (direction) {
-            0 -> n.calcDistance(OsmNode(n.iLon, minlat))
-            1 -> n.calcDistance(OsmNode(minlon, n.iLat))
-            2 -> n.calcDistance(OsmNode(n.iLon, maxlat))
-            3 -> n.calcDistance(OsmNode(maxlon, n.iLat))
+            0 -> n.calcDistance(OsmNode(nLon, minlat))
+            1 -> n.calcDistance(OsmNode(minlon, nLat))
+            2 -> n.calcDistance(OsmNode(nLon, maxlat))
+            3 -> n.calcDistance(OsmNode(maxlon, nLat))
             else -> throw IllegalArgumentException("undefined direction: $direction")
         }
     }
 
     companion object {
         fun getFileName(n: OsmNode): String {
-            val lon: Int = (n.iLon / 5000000) * 5000000
-            val lat = (n.iLat / 5000000) * 5000000
+            val lon: Int = (n.position.longitude.toIntLongitude() / 5000000) * 5000000
+            val lat = (n.position.latitude.toIntLatitude() / 5000000) * 5000000
 
             val dlon = lon / 1000000 - 180
             val dlat = lat / 1000000 - 90

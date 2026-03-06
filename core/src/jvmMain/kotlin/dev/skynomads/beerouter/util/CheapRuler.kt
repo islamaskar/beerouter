@@ -1,5 +1,8 @@
 package dev.skynomads.beerouter.util
 
+import dev.skynomads.beerouter.osm.toIntLatitude
+import dev.skynomads.beerouter.osm.toIntLongitude
+import org.maplibre.spatialk.geojson.Position
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.sqrt
@@ -67,6 +70,22 @@ public object CheapRuler {
     @JvmStatic
     public fun getLonLatToMeterScales(ilat: Int): DoubleArray? {
         return SCALE_CACHE[ilat / SCALE_CACHE_INCREMENT]
+    }
+
+    /**
+     * Compute the distance (in meters) between two Position objects.
+     *
+     * @param p1 First position
+     * @param p2 Second position
+     * @return The distance between the two points, in meters.
+     */
+    @JvmStatic
+    public fun distance(p1: Position, p2: Position): Double {
+        val ilon1 = p1.longitude.toIntLongitude()
+        val ilat1 = p1.latitude.toIntLatitude()
+        val ilon2 = p2.longitude.toIntLongitude()
+        val ilat2 = p2.latitude.toIntLatitude()
+        return distance(ilon1, ilat1, ilon2, ilat2)
     }
 
     /**

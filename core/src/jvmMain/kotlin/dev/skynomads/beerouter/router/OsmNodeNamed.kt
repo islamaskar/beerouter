@@ -7,6 +7,8 @@ package dev.skynomads.beerouter.router
 
 import dev.skynomads.beerouter.mapaccess.MatchedWaypoint
 import dev.skynomads.beerouter.mapaccess.OsmNode
+import dev.skynomads.beerouter.osm.toIntLatitude
+import dev.skynomads.beerouter.osm.toIntLongitude
 import dev.skynomads.beerouter.osm.toDoubleLatitude
 import dev.skynomads.beerouter.osm.toDoubleLongitude
 import dev.skynomads.beerouter.util.CheapRuler.distance
@@ -28,11 +30,11 @@ public open class OsmNodeNamed : OsmNode {
 
     public constructor()
 
-    public constructor(n: OsmNode) : super(n.iLon, n.iLat)
+    public constructor(n: OsmNode) : super(n.position.longitude.toIntLongitude(), n.position.latitude.toIntLatitude())
 
     override fun toString(): String {
-        return if (nogoWeight.isNaN()) "$iLon,$iLat,$name"
-        else "$iLon,$iLat,$name,$nogoWeight"
+        return if (nogoWeight.isNaN()) "${position.longitude.toIntLongitude()},${position.latitude.toIntLatitude()},$name"
+        else "${position.longitude.toIntLongitude()},${position.latitude.toIntLatitude()},$name,$nogoWeight"
     }
 
     public fun distanceWithinRadius(
@@ -48,8 +50,8 @@ public open class OsmNodeNamed : OsmNode {
         var currentLat2 = lat2
         val lonlat2m = getLonLatToMeterScales((currentLat1 + currentLat2) shr 1) ?: return 0.0
 
-        var isFirstPointWithinCircle = distance(currentLon1, currentLat1, iLon, iLat) < radius
-        var isLastPointWithinCircle = distance(currentLon2, currentLat2, iLon, iLat) < radius
+        var isFirstPointWithinCircle = distance(currentLon1, currentLat1, position.longitude.toIntLongitude(), position.latitude.toIntLatitude()) < radius
+        var isLastPointWithinCircle = distance(currentLon2, currentLat2, position.longitude.toIntLongitude(), position.latitude.toIntLatitude()) < radius
         // First point is within the circle
         if (isFirstPointWithinCircle) {
             // Last point is within the circle
@@ -75,11 +77,11 @@ public open class OsmNodeNamed : OsmNode {
         // Distance between the initial point and projection of center of
         // the circle on the current segment.
         val initialToProject: Double =
-            (((currentLon2 - currentLon1) * (iLon - currentLon1) * lonlat2m[0] * lonlat2m[0]
-                    + (currentLat2 - currentLat1) * (iLat - currentLat1) * lonlat2m[1] * lonlat2m[1]
+            (((currentLon2 - currentLon1) * (position.longitude.toIntLongitude() - currentLon1) * lonlat2m[0] * lonlat2m[0]
+                    + (currentLat2 - currentLat1) * (position.latitude.toIntLatitude() - currentLat1) * lonlat2m[1] * lonlat2m[1]
                     ) / totalSegmentLength)
         // Distance between the initial point and the center of the circle.
-        val initialToCenter = distance(iLon, iLat, currentLon1, currentLat1)
+        val initialToCenter = distance(position.longitude.toIntLongitude(), position.latitude.toIntLatitude(), currentLon1, currentLat1)
         // Half length of the segment within the circle
         val halfDistanceWithin = sqrt(
             radius * radius - (initialToCenter * initialToCenter -

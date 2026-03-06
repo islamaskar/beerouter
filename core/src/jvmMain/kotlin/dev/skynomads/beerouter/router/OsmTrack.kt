@@ -8,8 +8,10 @@ package dev.skynomads.beerouter.router
 import androidx.collection.MutableLongObjectMap
 import dev.skynomads.beerouter.mapaccess.MatchedWaypoint
 import dev.skynomads.beerouter.mapaccess.MatchedWaypoint.Companion.readFromStream
-import org.maplibre.spatialk.geojson.Position
 import dev.skynomads.beerouter.mapaccess.OsmPos
+import dev.skynomads.beerouter.osm.toIntLatitude
+import dev.skynomads.beerouter.osm.toIntLongitude
+import org.maplibre.spatialk.geojson.Position
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
 import java.io.DataInputStream
@@ -249,7 +251,8 @@ public class OsmTrack {
         for (i in nodes.indices) {
             val e1 = nodes[i]
             val e2 = t.nodes[i]
-            if (e1.iLon != e2.iLon || e1.iLat != e2.iLat) return false
+            if (e1.position.longitude.toIntLongitude() != e2.position.longitude.toIntLongitude() ||
+                e1.position.latitude.toIntLatitude() != e2.position.latitude.toIntLatitude()) return false
         }
         return true
     }
@@ -387,7 +390,8 @@ public class OsmTrack {
         var e = element
         var cnt = 0
         while (e != null && e.origin != null) {
-            if (e.origin!!.iLat == root.iLat && e.origin!!.iLon == root.iLon) {
+            if (e.origin!!.position.longitude.toIntLongitude() == root.position.longitude.toIntLongitude() &&
+                e.origin!!.position.latitude.toIntLatitude() == root.position.latitude.toIntLatitude()) {
                 return e.message
             }
             e = e.origin

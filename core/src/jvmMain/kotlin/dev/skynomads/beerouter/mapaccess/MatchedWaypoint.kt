@@ -5,6 +5,8 @@
  */
 package dev.skynomads.beerouter.mapaccess
 
+import dev.skynomads.beerouter.osm.toIntLatitude
+import dev.skynomads.beerouter.osm.toIntLongitude
 import dev.skynomads.beerouter.osm.toDoubleLatitude
 import dev.skynomads.beerouter.osm.toDoubleLongitude
 import org.maplibre.spatialk.geojson.Position
@@ -58,14 +60,14 @@ public class MatchedWaypoint {
 
     @Throws(IOException::class)
     public fun writeToStream(dos: DataOutput) {
-        dos.writeInt(node1!!.iLat)
-        dos.writeInt(node1!!.iLon)
-        dos.writeInt(node2!!.iLat)
-        dos.writeInt(node2!!.iLon)
-        dos.writeInt(crosspoint!!.iLat)
-        dos.writeInt(crosspoint!!.iLon)
-        dos.writeInt(waypoint!!.iLat)
-        dos.writeInt(waypoint!!.iLon)
+        dos.writeInt(node1!!.position.latitude.toIntLatitude())
+        dos.writeInt(node1!!.position.longitude.toIntLongitude())
+        dos.writeInt(node2!!.position.latitude.toIntLatitude())
+        dos.writeInt(node2!!.position.longitude.toIntLongitude())
+        dos.writeInt(crosspoint!!.position.latitude.toIntLatitude())
+        dos.writeInt(crosspoint!!.position.longitude.toIntLongitude())
+        dos.writeInt(waypoint!!.position.latitude.toIntLatitude())
+        dos.writeInt(waypoint!!.position.longitude.toIntLongitude())
         dos.writeDouble(radius)
     }
 

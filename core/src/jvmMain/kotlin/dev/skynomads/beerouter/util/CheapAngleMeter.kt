@@ -4,6 +4,9 @@
  */
 package dev.skynomads.beerouter.util
 
+import dev.skynomads.beerouter.osm.toIntLatitude
+import dev.skynomads.beerouter.osm.toIntLongitude
+import org.maplibre.spatialk.geojson.Position
 import kotlin.math.abs
 import kotlin.math.atan2
 import kotlin.math.sqrt
@@ -48,6 +51,17 @@ public class CheapAngleMeter {
         return offset + sinp * (57.4539 + s2 * (9.57565 + s2 * (4.30904 + s2 * 2.56491)))
     }
 
+    public fun calcAngle(p0: Position, p1: Position, p2: Position): Double {
+        return calcAngle(
+            p0.longitude.toIntLongitude(),
+            p0.latitude.toIntLatitude(),
+            p1.longitude.toIntLongitude(),
+            p1.latitude.toIntLatitude(),
+            p2.longitude.toIntLongitude(),
+            p2.latitude.toIntLatitude()
+        )
+    }
+
     public companion object {
         @JvmStatic
         public fun getAngle(lon1: Int, lat1: Int, lon2: Int, lat2: Int): Double {
@@ -62,6 +76,16 @@ public class CheapAngleMeter {
         public fun getDirection(lon1: Int, lat1: Int, lon2: Int, lat2: Int): Double {
             val res: Double = getAngle(lon1, lat1, lon2, lat2)
             return normalize(res)
+        }
+
+        @JvmStatic
+        public fun getDirection(p1: Position, p2: Position): Double {
+            return getDirection(
+                p1.longitude.toIntLongitude(),
+                p1.latitude.toIntLatitude(),
+                p2.longitude.toIntLongitude(),
+                p2.latitude.toIntLatitude()
+            )
         }
 
         @JvmStatic

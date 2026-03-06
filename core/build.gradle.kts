@@ -21,6 +21,13 @@ kotlin {
         compilerOptions {
             jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
         }
+        testRuns.configureEach {
+            executionTask.configure {
+                javaLauncher.set(javaToolchains.launcherFor {
+                    languageVersion.set(JavaLanguageVersion.of(21))
+                })
+            }
+        }
     }
 
     linuxX64()
@@ -58,6 +65,10 @@ kotlin {
             }
         }
     }
+}
+
+tasks.withType<JavaCompile> {
+    options.release.set(21)
 }
 
 tasks.withType<Test> {

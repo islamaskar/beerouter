@@ -7,6 +7,8 @@ import dev.skynomads.beerouter.mapaccess.OsmLink
 import dev.skynomads.beerouter.mapaccess.OsmNode
 import dev.skynomads.beerouter.mapaccess.OsmNodePairSet
 import dev.skynomads.beerouter.mapaccess.OsmPos
+import dev.skynomads.beerouter.osm.toIntLatitude
+import dev.skynomads.beerouter.osm.toIntLongitude
 import dev.skynomads.beerouter.router.OsmTrack.OsmPathElementHolder
 import org.maplibre.spatialk.geojson.Position
 import dev.skynomads.beerouter.util.CheapAngleMeter.Companion.getDifferenceFromDirection
@@ -64,7 +66,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) : Thread(
         try {
             if (routingContext.allowSamewayback) {
                 if (waypoints.size == 2) {
-                    val onn = OsmNodeNamed(OsmNode(waypoints[0].iLon, waypoints[0].iLat)).apply {
+                    val onn = OsmNodeNamed(OsmNode(waypoints[0].position)).apply {
                         name = "to"
                     }
                     waypoints.add(onn)
@@ -75,8 +77,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) : Thread(
                         // System.out.println("back " + waypoints.get(i));
                         val onn = OsmNodeNamed(
                             OsmNode(
-                                waypoints[i].iLon,
-                                waypoints[i].iLat
+                                waypoints[i].position
                             )
                         ).apply { name = "via" }
                         newpoints.add(onn)
@@ -136,16 +137,16 @@ public class RoutingEngine(private val routingContext: RoutingContext) : Thread(
         guideTrack = OsmTrack().apply {
             addNode(
                 OsmPathElement.create(
-                    wpt1.node2!!.iLon,
-                    wpt1.node2!!.iLat,
+                    wpt1.node2!!.position.longitude.toIntLongitude(),
+                    wpt1.node2!!.position.latitude.toIntLatitude(),
                     0.toShort(),
                     null
                 )
             )
             addNode(
                 OsmPathElement.create(
-                    wpt1.node1!!.iLon,
-                    wpt1.node1!!.iLat,
+                    wpt1.node1!!.position.longitude.toIntLongitude(),
+                    wpt1.node1!!.position.latitude.toIntLatitude(),
                     0.toShort(),
                     null
                 )
@@ -154,15 +155,15 @@ public class RoutingEngine(private val routingContext: RoutingContext) : Thread(
 
         matchedWaypoints = mutableListOf()
         val wp1 = MatchedWaypoint().apply {
-            crosspoint = OsmNode(wpt1.node1!!.iLon, wpt1.node1!!.iLat)
-            node1 = OsmNode(wpt1.node1!!.iLon, wpt1.node1!!.iLat)
-            node2 = OsmNode(wpt1.node2!!.iLon, wpt1.node2!!.iLat)
+            crosspoint = OsmNode(wpt1.node1!!.position)
+            node1 = OsmNode(wpt1.node1!!.position)
+            node2 = OsmNode(wpt1.node2!!.position)
         }
         matchedWaypoints.add(wp1)
         val wp2 = MatchedWaypoint().apply {
-            crosspoint = OsmNode(wpt1.node2!!.iLon, wpt1.node2!!.iLat)
-            node1 = OsmNode(wpt1.node1!!.iLon, wpt1.node1!!.iLat)
-            node2 = OsmNode(wpt1.node2!!.iLon, wpt1.node2!!.iLat)
+            crosspoint = OsmNode(wpt1.node2!!.position)
+            node1 = OsmNode(wpt1.node1!!.position)
+            node2 = OsmNode(wpt1.node2!!.position)
         }
         matchedWaypoints.add(wp2)
 
@@ -220,8 +221,8 @@ public class RoutingEngine(private val routingContext: RoutingContext) : Thread(
 
         if (routingContext.allowSamewayback) {
             val pos = destination(
-                waypoints[0].iLon,
-                waypoints[0].iLat,
+                waypoints[0].position.longitude.toIntLongitude(),
+                waypoints[0].position.latitude.toIntLatitude(),
                 searchRadius,
                 direction
             )
@@ -256,8 +257,8 @@ public class RoutingEngine(private val routingContext: RoutingContext) : Thread(
         for (i in 1..<points) {
             val anAngle = 90 - (180.0 * i / points)
             val pos = destination(
-                waypoints[0].iLon,
-                waypoints[0].iLat,
+                waypoints[0].position.longitude.toIntLongitude(),
+                waypoints[0].position.latitude.toIntLatitude(),
                 searchRadius,
                 startAngle - anAngle
             )
@@ -307,7 +308,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) : Thread(
             val listOne = mutableListOf<OsmNodeNamed>()
 
             for (a in 45..315 step 90) {
-                val pos = destination(wp.iLon, wp.iLat, searchRadius * 1.5, a.toDouble())
+                val pos = destination(wp.position.longitude.toIntLongitude(), wp.position.latitude.toIntLatitude(), searchRadius * 1.5, a.toDouble())
                 val onn = OsmNodeNamed(OsmNode(pos[0], pos[1])).apply { name = "via$a" }
                 listOne.add(onn)
 
@@ -336,10 +337,10 @@ public class RoutingEngine(private val routingContext: RoutingContext) : Thread(
             var maxlat = Int.MIN_VALUE
             var minlat = Int.MAX_VALUE
             for (on in listOne) {
-                maxlon = max(on.iLon, maxlon)
-                minlon = min(on.iLon, minlon)
-                maxlat = max(on.iLat, maxlat)
-                minlat = min(on.iLat, minlat)
+                maxlon = max(on.position.longitude.toIntLongitude(), maxlon)
+                minlon = min(on.position.longitude.toIntLongitude(), minlon)
+                maxlat = max(on.position.latitude.toIntLatitude(), maxlat)
+                minlat = min(on.position.latitude.toIntLatitude(), minlat)
             }
 
             val searchRect = OsmNogoPolygon(true).apply {
@@ -356,10 +357,10 @@ public class RoutingEngine(private val routingContext: RoutingContext) : Thread(
                 rc.ai!!.numRiver = numRiver
 
                 rc.ai!!.polygon = OsmNogoPolygon(true)
-                rc.ai!!.polygon!!.addVertex(wp.iLon, wp.iLat)
-                rc.ai!!.polygon!!.addVertex(listOne[a].iLon, listOne[a].iLat)
-                if (a == 3) rc.ai!!.polygon!!.addVertex(listOne[0].iLon, listOne[0].iLat)
-                else rc.ai!!.polygon!!.addVertex(listOne[a + 1].iLon, listOne[a + 1].iLat)
+                rc.ai!!.polygon!!.addVertex(wp.position.longitude.toIntLongitude(), wp.position.latitude.toIntLatitude())
+                rc.ai!!.polygon!!.addVertex(listOne[a].position.longitude.toIntLongitude(), listOne[a].position.latitude.toIntLatitude())
+                if (a == 3) rc.ai!!.polygon!!.addVertex(listOne[0].position.longitude.toIntLongitude(), listOne[0].position.latitude.toIntLatitude())
+                else rc.ai!!.polygon!!.addVertex(listOne[a + 1].position.longitude.toIntLongitude(), listOne[a + 1].position.latitude.toIntLatitude())
 
                 ais.add(rc.ai!!)
             }
@@ -751,18 +752,18 @@ public class RoutingEngine(private val routingContext: RoutingContext) : Thread(
     private suspend fun getExtraSegment(start: OsmPathElement, end: OsmPathElement): OsmTrack? {
         val wptlist: MutableList<MatchedWaypoint?> = ArrayList()
         val wpt1 = MatchedWaypoint()
-        wpt1.waypoint = OsmNode(start.iLon, start.iLat)
+        wpt1.waypoint = OsmNode(start.position)
         wpt1.name = "wptx1"
-        wpt1.crosspoint = OsmNode(start.iLon, start.iLat)
-        wpt1.node1 = OsmNode(start.iLon, start.iLat)
-        wpt1.node2 = OsmNode(end.iLon, end.iLat)
+        wpt1.crosspoint = OsmNode(start.position)
+        wpt1.node1 = OsmNode(start.position)
+        wpt1.node2 = OsmNode(end.position)
         wptlist.add(wpt1)
         val wpt2 = MatchedWaypoint()
-        wpt2.waypoint = OsmNode(end.iLon, end.iLat)
+        wpt2.waypoint = OsmNode(end.position)
         wpt2.name = "wptx2"
-        wpt2.crosspoint = OsmNode(end.iLon, end.iLat)
-        wpt2.node2 = OsmNode(start.iLon, start.iLat)
-        wpt2.node1 = OsmNode(end.iLon, end.iLat)
+        wpt2.crosspoint = OsmNode(end.position)
+        wpt2.node2 = OsmNode(start.position)
+        wpt2.node1 = OsmNode(end.position)
         wptlist.add(wpt2)
 
         val mwp1 = wptlist[0]
@@ -964,7 +965,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) : Thread(
         tt.cost = tt.nodes[tt.nodes.size - 1].cost
         t.cost = t.nodes[t.nodes.size - 1].cost
 
-        startWp.correctedpoint = OsmNode(ptStart.iLon, ptStart.iLat)
+        startWp.correctedpoint = OsmNode(ptStart.position)
 
         return (t.nodes.size)
     }
@@ -987,13 +988,10 @@ public class RoutingEngine(private val routingContext: RoutingContext) : Thread(
         if (ourSize > 0) {
             tt.nodes[ourSize - 1]
             for (node in routingContext.poipoints) {
-                val lon0 = tt.nodes[ourSize - 2].iLon
-                val lat0 = tt.nodes[ourSize - 2].iLat
-                val lon1: Int = startWp.crosspoint!!.iLon
-                val lat1 = startWp.crosspoint!!.iLat
-                val lon2: Int = node.iLon
-                val lat2 = node.iLat
-                routingContext.anglemeter.calcAngle(lon0, lat0, lon1, lat1, lon2, lat2)
+                val p0 = tt.nodes[ourSize - 2].position
+                val p1 = startWp.crosspoint!!.position
+                val p2 = node.position
+                routingContext.anglemeter.calcAngle(p0, p1, p2)
                 val dist = node.calcDistance(startWp.crosspoint!!)
                 if (dist < routingContext.global.waypointCatchingRange) return false
             }
@@ -1036,9 +1034,9 @@ public class RoutingEngine(private val routingContext: RoutingContext) : Thread(
                     tmpStart = t.nodes[0]
                 } else {
                     val dirback =
-                        getDirection(tmpStart!!.iLon, tmpStart.iLat, tmpback.iLon, tmpback.iLat)
+                        getDirection(tmpStart!!.position, tmpback.position)
                     val dirfore =
-                        getDirection(tmpStart.iLon, tmpStart.iLat, tmpfore.iLon, tmpfore.iLat)
+                        getDirection(tmpStart.position, tmpfore.position)
                     val dirdiff = getDifferenceFromDirection(dirback, dirfore)
                     // walking wrong direction
                     if (dirdiff > 60 && !bBackRoundAbout && !bForeRoundAbout) break
@@ -1181,7 +1179,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) : Thread(
             t.cost = t.nodes[t.nodes.size - 1].cost
 
             // fill to correctedpoint
-            startWp.correctedpoint = OsmNode(newJunction.iLon, newJunction.iLat)
+            startWp.correctedpoint = OsmNode(newJunction.position)
 
             return true
         }
@@ -1225,13 +1223,10 @@ public class RoutingEngine(private val routingContext: RoutingContext) : Thread(
                 }
 
                 else -> {
-                    val lon0 = t.nodes[i - 2].iLon
-                    val lat0 = t.nodes[i - 2].iLat
-                    val lon1 = t.nodes[i - 1].iLon
-                    val lat1 = t.nodes[i - 1].iLat
-                    val lon2 = t.nodes[i].iLon
-                    val lat2 = t.nodes[i].iLat
-                    angle = routingContext.anglemeter.calcAngle(lon0, lat0, lon1, lat1, lon2, lat2)
+                    val p0 = t.nodes[i - 2].position
+                    val p1 = t.nodes[i - 1].position
+                    val p2 = t.nodes[i].position
+                    angle = routingContext.anglemeter.calcAngle(p0, p1, p2)
                     nLast = t.nodes[i - 1]
                     dist = nLast.calcDistance(n)
                 }
@@ -1313,7 +1308,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) : Thread(
      */
     private fun elevationFilter(n: OsmPos): Double {
         if (nodesCache != null) {
-            val r = nodesCache!!.getElevationType(n.iLon, n.iLat)
+            val r = nodesCache!!.getElevationType(n.position.longitude.toIntLongitude(), n.position.latitude.toIntLatitude())
             if (r == 1) return -5.0
         }
         return -10.0
@@ -1352,7 +1347,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) : Thread(
                         nmw.apply {
                             waypoint = onn
                             name = onn.name
-                            crosspoint = OsmNode(wp.waypoint!!.iLon, wp.waypoint!!.iLat)
+                            crosspoint = OsmNode(wp.waypoint!!.position)
                             type = MatchedWaypoint.Type.DIRECT
                         }
                         onn = OsmNodeNamed(wp.crosspoint!!).apply { name = "${wp.name}_add" }
@@ -1364,9 +1359,9 @@ public class RoutingEngine(private val routingContext: RoutingContext) : Thread(
                         val onn = OsmNodeNamed(wp.crosspoint!!).apply { name = "${wp.name}_add" }
                         nmw.apply {
                             waypoint = onn
-                            crosspoint = OsmNode(wp.crosspoint!!.iLon, wp.crosspoint!!.iLat)
-                            node1 = OsmNode(wp.node1!!.iLon, wp.node1!!.iLat)
-                            node2 = OsmNode(wp.node2!!.iLon, wp.node2!!.iLat)
+                            crosspoint = OsmNode(wp.crosspoint!!.position)
+                            node1 = OsmNode(wp.node1!!.position)
+                            node2 = OsmNode(wp.node2!!.position)
                             type = MatchedWaypoint.Type.DIRECT
                             name = wp.name
                         }
@@ -1382,14 +1377,14 @@ public class RoutingEngine(private val routingContext: RoutingContext) : Thread(
                                 this.name = onn2.name
                                 this.waypoint = onn2
                                 this.crosspoint =
-                                    OsmNode(nmw.crosspoint!!.iLon, nmw.crosspoint!!.iLat)
-                                this.node1 = OsmNode(nmw.node1!!.iLon, nmw.node1!!.iLat)
-                                this.node2 = OsmNode(nmw.node2!!.iLon, nmw.node2!!.iLat)
+                                    OsmNode(nmw.crosspoint!!.position)
+                                this.node1 = OsmNode(nmw.node1!!.position)
+                                this.node2 = OsmNode(nmw.node2!!.position)
                                 this.type = MatchedWaypoint.Type.SHAPING
                             }
                             waypoints.add(emw)
                         }
-                        wp.crosspoint = OsmNode(wp.waypoint!!.iLon, wp.waypoint!!.iLat)
+                        wp.crosspoint = OsmNode(wp.waypoint!!.position)
                     }
                 } else {
                     waypoints.add(wp)

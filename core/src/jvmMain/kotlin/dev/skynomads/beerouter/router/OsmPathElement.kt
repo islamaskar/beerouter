@@ -1,6 +1,9 @@
 package dev.skynomads.beerouter.router
 
 import dev.skynomads.beerouter.mapaccess.OsmPos
+import dev.skynomads.beerouter.osm.toIntLatitude
+import dev.skynomads.beerouter.osm.toIntLongitude
+import dev.skynomads.beerouter.osm.toOsmId
 import dev.skynomads.beerouter.osm.toDoubleLatitude
 import dev.skynomads.beerouter.osm.toDoubleLongitude
 import dev.skynomads.beerouter.util.CheapRuler.distance
@@ -49,14 +52,13 @@ public class OsmPathElement protected constructor() : OsmPos {
         }
     }
 
-    override public val idFromPos: Long
-        get() = (iLon.toLong()) shl 32 or iLat.toLong()
+    public override val idFromPos: Long
+        get() = position.toOsmId()
 
-    override public fun calcDistance(p: OsmPos): Int {
+    public override fun calcDistance(p: OsmPos): Int {
         return max(
             1.0, distance(
-                this.iLon,
-                this.iLat, p.iLon, p.iLat
+                this.position, p.position
             ).roundToInt().toDouble()
         ).toInt()
     }
@@ -64,17 +66,19 @@ public class OsmPathElement protected constructor() : OsmPos {
     public var origin: OsmPathElement? = null
 
     override public fun toString(): String {
-        return iLon.toString() + "_" + this.iLat
+        return position.longitude.toIntLongitude()
+            .toString() + "_" + position.latitude.toIntLatitude()
     }
 
     public fun positionEquals(e: OsmPathElement): Boolean {
-        return this.iLat == e.iLat && this.iLon == e.iLon
+        return this.position.longitude.toIntLongitude() == e.position.longitude.toIntLongitude() &&
+                this.position.latitude.toIntLatitude() == e.position.latitude.toIntLatitude()
     }
 
     @Throws(IOException::class)
     public fun writeToStream(dos: DataOutput) {
-        dos.writeInt(this.iLat)
-        dos.writeInt(this.iLon)
+        dos.writeInt(this.position.latitude.toIntLatitude())
+        dos.writeInt(this.position.longitude.toIntLongitude())
         dos.writeShort(sElev.toInt())
         dos.writeInt(cost)
     }
@@ -83,13 +87,23 @@ public class OsmPathElement protected constructor() : OsmPos {
         // construct a path element from a path
         internal fun create(path: OsmPath): OsmPathElement {
             val n = path.targetNode!!
-            val pe: OsmPathElement = create(n.iLon, n.iLat, n.sElev, path.originElement)
+            val pe: OsmPathElement = create(
+                n.position.longitude.toIntLongitude(),
+                n.position.latitude.toIntLatitude(),
+                n.sElev,
+                path.originElement
+            )
             pe.cost = path.cost
             pe.message = path.message
             return pe
         }
 
-        public fun create(ilon: Int, ilat: Int, selev: Short, origin: OsmPathElement?): OsmPathElement {
+        public fun create(
+            ilon: Int,
+            ilat: Int,
+            selev: Short,
+            origin: OsmPathElement?
+        ): OsmPathElement {
             val pe = OsmPathElement()
             pe.position = Position(
                 ilon.toDoubleLongitude(),

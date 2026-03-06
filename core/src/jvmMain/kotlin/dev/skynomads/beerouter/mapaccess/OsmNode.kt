@@ -2,6 +2,8 @@ package dev.skynomads.beerouter.mapaccess
 
 import dev.skynomads.beerouter.codec.MicroCache
 import dev.skynomads.beerouter.codec.MicroCache2
+import dev.skynomads.beerouter.osm.toIntLatitude
+import dev.skynomads.beerouter.osm.toIntLongitude
 import dev.skynomads.beerouter.osm.toDoubleLatitude
 import dev.skynomads.beerouter.osm.toDoubleLongitude
 import dev.skynomads.beerouter.osm.toOsmId
@@ -97,12 +99,12 @@ public open class OsmNode : OsmLink, OsmPos {
     override fun calcDistance(p: OsmPos): Int {
         return max(
             1,
-            distance(iLon, iLat, p.iLon, p.iLat).roundToInt()
+            distance(position, p.position).roundToInt()
         )
     }
 
     override fun toString(): String {
-        return "n_" + (iLon - 180000000) + "_" + (iLat - 90000000)
+        return "n_" + (position.longitude.toIntLongitude() - 180000000) + "_" + (position.latitude.toIntLatitude() - 90000000)
     }
 
     public fun parseNodeBody(mc: MicroCache, hollowNodes: OsmNodesMap, expCtxWay: IByteArrayUnifier) {
@@ -134,8 +136,8 @@ public open class OsmNode : OsmLink, OsmPos {
         while (mc.hasMoreData()) {
             // read link data
             val endPointer = mc.endPointer
-            val linklon = iLon + mc.readVarLengthSigned()
-            val linklat = iLat + mc.readVarLengthSigned()
+            val linklon = position.longitude.toIntLongitude() + mc.readVarLengthSigned()
+            val linklat = position.latitude.toIntLatitude() + mc.readVarLengthSigned()
             val sizecode = mc.readVarLengthUnsigned()
             val isReverse = (sizecode and 1) != 0
             var description: ByteArray? = null
@@ -158,7 +160,7 @@ public open class OsmNode : OsmLink, OsmPos {
         hollowNodes: OsmNodesMap,
         isReverse: Boolean
     ) {
-        if (linklon == iLon && linklat == iLat) {
+        if (linklon == position.longitude.toIntLongitude() && linklat == position.latitude.toIntLatitude()) {
             return  // skip self-ref
         }
 
@@ -169,7 +171,7 @@ public open class OsmNode : OsmLink, OsmPos {
         var l = firstlink
         while (l != null) {
             val t = l.getTarget(this)
-            if (t!!.iLon == linklon && t.iLat == linklat) {
+            if (t!!.position.longitude.toIntLongitude() == linklon && t.position.latitude.toIntLatitude() == linklat) {
                 tn = t
                 if (isReverse || (l.descriptionBitmap == null && !l.isReverse(this))) {
                     link = l // the correct one that needs our data
@@ -262,7 +264,8 @@ public open class OsmNode : OsmLink, OsmPos {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is OsmNode) return false
-        return other.iLon == iLon && other.iLat == iLat
+        return other.position.longitude.toIntLongitude() == position.longitude.toIntLongitude() &&
+               other.position.latitude.toIntLatitude() == position.latitude.toIntLatitude()
     }
 
     override fun hashCode(): Int {

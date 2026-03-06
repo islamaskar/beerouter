@@ -10,6 +10,8 @@ import dev.skynomads.beerouter.mapaccess.OsmLink
 import dev.skynomads.beerouter.mapaccess.OsmNode
 import dev.skynomads.beerouter.mapaccess.OsmNodesMap
 import dev.skynomads.beerouter.mapaccess.PhysicalFile
+import dev.skynomads.beerouter.osm.toIntLatitude
+import dev.skynomads.beerouter.osm.toIntLongitude
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.BufferedInputStream
@@ -52,8 +54,8 @@ public class AreaReader {
         for (idxLat in -scale..scale) {
             for (idxLon in -scale..scale) {
                 if (ignoreCenter(maxscale, idxLon, idxLat)) continue
-                val tmplon: Int = wp.iLon + cellsize * idxLon
-                val tmplat = wp.iLat + cellsize * idxLat
+                val tmplon: Int = wp.position.longitude.toIntLongitude() + cellsize * idxLon
+                val tmplat = wp.position.latitude.toIntLatitude() + cellsize * idxLat
                 val lonDegree = tmplon / 1000000
                 val latDegree = tmplat / 1000000
                 val lonMod5 = lonDegree % 5
@@ -168,7 +170,7 @@ public class AreaReader {
 
                     pf = PhysicalFile(file, dataBuffers, -1, -1)
                 }
-                if (getDirectData(pf!!, dataBuffers!!, n.iLon, n.iLat, rc, expctxWay, ais)) used++
+                if (getDirectData(pf!!, dataBuffers!!, n.position.longitude.toIntLongitude(), n.position.latitude.toIntLatitude(), rc, expctxWay, ais)) used++
             }
         } catch (e: Exception) {
             logger.error("error after used={} / count={}", used, count, e)
@@ -232,8 +234,8 @@ public class AreaReader {
 
                                     for (ai in ais) {
                                         if (ai.polygon!!.isWithin(
-                                                node.iLon.toLong(),
-                                                node.iLat.toLong()
+                                                node.position.longitude.toIntLongitude().toLong(),
+                                                node.position.latitude.toIntLatitude().toLong()
                                             )
                                         ) {
                                             ai.checkAreaInfo(
@@ -295,8 +297,8 @@ public class AreaReader {
         try {
             dis = DataInputStream(BufferedInputStream(FileInputStream(fai)))
             ep = readFromStream(dis)
-            if (abs(ep.waypoint!!.iLon - wp.waypoint!!.iLon) > 500 &&
-                abs(ep.waypoint!!.iLat - wp.waypoint!!.iLat) > 500
+            if (abs(ep.waypoint!!.position.longitude.toIntLongitude() - wp.waypoint!!.position.longitude.toIntLongitude()) > 500 &&
+                abs(ep.waypoint!!.position.latitude.toIntLatitude() - wp.waypoint!!.position.latitude.toIntLatitude()) > 500
             ) {
                 return
             }

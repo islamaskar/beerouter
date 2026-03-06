@@ -6,6 +6,8 @@ import dev.skynomads.beerouter.codec.StatCoderContext
 import dev.skynomads.beerouter.codec.TagValueCoder
 import dev.skynomads.beerouter.codec.TagValueValidator
 import dev.skynomads.beerouter.codec.WaypointMatcher
+import dev.skynomads.beerouter.osm.toIntLatitude
+import dev.skynomads.beerouter.osm.toIntLongitude
 import dev.skynomads.beerouter.util.ByteDataWriter
 import org.maplibre.spatialk.geojson.Position
 
@@ -64,8 +66,8 @@ public class DirectWeaver(
         var selev = 0
         for (n in 0..<size) { // loop over nodes
             val node = nodes[n]
-            val ilon = node.iLon
-            val ilat = node.iLat
+            val ilon = node.position.longitude.toIntLongitude()
+            val ilat = node.position.latitude.toIntLatitude()
 
             // future escapes (turn restrictions?)
             var trExceptions: Short = 0
@@ -112,8 +114,8 @@ public class DirectWeaver(
 
                 var isReverse = false
                 if (nodeIdx != n) { // internal (forward-) link
-                    dlonRemaining = nodes[nodeIdx].iLon - ilon
-                    dlatRemaining = nodes[nodeIdx].iLat - ilat
+                    dlonRemaining = nodes[nodeIdx].position.longitude.toIntLongitude() - ilon
+                    dlatRemaining = nodes[nodeIdx].position.latitude.toIntLatitude() - ilat
                 } else {
                     isReverse = bc.decodeBit()
                     dlonRemaining = extLonDiff.decodeSignedValue()

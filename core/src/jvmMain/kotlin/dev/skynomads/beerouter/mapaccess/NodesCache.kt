@@ -9,6 +9,8 @@ import dev.skynomads.beerouter.codec.DataBuffers
 import dev.skynomads.beerouter.codec.MicroCache
 import dev.skynomads.beerouter.codec.WaypointMatcher
 import dev.skynomads.beerouter.expressions.BExpressionContextWay
+import dev.skynomads.beerouter.osm.toIntLatitude
+import dev.skynomads.beerouter.osm.toIntLongitude
 import java.io.File
 import java.io.IOException
 
@@ -205,7 +207,7 @@ public class NodesCache(
     public fun obtainNonHollowNode(node: OsmNode): Boolean {
         if (!node.isHollow) return true
 
-        val segment = getSegmentFor(node.iLon, node.iLat)
+        val segment = getSegmentFor(node.position.longitude.toIntLongitude(), node.position.latitude.toIntLatitude())
         if (segment == null) {
             return false
         }
@@ -276,7 +278,7 @@ public class NodesCache(
     }
 
     public fun getGraphNode(template: OsmNode): OsmNode {
-        val graphNode = OsmNode(template.iLon, template.iLat)
+        val graphNode = OsmNode(template.position)
         graphNode.setHollow()
         val existing = nodesMap.put(graphNode)
         if (existing == null) {
@@ -314,7 +316,7 @@ public class NodesCache(
             if (mwp.crosspoint == null) {
                 if (unmatchedWaypoints.size > 1 && i == unmatchedWaypoints.size - 1 && unmatchedWaypoints[i - 1].type == MatchedWaypoint.Type.DIRECT
                 ) {
-                    mwp.crosspoint = OsmNode(mwp.waypoint!!.iLon, mwp.waypoint!!.iLat)
+                    mwp.crosspoint = OsmNode(mwp.waypoint!!.position)
                     mwp.type = MatchedWaypoint.Type.DIRECT
                 } else {
                     // do not break here throw new IllegalArgumentException(mwp.name + "-position not mapped in existing datafile");
@@ -323,7 +325,7 @@ public class NodesCache(
             }
             if (unmatchedWaypoints.size > 1 && i == unmatchedWaypoints.size - 1 && unmatchedWaypoints[i - 1].type == MatchedWaypoint.Type.DIRECT
             ) {
-                mwp.crosspoint = OsmNode(mwp.waypoint!!.iLon, mwp.waypoint!!.iLat)
+                mwp.crosspoint = OsmNode(mwp.waypoint!!.position)
                 mwp.type = MatchedWaypoint.Type.DIRECT
             }
         }
@@ -338,16 +340,16 @@ public class NodesCache(
     ) {
         firstFileAccessFailed = false
         firstFileAccessName = null
-        loadSegmentFor(n.iLon, n.iLat)
+        loadSegmentFor(n.position.longitude.toIntLongitude(), n.position.latitude.toIntLatitude())
         require(!firstFileAccessFailed) { "datafile $firstFileAccessName not found" }
         var scale = 1
         while (scale < maxscale) {
             for (idxLat in -scale..scale) for (idxLon in -scale..scale) {
                 if (idxLon != 0 || idxLat != 0) {
-                    loadSegmentFor(n.iLon + d * idxLon, n.iLat + d * idxLat)
+                    loadSegmentFor(n.position.longitude.toIntLongitude() + d * idxLon, n.position.latitude.toIntLatitude() + d * idxLat)
                 }
             }
-            if (bUseDynamicRange && waypointMatcher!!.hasMatch(n.iLon, n.iLat)) break
+            if (bUseDynamicRange && waypointMatcher!!.hasMatch(n.position.longitude.toIntLongitude(), n.position.latitude.toIntLatitude())) break
             scale++
         }
     }

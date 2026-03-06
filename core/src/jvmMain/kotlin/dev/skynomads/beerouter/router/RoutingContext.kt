@@ -13,6 +13,8 @@ import dev.skynomads.beerouter.mapaccess.GeometryDecoder
 import dev.skynomads.beerouter.mapaccess.MatchedWaypoint
 import dev.skynomads.beerouter.mapaccess.OsmLink
 import dev.skynomads.beerouter.mapaccess.OsmNode
+import dev.skynomads.beerouter.osm.toIntLatitude
+import dev.skynomads.beerouter.osm.toIntLongitude
 import dev.skynomads.beerouter.util.CheapAngleMeter
 import dev.skynomads.beerouter.util.CheapRuler.getLonLatToMeterScales
 import java.io.File
@@ -252,9 +254,9 @@ public class RoutingContext(
             for (wp in waypoints) {
                 if (wp.calcDistance(nogo) < nogo.radius.toInt()
                     && (nogo !is OsmNogoPolygon || (if (nogo.isClosed)
-                        nogo.isWithin(wp.iLon.toLong(), wp.iLat.toLong())
+                        nogo.isWithin(wp.position.longitude.toIntLongitude().toLong(), wp.position.latitude.toIntLatitude().toLong())
                     else
-                        nogo.isOnPolyline(wp.iLon.toLong(), wp.iLat.toLong())))
+                        nogo.isOnPolyline(wp.position.longitude.toIntLongitude().toLong(), wp.position.latitude.toIntLatitude().toLong())))
                 ) {
                     goodGuy = false
                 }
@@ -279,9 +281,9 @@ public class RoutingContext(
             for (nogo in nogopoints) {
                 if (nogo.nogoWeight.isNaN()
                     && wp!!.calcDistance(nogo) < nogo.radius && (nogo !is OsmNogoPolygon || (if (nogo.isClosed)
-                        nogo.isWithin(wp.iLon.toLong(), wp.iLat.toLong())
+                        nogo.isWithin(wp.position.longitude.toIntLongitude().toLong(), wp.position.latitude.toIntLatitude().toLong())
                     else
-                        nogo.isOnPolyline(wp.iLon.toLong(), wp.iLat.toLong())))
+                        nogo.isOnPolyline(wp.position.longitude.toIntLongitude().toLong(), wp.position.latitude.toIntLatitude().toLong())))
                 ) {
                     isInsideNogo = true
                     break
@@ -323,9 +325,9 @@ public class RoutingContext(
                 val dist = wp.calcDistance(nogo)
                 if (dist < nogo.radius
                     && (nogo !is OsmNogoPolygon || (if (nogo.isClosed)
-                        nogo.isWithin(wp.iLon.toLong(), wp.iLat.toLong())
+                        nogo.isWithin(wp.position.longitude.toIntLongitude().toLong(), wp.position.latitude.toIntLatitude().toLong())
                     else
-                        nogo.isOnPolyline(wp.iLon.toLong(), wp.iLat.toLong())))
+                        nogo.isOnPolyline(wp.position.longitude.toIntLongitude().toLong(), wp.position.latitude.toIntLatitude().toLong())))
                 ) {
                     continue
                 }
@@ -342,8 +344,8 @@ public class RoutingContext(
             val n = if (nogopoints.isEmpty()) 0 else nogopoints.size
             for (i in 0..<n) {
                 val nogo = nogopoints[i]
-                cs[0] += nogo.iLon
-                cs[1] += nogo.iLat.toLong()
+                cs[0] += nogo.position.longitude.toIntLongitude()
+                cs[1] += nogo.position.latitude.toIntLatitude()
                 // 10 is an arbitrary constant to get sub-integer precision in the checksum
                 cs[2] += (nogo.radius * 10.0).toLong()
             }
@@ -410,10 +412,12 @@ public class RoutingContext(
         if (!nogopoints.isEmpty() && d > 0.0) {
             for (ngidx in nogopoints.indices) {
                 val nogo = nogopoints[ngidx]
-                val x1: Double = (lon1 - nogo.iLon) * dlon2m
-                val y1 = (lat1 - nogo.iLat) * dlat2m
-                val x2: Double = (lon2 - nogo.iLon) * dlon2m
-                val y2 = (lat2 - nogo.iLat) * dlat2m
+                val nogoLon = nogo.position.longitude.toIntLongitude()
+                val nogoLat = nogo.position.latitude.toIntLatitude()
+                val x1: Double = (lon1 - nogoLon) * dlon2m
+                val y1 = (lat1 - nogoLat) * dlat2m
+                val x2: Double = (lon2 - nogoLon) * dlon2m
+                val y2 = (lat2 - nogoLat) * dlat2m
                 val r12 = x1 * x1 + y1 * y1
                 val r22 = x2 * x2 + y2 * y2
                 var radius = abs(if (r12 < r22) y1 * dx - x1 * dy else y2 * dx - x2 * dy) / d
@@ -475,8 +479,8 @@ public class RoutingContext(
                             wayfraction = -s2 / (d * d)
                             val xm = x2 - wayfraction * dx
                             val ym = y2 - wayfraction * dy
-                            ilonshortest = (xm / dlon2m + nogo.iLon).toInt()
-                            ilatshortest = (ym / dlat2m + nogo.iLat).toInt()
+                            ilonshortest = (xm / dlon2m + nogoLon).toInt()
+                            ilatshortest = (ym / dlat2m + nogoLat).toInt()
                         } else if (s1 > s2) {
                             wayfraction = 0.0
                             ilonshortest = lon2

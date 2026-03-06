@@ -5,6 +5,9 @@
  */
 package dev.skynomads.beerouter.router
 
+import dev.skynomads.beerouter.osm.toIntLatitude
+import dev.skynomads.beerouter.osm.toIntLongitude
+
 internal class KinematicPrePath : OsmPrePath() {
     var angle: Double = 0.0
     var priorityclassifier: Int = 0
@@ -27,8 +30,8 @@ internal class KinematicPrePath : OsmPrePath() {
         val lat0 = origin.originLat
 
         val p1 = sourceNode!!
-        val lon1 = p1.iLon
-        val lat1 = p1.iLat
+        val lon1 = p1.position.longitude.toIntLongitude()
+        val lat1 = p1.position.latitude.toIntLatitude()
 
         val isReverse = link!!.isReverse(sourceNode)
 
@@ -44,8 +47,8 @@ internal class KinematicPrePath : OsmPrePath() {
         val lat2: Int
 
         if (transferNode == null) {
-            lon2 = targetNode!!.iLon
-            lat2 = targetNode!!.iLat
+            lon2 = targetNode!!.position.longitude.toIntLongitude()
+            lat2 = targetNode!!.position.latitude.toIntLatitude()
         } else {
             lon2 = transferNode.ilon
             lat2 = transferNode.ilat

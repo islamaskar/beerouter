@@ -59,10 +59,8 @@ public class WaypointMatcherImpl(
             mwp.radius = maxDistance
             if (last != null && mwp.directionToNext == -1.0) {
                 last.directionToNext = getDirection(
-                    last.waypoint!!.iLon,
-                    last.waypoint!!.iLat,
-                    mwp.waypoint!!.iLon,
-                    mwp.waypoint!!.iLat
+                    last.waypoint!!.position,
+                    mwp.waypoint!!.position
                 )
             }
             last = mwp
@@ -73,10 +71,8 @@ public class WaypointMatcherImpl(
             last!!.directionToNext = -1.0
         } else {
             last!!.directionToNext = getDirection(
-                last.waypoint!!.iLon,
-                last.waypoint!!.iLat,
-                waypoints[lastidx].waypoint!!.iLon,
-                waypoints[lastidx].waypoint!!.iLat
+                last.waypoint!!.position,
+                waypoints[lastidx].waypoint!!.position
             )
         }
         maxWptIdx = waypoints.size - 1
@@ -158,8 +154,8 @@ public class WaypointMatcherImpl(
                     val wayfraction = -s2 / (d * d)
                     val xm = x2 - wayfraction * dx
                     val ym = y2 - wayfraction * dy
-                    val newLon = (xm / dlon2m + wp.iLon).toInt()
-                    val newLat = (ym / dlat2m + wp.iLat).toInt()
+                    val newLon = (xm / dlon2m + wpLon).toInt()
+                    val newLat = (ym / dlat2m + wpLat).toInt()
                     mwp.crosspoint!!.position = Position(
                         newLon.toDoubleLongitude(),
                         newLat.toDoubleLatitude(),
@@ -267,7 +263,7 @@ public class WaypointMatcherImpl(
 
     override public fun hasMatch(lon: Int, lat: Int): Boolean {
         for (mwp in waypoints) {
-            if (mwp.waypoint!!.iLon == lon && mwp.waypoint!!.iLat == lat &&
+            if (mwp.waypoint!!.position.longitude.toIntLongitude() == lon && mwp.waypoint!!.position.latitude.toIntLatitude() == lat &&
                 (mwp.radius < this.maxDistance || mwp.crosspoint != null)
             ) {
                 return true
