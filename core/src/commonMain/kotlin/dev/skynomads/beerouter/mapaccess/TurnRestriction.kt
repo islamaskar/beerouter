@@ -22,13 +22,9 @@ public data class TurnRestriction(
     private fun hasException(exception: RestrictionException): Boolean =
         (exceptions.toInt() and exception.bit) != 0
 
-    public fun exceptBikes(): Boolean {
-        return hasException(RestrictionException.BICYCLES)
-    }
+    public fun exceptBikes(): Boolean = hasException(RestrictionException.BICYCLES)
 
-    public fun exceptMotorcars(): Boolean {
-        return hasException(RestrictionException.MOTORCARS)
-    }
+    public fun exceptMotorcars(): Boolean = hasException(RestrictionException.MOTORCARS)
 
     override fun toString(): String {
         return "pos=$isPositive fromLon=$fromLon fromLat=$fromLat toLon=$toLon toLat=$toLat"

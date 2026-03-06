@@ -2,11 +2,8 @@ package dev.skynomads.beerouter.util
 
 public class ByteArrayUnifier(private val size: Int, validateImmutability: Boolean) : IByteArrayUnifier {
     private val byteArrayCache: Array<ByteArray?> = arrayOfNulls(size)
-    private var crcCrosscheck: IntArray? = null
-
-    init {
-        if (validateImmutability) crcCrosscheck = IntArray(size)
-    }
+    private val crcCrosscheck: IntArray = IntArray(size)
+    private val validateImmutabilityEnabled: Boolean = validateImmutability
 
     /**
      * Unify a byte array in order to reuse instances when possible.
@@ -24,21 +21,16 @@ public class ByteArrayUnifier(private val size: Int, validateImmutability: Boole
         val crc = Crc32.crc(ab, offset, len)
         val idx = (crc and 0xfffffff) % size
         val abc = byteArrayCache[idx]
-        if (abc != null && abc.size == len) {
-            var i = 0
-            while (i < len) {
-                if (ab[offset + i] != abc[i]) break
-                i++
-            }
-            if (i == len) return abc
+        if (abc != null && abc.size == len && (0 until len).all { ab[offset + it] == abc[it] }) {
+            return abc
         }
-        if (crcCrosscheck != null) {
+        if (validateImmutabilityEnabled) {
             val abold = byteArrayCache[idx]
             if (abold != null) {
                 val crcold = Crc32.crc(abold, 0, abold.size)
-                require(crcold == crcCrosscheck!![idx]) { "ByteArrayUnifier: immutablity validation failed!" }
+                require(crcold == crcCrosscheck[idx]) { "ByteArrayUnifier: immutablity validation failed!" }
             }
-            crcCrosscheck!![idx] = crc
+            crcCrosscheck[idx] = crc
         }
         val nab = ByteArray(len)
         ab.copyInto(nab, 0, offset, offset + len)

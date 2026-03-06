@@ -13,17 +13,20 @@ public class ReducedMedianFilter(size: Int) {
     }
 
     public fun addSample(weight: Double, value: Int) {
-        if (weight > 0.0) {
-            for (i in 0..<nsamples) {
-                if (values[i] == value) {
-                    weights[i] += weight
-                    return
-                }
-            }
-            weights[nsamples] = weight
-            values[nsamples] = value
-            nsamples++
+        if (weight <= 0.0) {
+            return
         }
+
+        for (i in 0..<nsamples) {
+            if (values[i] == value) {
+                weights[i] += weight
+                return
+            }
+        }
+
+        weights[nsamples] = weight
+        values[nsamples] = value
+        nsamples++
     }
 
     public fun calcEdgeReducedMedian(fraction: Double): Double {
@@ -41,9 +44,9 @@ public class ReducedMedianFilter(size: Int) {
     }
 
 
-    private fun removeEdgeWeight(excessWeight: Double, high: Boolean) {
-        var excessWeight = excessWeight
-        while (excessWeight > 0.0) {
+    private fun removeEdgeWeight(initialExcessWeight: Double, high: Boolean) {
+        var remainingExcessWeight = initialExcessWeight
+        while (remainingExcessWeight > 0.0) {
             // first pass to find minmax value
             var totalWeight = 0.0
             var minmax = 0
@@ -58,17 +61,17 @@ public class ReducedMedianFilter(size: Int) {
                 }
             }
 
-            require(!(totalWeight < excessWeight)) { "ups, not enough weight to remove" }
+            require(totalWeight >= remainingExcessWeight) { "ups, not enough weight to remove" }
 
             // second pass to remove
             for (i in 0..<nsamples) {
                 if (values[i] == minmax && weights[i] > 0.0) {
-                    if (excessWeight > weights[i]) {
-                        excessWeight -= weights[i]
+                    if (remainingExcessWeight > weights[i]) {
+                        remainingExcessWeight -= weights[i]
                         weights[i] = 0.0
                     } else {
-                        weights[i] -= excessWeight
-                        excessWeight = 0.0
+                        weights[i] -= remainingExcessWeight
+                        remainingExcessWeight = 0.0
                     }
                 }
             }
