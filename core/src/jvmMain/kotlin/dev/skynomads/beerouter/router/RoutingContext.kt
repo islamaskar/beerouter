@@ -10,7 +10,9 @@ import dev.skynomads.beerouter.expressions.BExpressionContextNode
 import dev.skynomads.beerouter.expressions.BExpressionContextWay
 import dev.skynomads.beerouter.expressions.BExpressionMetaData
 import dev.skynomads.beerouter.mapaccess.GeometryDecoder
+import dev.skynomads.beerouter.mapaccess.MapAccessFileSystem
 import dev.skynomads.beerouter.mapaccess.MatchedWaypoint
+import dev.skynomads.beerouter.mapaccess.DefaultMapAccessFileSystem
 import dev.skynomads.beerouter.mapaccess.OsmLink
 import dev.skynomads.beerouter.mapaccess.OsmNode
 import dev.skynomads.beerouter.osm.toIntLatitude
@@ -30,25 +32,29 @@ public class RoutingContext(
     public val profileName: String,
     public val segmentDir: Path,
     private val profileContent: String,
-    private val lookupContent: String
+    private val lookupContent: String,
+    public val mapAccessFileSystem: MapAccessFileSystem = DefaultMapAccessFileSystem
 ) {
     public constructor(
         profileName: String,
         segmentDir: Path,
         profileSource: Source,
-        lookupSource: Source
+        lookupSource: Source,
+        mapAccessFileSystem: MapAccessFileSystem = DefaultMapAccessFileSystem
     ) : this(
         profileName = profileName,
         segmentDir = segmentDir,
         profileContent = profileSource.buffered().use(::readUtf8),
-        lookupContent = lookupSource.buffered().use(::readUtf8)
+        lookupContent = lookupSource.buffered().use(::readUtf8),
+        mapAccessFileSystem = mapAccessFileSystem
     )
 
     public constructor(template: RoutingContext) : this(
         profileName = template.profileName,
         segmentDir = template.segmentDir,
         profileContent = template.profileContent,
-        lookupContent = template.lookupContent
+        lookupContent = template.lookupContent,
+        mapAccessFileSystem = template.mapAccessFileSystem
     )
 
     public class Global(ctx: BExpressionContext) {

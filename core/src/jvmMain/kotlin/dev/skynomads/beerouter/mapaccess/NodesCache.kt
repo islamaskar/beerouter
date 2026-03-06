@@ -16,6 +16,7 @@ import kotlinx.io.files.SystemFileSystem
 
 public class NodesCache(
     private val segmentDir: Path,
+    private val mapAccessFileSystem: MapAccessFileSystem,
     private val ctxWay: BExpressionContextWay,
     forceSecondaryData: Boolean,
     maxmem: Long,
@@ -362,10 +363,16 @@ public class NodesCache(
 
         val ra: PhysicalFile? = fileCache.getOrPut(filenameBase) {
             if (!forceSecondaryData) {
-                val primary = Path("${segmentDir.toString()}/$filenameBase.rd5")
-                if (SystemFileSystem.exists(primary)) {
+                val primary = mapAccessFileSystem.resolve(segmentDir, "$filenameBase.rd5")
+                if (primary != null && mapAccessFileSystem.exists(primary)) {
                     currentFileName = "$filenameBase.rd5"
-                    return@getOrPut PhysicalFile(primary, dataBuffers, lookupVersion, lookupMinorVersion)
+                    return@getOrPut PhysicalFile(
+                        primary,
+                        mapAccessFileSystem,
+                        dataBuffers,
+                        lookupVersion,
+                        lookupMinorVersion
+                    )
                 }
             }
             null

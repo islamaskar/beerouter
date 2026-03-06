@@ -14,7 +14,6 @@ import dev.skynomads.beerouter.codec.WaypointMatcher
 import dev.skynomads.beerouter.util.ByteDataReader
 import dev.skynomads.beerouter.util.Crc32.crc
 import java.io.IOException
-import java.io.RandomAccessFile
 
 public class OsmFile(
     rafile: PhysicalFile?,
@@ -22,7 +21,7 @@ public class OsmFile(
     public val latDegree: Int,
     dataBuffers: DataBuffers
 ) {
-    private var raf: RandomAccessFile? = null
+    private var raf: RandomAccessReader? = null
     private var fileOffset: Long = 0
 
     private var posIdx: IntArray = IntArray(0)

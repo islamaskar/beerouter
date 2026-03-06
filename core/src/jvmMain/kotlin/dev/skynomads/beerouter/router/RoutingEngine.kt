@@ -1530,6 +1530,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
 
         nodesCache = NodesCache(
             routingContext.segmentDir,
+            routingContext.mapAccessFileSystem,
             routingContext.way,
             routingContext.global.forceSecondaryData,
             maxmem,

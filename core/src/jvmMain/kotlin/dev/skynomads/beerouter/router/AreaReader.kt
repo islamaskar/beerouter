@@ -131,6 +131,7 @@ public class AreaReader {
         val nodesCache =
             NodesCache(
                 folder,
+                rc.mapAccessFileSystem,
                 expctxWay,
                 rc.global.forceSecondaryData,
                 maxmem,
@@ -149,7 +150,13 @@ public class AreaReader {
                     lastFilenameBase = filenameBase
                     val file = Path("${folder.toString()}/$filenameBase.rd5")
                     currentDataBuffers = DataBuffers()
-                    currentPhysicalFile = PhysicalFile(file, currentDataBuffers, -1, -1)
+                    currentPhysicalFile = PhysicalFile(
+                        file,
+                        rc.mapAccessFileSystem,
+                        currentDataBuffers,
+                        -1,
+                        -1
+                    )
                 }
                 val physicalFile = requireNotNull(currentPhysicalFile)
                 val dataBuffers = requireNotNull(currentDataBuffers)

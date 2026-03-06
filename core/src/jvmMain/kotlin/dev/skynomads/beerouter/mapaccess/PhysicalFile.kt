@@ -9,11 +9,16 @@ import dev.skynomads.beerouter.codec.DataBuffers
 import dev.skynomads.beerouter.util.ByteDataReader
 import dev.skynomads.beerouter.util.Crc32.crc
 import java.io.IOException
-import java.io.RandomAccessFile
 import kotlinx.io.files.Path
 
-public class PhysicalFile(path: Path, dataBuffers: DataBuffers, lookupVersion: Int, lookupMinorVersion: Int) {
-    public val ra: RandomAccessFile = RandomAccessFile(path.toString(), "r")
+public class PhysicalFile(
+    path: Path,
+    fileSystem: MapAccessFileSystem,
+    dataBuffers: DataBuffers,
+    lookupVersion: Int,
+    lookupMinorVersion: Int
+) {
+    public val ra: RandomAccessReader = fileSystem.openRandomAccess(path)
     public val fileIndex: LongArray = LongArray(25)
     public var fileHeaderCrcs: IntArray = IntArray(0)
 
@@ -76,9 +81,12 @@ public class PhysicalFile(path: Path, dataBuffers: DataBuffers, lookupVersion: I
     }
 
     public companion object {
-        public fun checkVersionIntegrity(path: Path): Int {
+        public fun checkVersionIntegrity(
+            path: Path,
+            fileSystem: MapAccessFileSystem = DefaultMapAccessFileSystem
+        ): Int {
             return try {
-                RandomAccessFile(path.toString(), "r").use { raf ->
+                fileSystem.openRandomAccess(path).use { raf ->
                     val iobuffer = ByteArray(200)
                     raf.readFully(iobuffer, 0, 200)
                     val dis = ByteDataReader(iobuffer)
@@ -95,9 +103,12 @@ public class PhysicalFile(path: Path, dataBuffers: DataBuffers, lookupVersion: I
          *
          * @return the error message if file corrupt, else null
          */
-        public fun checkFileIntegrity(path: Path): String? {
+        public fun checkFileIntegrity(
+            path: Path,
+            fileSystem: MapAccessFileSystem = DefaultMapAccessFileSystem
+        ): String? {
             val dataBuffers = DataBuffers()
-            val pf = PhysicalFile(path, dataBuffers, -1, -1)
+            val pf = PhysicalFile(path, fileSystem, dataBuffers, -1, -1)
             try {
                 val div = pf.divisor
                 for (lonDegree in 0..4) {
@@ -129,5 +140,13 @@ public class PhysicalFile(path: Path, dataBuffers: DataBuffers, lookupVersion: I
             val cut = maxOf(slash, backslash)
             return if (cut >= 0 && cut < raw.length - 1) raw.substring(cut + 1) else raw
         }
+    }
+}
+
+private inline fun <T : RandomAccessReader, R> T.use(block: (T) -> R): R {
+    try {
+        return block(this)
+    } finally {
+        close()
     }
 }
