@@ -237,6 +237,10 @@ public class Rd5DiffTool : ProgressListener {
             }}}
         }
 
+        public fun diff2files(f1: Path, f2: Path, outFile: Path) {
+            diff2files(File(f1.toString()), File(f2.toString()), File(outFile.toString()))
+        }
+
         public fun recoverFromDelta(
             f1: File,
             f2: File,
@@ -328,6 +332,20 @@ public class Rd5DiffTool : ProgressListener {
             if (progress.isCanceled) outFile.delete()
         }
 
+        public fun recoverFromDelta(
+            f1: Path,
+            f2: Path,
+            outFile: Path,
+            progress: ProgressListener
+        ) {
+            recoverFromDelta(
+                File(f1.toString()),
+                File(f2.toString()),
+                File(outFile.toString()),
+                progress
+            )
+        }
+
         public fun copyFile(f1: File, outFile: File, progress: ProgressListener) {
             val sizeTotal = f1.length()
             var sizeRead = 0L
@@ -352,6 +370,10 @@ public class Rd5DiffTool : ProgressListener {
                 }
             }}
             if (progress.isCanceled) outFile.delete()
+        }
+
+        public fun copyFile(f1: Path, outFile: Path, progress: ProgressListener) {
+            copyFile(File(f1.toString()), File(outFile.toString()), progress)
         }
 
         public fun addDeltas(f1: File, f2: File, outFile: File) {
@@ -399,6 +421,10 @@ public class Rd5DiffTool : ProgressListener {
             }}}
         }
 
+        public fun addDeltas(f1: Path, f2: Path, outFile: Path) {
+            addDeltas(File(f1.toString()), File(f2.toString()), File(outFile.toString()))
+        }
+
         public fun reEncode(f1: File, outFile: File) {
             val abBuf1 = ByteArray(10 * 1024 * 1024)
 
@@ -429,6 +455,10 @@ public class Rd5DiffTool : ProgressListener {
                 val t1 = System.currentTimeMillis()
                 println("re-encoding took ${t1 - t0}ms")
             }}
+        }
+
+        public fun reEncode(f1: Path, outFile: Path) {
+            reEncode(File(f1.toString()), File(outFile.toString()))
         }
     }
 }
