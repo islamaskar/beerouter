@@ -1,9 +1,11 @@
 package dev.skynomads.beerouter.util
 
-public class ByteArrayUnifier(private val size: Int, validateImmutability: Boolean) : IByteArrayUnifier {
+public class ByteArrayUnifier(
+    private val size: Int,
+    private val validateImmutability: Boolean
+) : IByteArrayUnifier {
     private val byteArrayCache: Array<ByteArray?> = arrayOfNulls(size)
     private val crcCrosscheck: IntArray = IntArray(size)
-    private val validateImmutabilityEnabled: Boolean = validateImmutability
 
     /**
      * Unify a byte array in order to reuse instances when possible.
@@ -24,7 +26,7 @@ public class ByteArrayUnifier(private val size: Int, validateImmutability: Boole
         if (abc != null && abc.size == len && (0 until len).all { ab[offset + it] == abc[it] }) {
             return abc
         }
-        if (validateImmutabilityEnabled) {
+        if (validateImmutability) {
             val abold = byteArrayCache[idx]
             if (abold != null) {
                 val crcold = Crc32.crc(abold, 0, abold.size)
