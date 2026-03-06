@@ -29,9 +29,15 @@ public open class OsmNodeNamed : OsmNode {
 
     public constructor(n: OsmNode) : super(n.position)
 
+    private val lonInt: Int
+        get() = position.longitude.toIntLongitude()
+
+    private val latInt: Int
+        get() = position.latitude.toIntLatitude()
+
     override fun toString(): String {
-        return if (nogoWeight.isNaN()) "${position.longitude.toIntLongitude()},${position.latitude.toIntLatitude()},$name"
-        else "${position.longitude.toIntLongitude()},${position.latitude.toIntLatitude()},$name,$nogoWeight"
+        return if (nogoWeight.isNaN()) "$lonInt,$latInt,$name"
+        else "$lonInt,$latInt,$name,$nogoWeight"
     }
 
     public fun distanceWithinRadius(
@@ -47,8 +53,8 @@ public open class OsmNodeNamed : OsmNode {
         var currentLat2 = lat2
         val lonlat2m = getLonLatToMeterScales((currentLat1 + currentLat2) shr 1) ?: return 0.0
 
-        var isFirstPointWithinCircle = distance(currentLon1, currentLat1, position.longitude.toIntLongitude(), position.latitude.toIntLatitude()) < radius
-        var isLastPointWithinCircle = distance(currentLon2, currentLat2, position.longitude.toIntLongitude(), position.latitude.toIntLatitude()) < radius
+        var isFirstPointWithinCircle = distance(currentLon1, currentLat1, lonInt, latInt) < radius
+        var isLastPointWithinCircle = distance(currentLon2, currentLat2, lonInt, latInt) < radius
         // First point is within the circle
         if (isFirstPointWithinCircle) {
             // Last point is within the circle
@@ -74,11 +80,11 @@ public open class OsmNodeNamed : OsmNode {
         // Distance between the initial point and projection of center of
         // the circle on the current segment.
         val initialToProject: Double =
-            (((currentLon2 - currentLon1) * (position.longitude.toIntLongitude() - currentLon1) * lonlat2m[0] * lonlat2m[0]
-                    + (currentLat2 - currentLat1) * (position.latitude.toIntLatitude() - currentLat1) * lonlat2m[1] * lonlat2m[1]
+            (((currentLon2 - currentLon1) * (lonInt - currentLon1) * lonlat2m[0] * lonlat2m[0]
+                    + (currentLat2 - currentLat1) * (latInt - currentLat1) * lonlat2m[1] * lonlat2m[1]
                     ) / totalSegmentLength)
         // Distance between the initial point and the center of the circle.
-        val initialToCenter = distance(position.longitude.toIntLongitude(), position.latitude.toIntLatitude(), currentLon1, currentLat1)
+        val initialToCenter = distance(lonInt, latInt, currentLon1, currentLat1)
         // Half length of the segment within the circle
         val halfDistanceWithin = sqrt(
             radius * radius - (initialToCenter * initialToCenter -
@@ -95,26 +101,24 @@ public open class OsmNodeNamed : OsmNode {
 
     public companion object {
         public fun decodeNogo(s: String): OsmNodeNamed {
-            val n = OsmNodeNamed()
-            val idx1 = s.indexOf(',')
-            val lon = s.take(idx1).toInt()
-            val idx2 = s.indexOf(',', idx1 + 1)
-            val lat = s.substring(idx1 + 1, idx2).toInt()
-            val idx3 = s.indexOf(',', idx2 + 1)
-            if (idx3 == -1) {
-                n.name = s.substring(idx2 + 1)
-                n.nogoWeight = Double.NaN
-            } else {
-                n.name = s.substring(idx2 + 1, idx3)
-                n.nogoWeight = s.substring(idx3 + 1).toDouble()
+            val parts = s.split(',', limit = 4)
+            require(parts.size >= 3) { "invalid nogo format: $s" }
+
+            val lon = parts[0].toInt()
+            val lat = parts[1].toInt()
+            val name = parts[2]
+            val nogoWeight = parts.getOrNull(3)?.toDouble() ?: Double.NaN
+
+            return OsmNodeNamed().apply {
+                this.name = name
+                this.nogoWeight = nogoWeight
+                isNogo = true
+                position = Position(
+                    lon.toDoubleLongitude(),
+                    lat.toDoubleLatitude(),
+                    0.0
+                )
             }
-            n.isNogo = true
-            n.position = Position(
-                lon.toDoubleLongitude(),
-                lat.toDoubleLatitude(),
-                0.0
-            )
-            return n
         }
     }
 }
