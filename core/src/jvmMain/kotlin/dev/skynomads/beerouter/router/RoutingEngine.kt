@@ -2068,6 +2068,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
         val track = OsmTrack()
         track.cost = path.cost
         track.energy = path.totalEnergy.toInt()
+        val compiledNodes = ArrayList<OsmPathElement>()
 
         var distance = 0
 
@@ -2085,16 +2086,23 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
             if (routingContext.global.inverseRouting) {
                 element.time = totalTime - element.time
                 element.energy = totalEnergy - element.energy
-                track.nodes.add(element)
-            } else {
-                track.nodes.add(0, element)
             }
+            compiledNodes.add(element)
 
             if (nextElement != null) {
                 distance += element.calcDistance(nextElement)
             }
             element = nextElement
         }
+
+        if (routingContext.global.inverseRouting) {
+            track.nodes.addAll(compiledNodes)
+        } else {
+            for (idx in compiledNodes.lastIndex downTo 0) {
+                track.nodes.add(compiledNodes[idx])
+            }
+        }
+
         track.distance = distance
         log("track total distance=${track.distance}")
         track.buildMap()
