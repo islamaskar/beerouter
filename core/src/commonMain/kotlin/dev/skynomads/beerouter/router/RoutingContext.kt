@@ -30,20 +30,17 @@ import kotlin.math.sqrt
 
 public class RoutingContext(
     public val profileName: String,
-    public val segmentDir: Path,
     private val profileContent: String,
     private val lookupContent: String,
     public val mapAccessFileSystem: MapAccessFileSystem
 ) {
     public constructor(
         profileName: String,
-        segmentDir: Path,
         profileSource: Source,
         lookupSource: Source,
-        mapAccessFileSystem: MapAccessFileSystem = DefaultMapAccessFileSystem(segmentDir)
+        mapAccessFileSystem: MapAccessFileSystem
     ) : this(
         profileName = profileName,
-        segmentDir = segmentDir,
         profileContent = profileSource.buffered().use(::readUtf8),
         lookupContent = lookupSource.buffered().use(::readUtf8),
         mapAccessFileSystem = mapAccessFileSystem
@@ -51,7 +48,6 @@ public class RoutingContext(
 
     public constructor(template: RoutingContext) : this(
         profileName = template.profileName,
-        segmentDir = template.segmentDir,
         profileContent = template.profileContent,
         lookupContent = template.lookupContent,
         mapAccessFileSystem = template.mapAccessFileSystem
@@ -290,9 +286,15 @@ public class RoutingContext(
             for (wp in waypoints) {
                 if (wp.calcDistance(nogo) < nogo.radius.toInt()
                     && (nogo !is OsmNogoPolygon || (if (nogo.isClosed)
-                        nogo.isWithin(wp.position.longitude.toIntLongitude().toLong(), wp.position.latitude.toIntLatitude().toLong())
+                        nogo.isWithin(
+                            wp.position.longitude.toIntLongitude().toLong(),
+                            wp.position.latitude.toIntLatitude().toLong()
+                        )
                     else
-                        nogo.isOnPolyline(wp.position.longitude.toIntLongitude().toLong(), wp.position.latitude.toIntLatitude().toLong())))
+                        nogo.isOnPolyline(
+                            wp.position.longitude.toIntLongitude().toLong(),
+                            wp.position.latitude.toIntLatitude().toLong()
+                        )))
                 ) {
                     goodGuy = false
                 }
@@ -317,9 +319,15 @@ public class RoutingContext(
             for (nogo in nogopoints) {
                 if (nogo.nogoWeight.isNaN()
                     && wp!!.calcDistance(nogo) < nogo.radius && (nogo !is OsmNogoPolygon || (if (nogo.isClosed)
-                        nogo.isWithin(wp.position.longitude.toIntLongitude().toLong(), wp.position.latitude.toIntLatitude().toLong())
+                        nogo.isWithin(
+                            wp.position.longitude.toIntLongitude().toLong(),
+                            wp.position.latitude.toIntLatitude().toLong()
+                        )
                     else
-                        nogo.isOnPolyline(wp.position.longitude.toIntLongitude().toLong(), wp.position.latitude.toIntLatitude().toLong())))
+                        nogo.isOnPolyline(
+                            wp.position.longitude.toIntLongitude().toLong(),
+                            wp.position.latitude.toIntLatitude().toLong()
+                        )))
                 ) {
                     isInsideNogo = true
                     break
@@ -361,9 +369,15 @@ public class RoutingContext(
                 val dist = wp.calcDistance(nogo)
                 if (dist < nogo.radius
                     && (nogo !is OsmNogoPolygon || (if (nogo.isClosed)
-                        nogo.isWithin(wp.position.longitude.toIntLongitude().toLong(), wp.position.latitude.toIntLatitude().toLong())
+                        nogo.isWithin(
+                            wp.position.longitude.toIntLongitude().toLong(),
+                            wp.position.latitude.toIntLatitude().toLong()
+                        )
                     else
-                        nogo.isOnPolyline(wp.position.longitude.toIntLongitude().toLong(), wp.position.latitude.toIntLatitude().toLong())))
+                        nogo.isOnPolyline(
+                            wp.position.longitude.toIntLongitude().toLong(),
+                            wp.position.latitude.toIntLatitude().toLong()
+                        )))
                 ) {
                     continue
                 }
@@ -416,6 +430,7 @@ public class RoutingContext(
         val effectiveClassName = when {
             className.startsWith("btools.router.") ->
                 className.replace("btools.router.", "dev.skynomads.beerouter.router.")
+
             else -> className
         }
         return effectiveClassName.substringAfterLast('.')

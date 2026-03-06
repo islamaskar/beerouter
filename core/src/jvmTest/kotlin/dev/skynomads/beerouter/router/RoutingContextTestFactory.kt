@@ -1,5 +1,6 @@
 package dev.skynomads.beerouter.router
 
+import dev.skynomads.beerouter.mapaccess.DefaultMapAccessFileSystem
 import java.io.File
 import kotlinx.io.buffered
 import kotlinx.io.files.Path
@@ -13,9 +14,9 @@ internal fun routingContextFromFiles(profile: File, segmentDir: File): RoutingCo
         SystemFileSystem.source(Path(lookup.path)).buffered().use { lookupSource ->
             RoutingContext(
                 profileName = profile.name,
-                segmentDir = Path(segmentDir.path),
                 profileSource = profileSource,
-                lookupSource = lookupSource
+                lookupSource = lookupSource,
+                mapAccessFileSystem = DefaultMapAccessFileSystem(Path(segmentDir.path))
             )
         }
     }

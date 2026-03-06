@@ -1,7 +1,9 @@
 package dev.skynomads.beerouter.mapaccess
 
 import kotlinx.cinterop.ExperimentalForeignApi
+import kotlinx.cinterop.UnsafeNumber
 import kotlinx.cinterop.addressOf
+import kotlinx.cinterop.convert
 import kotlinx.cinterop.usePinned
 import kotlinx.io.EOFException
 import kotlinx.io.files.Path
@@ -20,8 +22,9 @@ private class PosixRandomAccessReader(private val path: Path) : RandomAccessRead
     private val file = fopen(path.toString(), "rb")
         ?: throw IllegalStateException("failed to open $path")
 
+    @OptIn(UnsafeNumber::class)
     override fun seek(position: Long) {
-        fseek(file, position, SEEK_SET)
+        fseek(file, position.convert(), SEEK_SET)
     }
 
     override fun readFully(buffer: ByteArray, offset: Int, length: Int) {
@@ -37,12 +40,13 @@ private class PosixRandomAccessReader(private val path: Path) : RandomAccessRead
         }
     }
 
+    @OptIn(UnsafeNumber::class)
     override fun length(): Long {
         val saved = ftell(file)
         fseek(file, 0, SEEK_END)
         val len = ftell(file)
         fseek(file, saved, SEEK_SET)
-        return len
+        return len.convert()
     }
 
     override fun close() {

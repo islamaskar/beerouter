@@ -1,5 +1,6 @@
 package dev.skynomads.beerouter.benchmark
 
+import dev.skynomads.beerouter.mapaccess.DefaultMapAccessFileSystem
 import dev.skynomads.beerouter.router.OsmNodeNamed
 import dev.skynomads.beerouter.router.RoutingContext
 import dev.skynomads.beerouter.router.RoutingEngine
@@ -50,9 +51,9 @@ open class BeerouterRoutingBenchmark {
             SystemFileSystem.source(lookup).buffered().use { lookupSource ->
                 RoutingContext(
                     profileName = fileName(profile),
-                    segmentDir = segmentDir,
                     profileSource = profileSource,
-                    lookupSource = lookupSource
+                    lookupSource = lookupSource,
+                    mapAccessFileSystem = DefaultMapAccessFileSystem(segmentDir)
                 ).apply {
                     global.turnInstructionMode = 2
                 }
@@ -84,7 +85,8 @@ open class BeerouterRoutingBenchmark {
 
     private fun resolve(base: Path, child: String): Path = Path("${base.toString()}/$child")
 
-    private fun fileName(path: Path): String = path.toString().substringAfterLast('/').substringAfterLast('\\')
+    private fun fileName(path: Path): String =
+        path.toString().substringAfterLast('/').substringAfterLast('\\')
 
     private fun parent(path: Path): Path {
         val normalized = path.toString().replace('\\', '/')
