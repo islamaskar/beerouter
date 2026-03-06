@@ -50,11 +50,7 @@ public class OsmPathElement protected constructor() : OsmPos {
         get() = position.toOsmId()
 
     public override fun calcDistance(p: OsmPos): Int {
-        return max(
-            1.0, distance(
-                this.position, p.position
-            ).roundToInt().toDouble()
-        ).toInt()
+        return max(1, distance(this.position, p.position).roundToInt())
     }
 
     public var origin: OsmPathElement? = null

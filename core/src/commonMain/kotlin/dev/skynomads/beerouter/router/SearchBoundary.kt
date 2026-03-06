@@ -18,9 +18,9 @@ internal class SearchBoundary(n: OsmNode, private val radius: Int, val direction
 
         companion object {
             fun fromId(id: Int): Direction =
-                entries.getOrNull(id)
-                    ?.takeIf { it.id == id }
-                    ?: throw IllegalArgumentException("undefined direction: $id")
+                entries.getOrElse(id) {
+                    throw IllegalArgumentException("undefined direction: $id")
+                }
         }
     }
 
