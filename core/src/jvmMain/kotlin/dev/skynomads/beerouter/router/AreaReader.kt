@@ -28,7 +28,7 @@ import kotlin.math.roundToInt
 public class AreaReader {
     private val logger: Logger = LoggerFactory.getLogger(AreaReader::class.java)
 
-    public var segmentFolder: File? = null
+    public lateinit var segmentFolder: File
 
     public fun getDirectAllData(
         folder: File,
@@ -39,7 +39,7 @@ public class AreaReader {
         searchRect: OsmNogoPolygon,
         ais: MutableList<AreaInfo>
     ) {
-        this.segmentFolder = folder
+        segmentFolder = folder
 
         val div = 32
         val cellsize = 1000000 / div
@@ -141,7 +141,7 @@ public class AreaReader {
         val maxmem = rc.memoryclass * 1024L * 1024L // in MB
         val nodesCache =
             NodesCache(
-                segmentFolder!!,
+                segmentFolder,
                 expctxWay,
                 rc.global.forceSecondaryData,
                 maxmem,
@@ -169,10 +169,7 @@ public class AreaReader {
             logger.error("error after used={} / count={}", used, count, e)
             ais.clear()
         } finally {
-            if (pf != null) try {
-                pf.close()
-            } catch (ee: Exception) {
-            }
+            runCatching { pf?.close() }
             nodesCache.close()
         }
     }
