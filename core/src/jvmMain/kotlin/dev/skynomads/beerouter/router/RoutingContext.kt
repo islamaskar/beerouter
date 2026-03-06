@@ -341,9 +341,7 @@ public class RoutingContext(
     public val nogoChecksums: LongArray
         get() {
             val cs = LongArray(3)
-            val n = if (nogopoints.isEmpty()) 0 else nogopoints.size
-            for (i in 0..<n) {
-                val nogo = nogopoints[i]
+            for (nogo in nogopoints) {
                 cs[0] += nogo.position.longitude.toIntLongitude()
                 cs[1] += nogo.position.latitude.toIntLatitude()
                 // 10 is an arbitrary constant to get sub-integer precision in the checksum
@@ -409,7 +407,7 @@ public class RoutingContext(
 
         shortestmatch = false
 
-        if (!nogopoints.isEmpty() && d > 0.0) {
+        if (nogopoints.isNotEmpty() && d > 0.0) {
             for (ngidx in nogopoints.indices) {
                 val nogo = nogopoints[ngidx]
                 val nogoLon = nogo.position.longitude.toIntLongitude()
