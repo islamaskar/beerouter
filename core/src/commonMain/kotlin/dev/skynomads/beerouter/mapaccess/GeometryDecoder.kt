@@ -40,7 +40,7 @@ public class GeometryDecoder {
         r.reset(geometry)
         var olon = startnode.position.longitude.toIntLongitude()
         var olat = startnode.position.latitude.toIntLatitude()
-        var oselev = startnode.sElev.toInt()
+        var oselev = toSElev(startnode.position.altitude).toInt()
         var idx = 0
         while (r.hasMoreData()) {
             val trans = if (idx < nCachedNodes) cachedNodes[idx++] else OsmTransferNode()
@@ -69,4 +69,6 @@ public class GeometryDecoder {
 
         return firstTransferNode
     }
+
+    private fun toSElev(altitude: Double?): Short = (altitude ?: 0.0).times(4.0).toInt().toShort()
 }

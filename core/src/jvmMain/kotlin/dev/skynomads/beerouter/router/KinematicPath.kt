@@ -271,10 +271,10 @@ internal class KinematicPath : OsmPath() {
         return 0
     }
 
-    override fun definitlyWorseThan(path: OsmPath?): Boolean {
-        val p = path as KinematicPath
+    override fun definitlyWorseThan(p: OsmPath?): Boolean {
+        val path = p as KinematicPath
 
-        val c = p.cost
+        val c = path.cost
         return cost > c + 100
     }
 }

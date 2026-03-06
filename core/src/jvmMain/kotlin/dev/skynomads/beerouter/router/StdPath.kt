@@ -48,7 +48,7 @@ internal class StdPath : OsmPath() {
 
     override fun processWaySection(
         rc: RoutingContext,
-        distance: Double,
+        dist: Double,
         delta_h: Double,
         elevation: Double,
         angle: Double,
@@ -95,7 +95,7 @@ internal class StdPath : OsmPath() {
             uphillcostdiv
         }
 
-        val dist = distance.toInt() // legacy arithmetics needs int
+        val distInt = dist.toInt() // legacy arithmetics needs int
 
         // penalty for turning angle
         val turncost =
@@ -111,15 +111,15 @@ internal class StdPath : OsmPath() {
         // only the part of the descend that does not fit into the elevation-hysteresis-buffers
         // leads to an immediate penalty
         val delta_h_micros = (1000000.0 * delta_h).toInt()
-        ehbd = (ehbd + (-delta_h_micros - dist * downhillcutoff)).toInt()
-        ehbu = (ehbu + (delta_h_micros - dist * uphillcutoff)).toInt()
+        ehbd = (ehbd + (-delta_h_micros - distInt * downhillcutoff)).toInt()
+        ehbu = (ehbu + (delta_h_micros - distInt * uphillcutoff)).toInt()
 
         var downweight = 0f
         if (ehbd > rc.global.elevationpenaltybuffer) {
             downweight = 1f
 
             var excess = ehbd - rc.global.elevationpenaltybuffer
-            var reduce = dist * rc.global.elevationbufferreduce
+            var reduce = distInt * rc.global.elevationbufferreduce
             if (reduce > excess) {
                 downweight = (excess.toFloat()) / reduce
                 reduce = excess
@@ -131,10 +131,10 @@ internal class StdPath : OsmPath() {
             ehbd -= reduce
             var elevationCost = 0f
             if (downhillcostdiv > 0) {
-                elevationCost += min(reduce.toFloat(), dist * downhillmaxslope) / downhillcostdiv
+                elevationCost += min(reduce.toFloat(), distInt * downhillmaxslope) / downhillcostdiv
             }
             if (downhillmaxslopecostdiv > 0) {
-                elevationCost += max(0f, reduce - dist * downhillmaxslope) / downhillmaxslopecostdiv
+                elevationCost += max(0f, reduce - distInt * downhillmaxslope) / downhillmaxslopecostdiv
             }
             if (elevationCost > 0) {
                 sectionCost += elevationCost.toDouble()
@@ -152,7 +152,7 @@ internal class StdPath : OsmPath() {
             upweight = 1f
 
             var excess = ehbu - rc.global.elevationpenaltybuffer
-            var reduce = dist * rc.global.elevationbufferreduce
+            var reduce = distInt * rc.global.elevationbufferreduce
             if (reduce > excess) {
                 upweight = (excess.toFloat()) / reduce
                 reduce = excess
@@ -164,10 +164,10 @@ internal class StdPath : OsmPath() {
             ehbu -= reduce
             var elevationCost = 0f
             if (uphillcostdiv > 0) {
-                elevationCost += min(reduce.toFloat(), dist * uphillmaxslope) / uphillcostdiv
+                elevationCost += min(reduce.toFloat(), distInt * uphillmaxslope) / uphillcostdiv
             }
             if (uphillmaxslopecostdiv > 0) {
-                elevationCost += max(0f, reduce - dist * uphillmaxslope) / uphillmaxslopecostdiv
+                elevationCost += max(0f, reduce - distInt * uphillmaxslope) / uphillmaxslopecostdiv
             }
             if (elevationCost > 0) {
                 sectionCost += elevationCost.toDouble()
@@ -187,7 +187,7 @@ internal class StdPath : OsmPath() {
             message!!.costfactor = costfactor
         }
 
-        sectionCost += (dist * costfactor + 0.5f).toDouble()
+        sectionCost += (distInt * costfactor + 0.5f).toDouble()
 
         return sectionCost
     }
@@ -218,18 +218,18 @@ internal class StdPath : OsmPath() {
                 + (if (uphillcostdiv > 0) ehbu / uphillcostdiv else 0))
     }
 
-    override fun definitlyWorseThan(path: OsmPath?): Boolean {
-        val p = path as StdPath
+    override fun definitlyWorseThan(p: OsmPath?): Boolean {
+        val path = p as StdPath
 
-        var c = p.cost
-        if (p.downhillcostdiv > 0) {
+        var c = path.cost
+        if (path.downhillcostdiv > 0) {
             val delta =
-                p.ehbd / p.downhillcostdiv - (if (downhillcostdiv > 0) ehbd / downhillcostdiv else 0)
+                path.ehbd / path.downhillcostdiv - (if (downhillcostdiv > 0) ehbd / downhillcostdiv else 0)
             if (delta > 0) c += delta
         }
-        if (p.uphillcostdiv > 0) {
+        if (path.uphillcostdiv > 0) {
             val delta =
-                p.ehbu / p.uphillcostdiv - (if (uphillcostdiv > 0) ehbu / uphillcostdiv else 0)
+                path.ehbu / path.uphillcostdiv - (if (uphillcostdiv > 0) ehbu / uphillcostdiv else 0)
             if (delta > 0) c += delta
         }
 

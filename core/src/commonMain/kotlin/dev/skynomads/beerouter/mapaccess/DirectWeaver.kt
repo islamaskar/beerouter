@@ -6,6 +6,8 @@ import dev.skynomads.beerouter.codec.StatCoderContext
 import dev.skynomads.beerouter.codec.TagValueCoder
 import dev.skynomads.beerouter.codec.TagValueValidator
 import dev.skynomads.beerouter.codec.WaypointMatcher
+import dev.skynomads.beerouter.osm.toDoubleLatitude
+import dev.skynomads.beerouter.osm.toDoubleLongitude
 import dev.skynomads.beerouter.osm.toIntLatitude
 import dev.skynomads.beerouter.osm.toIntLongitude
 import dev.skynomads.beerouter.util.ByteDataWriter
@@ -49,7 +51,7 @@ public class DirectWeaver(
             val id = expandId(faid[n])
             val ilon = (id shr 32).toInt()
             val ilat = (id and 0xffffffffL).toInt()
-            var node = hollowNodes.get(ilon, ilat)
+            var node = hollowNodes.get(Position(ilon.toDoubleLongitude(), ilat.toDoubleLatitude(), 0.0))
             if (node == null) {
                 node = OsmNode(ilon, ilat)
             } else {

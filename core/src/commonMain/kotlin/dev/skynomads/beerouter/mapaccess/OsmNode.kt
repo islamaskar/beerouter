@@ -181,7 +181,7 @@ public open class OsmNode : OsmLink, OsmPos {
             l = l.getNext(this)
         }
         if (tn == null) { // .. not found, then check the hollow nodes
-            tn = hollowNodes.get(linklon, linklat) // target node
+            tn = hollowNodes.get(Position(linklon.toDoubleLongitude(), linklat.toDoubleLatitude(), 0.0)) // target node
             if (tn == null) { // node not yet known, create a new hollow proxy
                 tn = OsmNode(linklon, linklat)
                 tn.setHollow()

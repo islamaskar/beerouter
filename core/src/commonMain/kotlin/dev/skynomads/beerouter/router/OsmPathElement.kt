@@ -77,9 +77,11 @@ public class OsmPathElement protected constructor() : OsmPos {
     public fun writeToStream(sink: Sink) {
         sink.writeInt(this.position.latitude.toIntLatitude())
         sink.writeInt(this.position.longitude.toIntLongitude())
-        sink.writeShort(sElev)
+        sink.writeShort(toSElev(position.altitude))
         sink.writeInt(cost)
     }
+
+    private fun toSElev(altitude: Double?): Short = (altitude ?: 0.0).times(4.0).toInt().toShort()
 
     public companion object {
         public fun create(
