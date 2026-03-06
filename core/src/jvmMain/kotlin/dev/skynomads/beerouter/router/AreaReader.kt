@@ -14,14 +14,12 @@ import dev.skynomads.beerouter.osm.toIntLatitude
 import dev.skynomads.beerouter.osm.toIntLongitude
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
-import java.io.BufferedInputStream
-import java.io.BufferedOutputStream
-import java.io.DataInputStream
-import java.io.DataOutputStream
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
-import java.io.IOException
+import kotlinx.io.asSink
+import kotlinx.io.asSource
+import kotlinx.io.buffered
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
@@ -269,23 +267,23 @@ public class AreaReader {
     }
 
     public fun writeAreaInfo(filename: String, wp: MatchedWaypoint, ais: MutableList<AreaInfo>) {
-        DataOutputStream(BufferedOutputStream(FileOutputStream(filename))).use { dos ->
-            wp.writeToStream(dos)
+        FileOutputStream(filename).asSink().buffered().use { sink ->
+            wp.writeToStream(sink)
             for (ai in ais) {
-                dos.writeInt(ai.direction)
-                dos.writeDouble(ai.elevStart)
-                dos.writeInt(ai.ways)
-                dos.writeInt(ai.greenWays)
-                dos.writeInt(ai.riverWays)
-                dos.writeInt(ai.elev50)
+                sink.writeInt(ai.direction)
+                sink.writeLong(ai.elevStart.toBits())
+                sink.writeInt(ai.ways)
+                sink.writeInt(ai.greenWays)
+                sink.writeInt(ai.riverWays)
+                sink.writeInt(ai.elev50)
             }
         }
     }
 
     public fun readAreaInfo(fai: File, wp: MatchedWaypoint, ais: MutableList<AreaInfo>) {
         try {
-            DataInputStream(BufferedInputStream(FileInputStream(fai))).use { dis ->
-                val ep = readFromStream(dis)
+            FileInputStream(fai).asSource().buffered().use { source ->
+                val ep = readFromStream(source)
                 if (abs(ep.waypoint!!.position.longitude.toIntLongitude() - wp.waypoint!!.position.longitude.toIntLongitude()) > 500 &&
                     abs(ep.waypoint!!.position.latitude.toIntLatitude() - wp.waypoint!!.position.latitude.toIntLatitude()) > 500
                 ) {
@@ -295,17 +293,17 @@ public class AreaReader {
                     return
                 }
                 for (i in 0..3) {
-                    val direction = dis.readInt()
+                    val direction = source.readInt()
                     val ai = AreaInfo(direction)
-                    ai.elevStart = dis.readDouble()
-                    ai.ways = dis.readInt()
-                    ai.greenWays = dis.readInt()
-                    ai.riverWays = dis.readInt()
-                    ai.elev50 = dis.readInt()
+                    ai.elevStart = Double.fromBits(source.readLong())
+                    ai.ways = source.readInt()
+                    ai.greenWays = source.readInt()
+                    ai.riverWays = source.readInt()
+                    ai.elev50 = source.readInt()
                     ais.add(ai)
                 }
             }
-        } catch (e: IOException) {
+        } catch (e: Exception) {
             ais.clear()
         }
     }

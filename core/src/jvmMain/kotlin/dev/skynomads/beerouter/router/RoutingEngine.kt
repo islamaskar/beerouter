@@ -1837,7 +1837,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) : Thread(
                                 + path.elevationCorrection()
                                 + (costCuttingTrack.cost - pe.cost))
                         if (costEstimate <= maxTotalCost) {
-                            matchPath = OsmPathElement.create(path)
+                            matchPath = path.toPathElement()
                         }
                         if (costEstimate < maxTotalCost) {
                             logger.info("maxcost $maxTotalCost -> $costEstimate")
@@ -1937,7 +1937,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) : Thread(
                             if (detour.cost >= 0.0 && nextId != startNodeId1 && nextId != startNodeId2) {
                                 guideTrack!!.registerDetourForId(
                                     currentNode.idFromPos,
-                                    OsmPathElement.create(detour)
+                                    detour.toPathElement()
                                 )
                             }
                         }
@@ -2025,8 +2025,21 @@ public class RoutingEngine(private val routingContext: RoutingContext) : Thread(
         }
     }
 
+    private fun OsmPath.toPathElement(): OsmPathElement {
+        val n = targetNode!!
+        return OsmPathElement.create(
+            n.position.longitude.toIntLongitude(),
+            n.position.latitude.toIntLatitude(),
+            n.sElev,
+            originElement
+        ).also {
+            it.cost = cost
+            it.message = message
+        }
+    }
+
     private fun compileTrack(path: OsmPath, verbose: Boolean): OsmTrack {
-        var element: OsmPathElement? = OsmPathElement.create(path)
+        var element: OsmPathElement? = path.toPathElement()
 
         // for final track, cut endnode
         if (guideTrack != null && element!!.origin != null) {

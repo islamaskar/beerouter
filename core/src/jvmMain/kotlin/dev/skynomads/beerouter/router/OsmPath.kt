@@ -9,6 +9,8 @@ import dev.skynomads.beerouter.mapaccess.OsmLink
 import dev.skynomads.beerouter.mapaccess.OsmLinkHolder
 import dev.skynomads.beerouter.mapaccess.OsmNode
 import dev.skynomads.beerouter.mapaccess.TurnRestriction.Companion.isTurnForbidden
+import dev.skynomads.beerouter.osm.toIntLatitude
+import dev.skynomads.beerouter.osm.toIntLongitude
 import dev.skynomads.beerouter.util.CheapRuler
 import dev.skynomads.beerouter.util.CheapRuler.getLonLatToMeterScales
 import kotlin.math.cos
@@ -82,7 +84,16 @@ public abstract class OsmPath : OsmLinkHolder {
         rc: RoutingContext
     ) {
         if (origin.myElement == null) {
-            origin.myElement = OsmPathElement.create(origin)
+            val n = origin.targetNode!!
+            origin.myElement = OsmPathElement.create(
+                n.position.longitude.toIntLongitude(),
+                n.position.latitude.toIntLatitude(),
+                n.sElev,
+                origin.originElement
+            ).also {
+                it.cost = origin.cost
+                it.message = origin.message
+            }
         }
         this.originElement = origin.myElement
         this.link = link

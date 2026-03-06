@@ -7,9 +7,9 @@ import dev.skynomads.beerouter.osm.toOsmId
 import dev.skynomads.beerouter.osm.toDoubleLatitude
 import dev.skynomads.beerouter.osm.toDoubleLongitude
 import dev.skynomads.beerouter.util.CheapRuler.distance
+import kotlinx.io.Sink
+import kotlinx.io.Source
 import org.maplibre.spatialk.geojson.Position
-import java.io.DataInput
-import java.io.DataOutput
 import kotlin.math.max
 import kotlin.math.roundToInt
 
@@ -74,28 +74,14 @@ public class OsmPathElement protected constructor() : OsmPos {
                 this.position.latitude.toIntLatitude() == e.position.latitude.toIntLatitude()
     }
 
-    public fun writeToStream(dos: DataOutput) {
-        dos.writeInt(this.position.latitude.toIntLatitude())
-        dos.writeInt(this.position.longitude.toIntLongitude())
-        dos.writeShort(sElev.toInt())
-        dos.writeInt(cost)
+    public fun writeToStream(sink: Sink) {
+        sink.writeInt(this.position.latitude.toIntLatitude())
+        sink.writeInt(this.position.longitude.toIntLongitude())
+        sink.writeShort(sElev)
+        sink.writeInt(cost)
     }
 
     public companion object {
-        // construct a path element from a path
-        internal fun create(path: OsmPath): OsmPathElement {
-            val n = path.targetNode!!
-            val pe: OsmPathElement = create(
-                n.position.longitude.toIntLongitude(),
-                n.position.latitude.toIntLatitude(),
-                n.sElev,
-                path.originElement
-            )
-            pe.cost = path.cost
-            pe.message = path.message
-            return pe
-        }
-
         public fun create(
             ilon: Int,
             ilat: Int,
@@ -112,17 +98,17 @@ public class OsmPathElement protected constructor() : OsmPos {
             return pe
         }
 
-        public fun readFromStream(dis: DataInput): OsmPathElement {
+        public fun readFromStream(source: Source): OsmPathElement {
             val pe = OsmPathElement()
-            val lat = dis.readInt()
-            val lon = dis.readInt()
-            val selev = dis.readShort()
+            val lat = source.readInt()
+            val lon = source.readInt()
+            val selev = source.readShort()
             pe.position = Position(
                 lon.toDoubleLongitude(),
                 lat.toDoubleLatitude(),
                 selev.toDouble() / 4.0
             )
-            pe.cost = dis.readInt()
+            pe.cost = source.readInt()
             return pe
         }
     }

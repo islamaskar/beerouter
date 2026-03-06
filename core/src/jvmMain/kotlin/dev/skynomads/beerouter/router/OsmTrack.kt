@@ -12,14 +12,13 @@ import dev.skynomads.beerouter.mapaccess.OsmPos
 import dev.skynomads.beerouter.osm.toIntLatitude
 import dev.skynomads.beerouter.osm.toIntLongitude
 import org.maplibre.spatialk.geojson.Position
-import java.io.BufferedInputStream
-import java.io.BufferedOutputStream
-import java.io.DataInputStream
-import java.io.DataOutputStream
-import java.io.EOFException
 import java.io.File
 import java.io.FileInputStream
 import java.io.FileOutputStream
+import kotlinx.io.EOFException
+import kotlinx.io.asSink
+import kotlinx.io.asSource
+import kotlinx.io.buffered
 import kotlin.math.abs
 
 public class OsmTrack {
@@ -112,17 +111,17 @@ public class OsmTrack {
      * @param filename the filename to write to
      */
     public fun writeBinary(filename: String) {
-        DataOutputStream(BufferedOutputStream(FileOutputStream(filename))).use { dos ->
-            endPoint!!.writeToStream(dos)
-            dos.writeInt(nodes.size)
+        FileOutputStream(filename).asSink().buffered().use { sink ->
+            endPoint!!.writeToStream(sink)
+            sink.writeInt(nodes.size)
             for (node in nodes) {
-                node.writeToStream(dos)
+                node.writeToStream(sink)
             }
-            dos.writeLong(nogoChecksums[0])
-            dos.writeLong(nogoChecksums[1])
-            dos.writeLong(nogoChecksums[2])
-            dos.writeBoolean(isDirty)
-            dos.writeLong(profileTimestamp)
+            sink.writeLong(nogoChecksums[0])
+            sink.writeLong(nogoChecksums[1])
+            sink.writeLong(nogoChecksums[2])
+            sink.writeByte(if (isDirty) 1 else 0)
+            sink.writeLong(profileTimestamp)
         }
     }
 
@@ -405,8 +404,8 @@ public class OsmTrack {
                 val f = File(filename)
                 if (f.exists()) {
                     try {
-                        DataInputStream(BufferedInputStream(FileInputStream(f))).use { dis ->
-                            val ep = readFromStream(dis)
+                        FileInputStream(f).asSource().buffered().use { source ->
+                            val ep = readFromStream(source)
                             val dlon: Int = ep.waypoint!!.iLon - newEp.iLon
                             val dlat = ep.waypoint!!.iLat - newEp.iLat
                             val targetMatch = dlon < 20 && dlon > -20 && dlat < 20 && dlat > -20
@@ -414,10 +413,10 @@ public class OsmTrack {
                             if (targetMatch) {
                                 t = OsmTrack()
                                 t.endPoint = ep
-                                val n = dis.readInt()
+                                val n = source.readInt()
                                 var lastPe: OsmPathElement? = null
                                 for (i in 0..<n) {
-                                    val pe: OsmPathElement = OsmPathElement.readFromStream(dis)
+                                    val pe: OsmPathElement = OsmPathElement.readFromStream(source)
                                     pe.origin = lastPe
                                     lastPe = pe
                                     t.nodes.add(pe)
@@ -428,17 +427,17 @@ public class OsmTrack {
                                 val al = LongArray(3)
                                 var pchecksum: Long = 0
                                 try {
-                                    al[0] = dis.readLong()
-                                    al[1] = dis.readLong()
-                                    al[2] = dis.readLong()
+                                    al[0] = source.readLong()
+                                    al[1] = source.readLong()
+                                    al[2] = source.readLong()
                                 } catch (eof: EOFException) { /* kind of expected */
                                 }
                                 try {
-                                    t.isDirty = dis.readBoolean()
+                                    t.isDirty = source.readByte().toInt() != 0
                                 } catch (eof: EOFException) { /* kind of expected */
                                 }
                                 try {
-                                    pchecksum = dis.readLong()
+                                    pchecksum = source.readLong()
                                 } catch (eof: EOFException) { /* kind of expected */
                                 }
                                 val nogoCheckOk =
