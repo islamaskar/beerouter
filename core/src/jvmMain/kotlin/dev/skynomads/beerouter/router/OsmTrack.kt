@@ -56,8 +56,8 @@ public class OsmTrack {
     public var exportWaypoints: Boolean = false
     public var exportCorrectedWaypoints: Boolean = false
 
-    public fun addNode(node: OsmPathElement?) {
-        nodes.add(0, node!!)
+    public fun addNode(node: OsmPathElement) {
+        nodes.add(0, node)
     }
 
     public fun registerDetourForId(id: Long, detour: OsmPathElement?) {

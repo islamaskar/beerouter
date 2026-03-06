@@ -205,43 +205,41 @@ public class AreaReader {
                 val segment =
                     osmf.createMicroCache(lonIdx, latIdx, dataBuffers, expctxWay, null, true, null)
 
-                if (segment != null) {
-                    val size = segment.size
-                    for (i in 0..<size) {
-                        val id = segment.getIdForIndex(i)
-                        val node = OsmNode(id)
-                        if (segment.getAndClear(id)) {
-                            node.parseNodeBody(segment, nodesMap, expctxWay)
-                            if (node.firstlink is OsmLink) {
-                                var link = node.firstlink
-                                while (link != null) {
-                                    val nextNode = link.getTarget(node)
-                                    if (nextNode!!.firstlink == null) {
-                                        link = link.getNext(node)
-                                        continue  // don't care about dead ends
-                                    }
-                                    if (nextNode.firstlink!!.descriptionBitmap == null) {
-                                        link = link.getNext(node)
-                                        continue
-                                    }
-
-                                    for (ai in ais) {
-                                        if (ai.polygon!!.isWithin(
-                                                node.position.longitude.toIntLongitude().toLong(),
-                                                node.position.latitude.toIntLatitude().toLong()
-                                            )
-                                        ) {
-                                            ai.checkAreaInfo(
-                                                expctxWay,
-                                                node.position.altitude ?: 0.0,
-                                                nextNode.firstlink!!.descriptionBitmap!!
-                                            )
-                                            break
-                                        }
-                                    }
-                                    break
+                val size = segment.size
+                for (i in 0..<size) {
+                    val id = segment.getIdForIndex(i)
+                    val node = OsmNode(id)
+                    if (segment.getAndClear(id)) {
+                        node.parseNodeBody(segment, nodesMap, expctxWay)
+                        if (node.firstlink is OsmLink) {
+                            var link = node.firstlink
+                            while (link != null) {
+                                val nextNode = link.getTarget(node)
+                                if (nextNode!!.firstlink == null) {
                                     link = link.getNext(node)
+                                    continue  // don't care about dead ends
                                 }
+                                if (nextNode.firstlink!!.descriptionBitmap == null) {
+                                    link = link.getNext(node)
+                                    continue
+                                }
+
+                                for (ai in ais) {
+                                    if (ai.polygon!!.isWithin(
+                                            node.position.longitude.toIntLongitude().toLong(),
+                                            node.position.latitude.toIntLatitude().toLong()
+                                        )
+                                    ) {
+                                        ai.checkAreaInfo(
+                                            expctxWay,
+                                            node.position.altitude ?: 0.0,
+                                            nextNode.firstlink!!.descriptionBitmap!!
+                                        )
+                                        break
+                                    }
+                                }
+                                break
+                                link = link.getNext(node)
                             }
                         }
                     }
