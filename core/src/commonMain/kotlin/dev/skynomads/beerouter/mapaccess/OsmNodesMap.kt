@@ -15,29 +15,22 @@ public class OsmNodesMap {
 
     public val byteArrayUnifier: ByteArrayUnifier = ByteArrayUnifier(16384, false)
 
-    @JvmField
     public var nodesCreated: Int = 0
     public var maxmem: Long = 0
     private var currentmaxmem: Long = 4000000 // start with 4 MB
     public var lastVisitID: Int = 1000
     public var baseID: Int = 1000
 
-    @JvmField
     public var destination: OsmNode? = null
 
-    @JvmField
     public var currentPathCost: Int = 0
 
-    @JvmField
     public var currentMaxCost: Int = 1000000000
 
-    @JvmField
     public var endNode1: OsmNode? = null
 
-    @JvmField
     public var endNode2: OsmNode? = null
 
-    @JvmField
     public var cleanupMode: Int = 0
 
     public fun cleanupAndCount(nodes: List<OsmNode>) {
