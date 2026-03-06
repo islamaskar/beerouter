@@ -70,7 +70,7 @@ public abstract class OsmPath : OsmLinkHolder {
     public fun init(link: OsmLink) {
         this.link = link
         targetNode = link.getTarget(null)
-        selev = targetNode!!.sElev
+        selev = toSElev(targetNode!!.position.altitude)
 
         originLon = -1
         originLat = -1
@@ -88,7 +88,7 @@ public abstract class OsmPath : OsmLinkHolder {
             origin.myElement = OsmPathElement.create(
                 n.position.longitude.toIntLongitude(),
                 n.position.latitude.toIntLatitude(),
-                n.sElev,
+                toSElev(n.position.altitude),
                 origin.originElement
             ).also {
                 it.cost = origin.cost
@@ -127,8 +127,8 @@ public abstract class OsmPath : OsmLinkHolder {
                 it.energy = 0f
                 it.priorityclassifier = 0
                 it.classifiermask = 0
-                it.lon = targetNode!!.iLon
-                it.lat = targetNode!!.iLat
+                it.lon = targetNode!!.position.longitude.toIntLongitude()
+                it.lat = targetNode!!.position.latitude.toIntLatitude()
                 it.ele = Short.MIN_VALUE
                 it.linkdist = sourceNode!!.calcDistance(targetNode!!)
                 it.wayTags = mapOf("direct_segment" to "$seg")
@@ -145,8 +145,8 @@ public abstract class OsmPath : OsmLinkHolder {
         var lon0 = origin.originLon
         var lat0 = origin.originLat
 
-        var lon1 = sourceNode!!.iLon
-        var lat1 = sourceNode!!.iLat
+        var lon1 = sourceNode!!.position.longitude.toIntLongitude()
+        var lat1 = sourceNode!!.position.latitude.toIntLatitude()
         var ele1 = origin.selev
 
         var linkdisttotal = 0
@@ -226,9 +226,9 @@ public abstract class OsmPath : OsmLinkHolder {
             val originEle2: Short
 
             if (transferNode == null) {
-                lon2 = targetNode!!.iLon
-                lat2 = targetNode!!.iLat
-                originEle2 = targetNode!!.sElev
+                lon2 = targetNode!!.position.longitude.toIntLongitude()
+                lat2 = targetNode!!.position.latitude.toIntLatitude()
+                originEle2 = toSElev(targetNode!!.position.altitude)
             } else {
                 lon2 = transferNode.ilon
                 lat2 = transferNode.ilat
@@ -481,6 +481,8 @@ public abstract class OsmPath : OsmLinkHolder {
 
     public open val totalEnergy: Double
         get() = 0.0
+
+    private fun toSElev(altitude: Double?): Short = (altitude ?: 0.0).times(4.0).toInt().toShort()
 
     public companion object {
         private const val PATH_START_BIT = 1
