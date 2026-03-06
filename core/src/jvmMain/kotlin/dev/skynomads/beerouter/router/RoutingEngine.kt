@@ -29,7 +29,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
     private var nodesCache: NodesCache? = null
     private val openSet = SortedHeap<OsmPath?>()
 
-    private var extraWaypoints: MutableList<OsmNodeNamed> = mutableListOf()
+    private val extraWaypoints: MutableList<OsmNodeNamed> = mutableListOf()
     protected var matchedWaypoints: MutableList<MatchedWaypoint> = mutableListOf()
     private var linksProcessed: Int = 0
 
@@ -586,7 +586,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
                     nUnmatched++
                 }
             }
-            extraWaypoints = mutableListOf()
+            extraWaypoints.clear()
         }
         if (lastTracks.size < waypoints.size - 1) {
             refTracks = arrayOfNulls(waypoints.size - 1) // used ways for alternatives
