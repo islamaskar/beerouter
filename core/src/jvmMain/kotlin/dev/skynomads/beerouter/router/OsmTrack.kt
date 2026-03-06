@@ -172,16 +172,23 @@ public class OsmTrack {
         i = 0
         while (i < t.nodes.size) {
             val e = t.nodes[i]
-            if (i == 0 && ourSize > 0 && nodes[ourSize - 1].sElev == Short.MIN_VALUE) nodes[ourSize - 1].position =
-                Position(nodes[ourSize - 1].position.longitude, nodes[ourSize - 1].position.latitude, e.sElev.toDouble() / 4.0)
+            if (i == 0 && ourSize > 0 && toSElev(nodes[ourSize - 1].position.altitude) == Short.MIN_VALUE) {
+                nodes[ourSize - 1].position = Position(
+                    nodes[ourSize - 1].position.longitude,
+                    nodes[ourSize - 1].position.latitude,
+                    toSElev(e.position.altitude).toDouble() / 4.0
+                )
+            }
             if (i > 0 || ourSize == 0) {
                 e.time += t0
                 e.energy += e0
                 e.cost += c0
                 if (e.message != null) {
-                    if (!(e.message!!.lon == e.iLon && e.message!!.lat == e.iLat)) {
-                        e.message!!.lon = e.iLon
-                        e.message!!.lat = e.iLat
+                    val lon = e.position.longitude.toIntLongitude()
+                    val lat = e.position.latitude.toIntLatitude()
+                    if (!(e.message!!.lon == lon && e.message!!.lat == lat)) {
+                        e.message!!.lon = lon
+                        e.message!!.lat = lat
                     }
                 }
                 nodes.add(e)
@@ -292,9 +299,9 @@ public class OsmTrack {
                 if (nodeNr == nodes.size - 1) {
                     val input = VoiceHint()
                     inputs.add(0, input)
-                    input.ilat = node.iLat
-                    input.ilon = node.iLon
-                    input.selev = node.sElev
+                    input.ilat = node.position.latitude.toIntLatitude()
+                    input.ilon = node.position.longitude.toIntLongitude()
+                    input.selev = toSElev(node.position.altitude)
                     input.goodWay = node.message
                     input.oldWay = node.message
                     input.indexInTrack = nodes.size - 1
@@ -302,9 +309,9 @@ public class OsmTrack {
                 }
                 val input = VoiceHint()
                 inputs.add(input)
-                input.ilat = origin.iLat
-                input.ilon = origin.iLon
-                input.selev = origin.sElev
+                input.ilat = origin.position.latitude.toIntLatitude()
+                input.ilon = origin.position.longitude.toIntLongitude()
+                input.selev = toSElev(origin.position.altitude)
                 input.indexInTrack = --nodeNr
                 input.goodWay = node.message
                 input.oldWay = if (origin.message == null) node.message else origin.message
@@ -446,8 +453,8 @@ public class OsmTrack {
             debugInfo: StringBuilder?
         ): OsmTrack? {
             val ep = readFromStream(source)
-            val dlon: Int = ep.waypoint!!.iLon - newEp.iLon
-            val dlat = ep.waypoint!!.iLat - newEp.iLat
+            val dlon: Int = ep.waypoint!!.position.longitude.toIntLongitude() - newEp.position.longitude.toIntLongitude()
+            val dlat = ep.waypoint!!.position.latitude.toIntLatitude() - newEp.position.latitude.toIntLatitude()
             val targetMatch = dlon < 20 && dlon > -20 && dlat < 20 && dlat > -20
             debugInfo?.append("target-delta = $dlon/$dlat targetMatch=$targetMatch")
             if (!targetMatch) return null
@@ -504,5 +511,7 @@ public class OsmTrack {
             sb.append('}')
             return sb.toString()
         }
+
+        private fun toSElev(altitude: Double?): Short = (altitude ?: 0.0).times(4.0).toInt().toShort()
     }
 }
