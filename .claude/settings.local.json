@@ -1,11 +1,12 @@
 {
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:brouter.de)",
+      "Bash(./gradlew :core:jvmTest:*)"
+    ]
+  },
   "sandbox": {
     "enabled": true,
     "autoAllowBashIfSandboxed": true
-  },
-  "permissions": {
-    "allow": [
-      "WebFetch(domain:brouter.de)"
-    ]
   }
 }
