@@ -110,7 +110,7 @@ public open class OsmNode : OsmLink, OsmPos {
     public fun parseNodeBody(mc: MicroCache, hollowNodes: OsmNodesMap, expCtxWay: IByteArrayUnifier) {
         if (mc is MicroCache2) {
             parseNodeBody2(mc, hollowNodes, expCtxWay)
-        } else throw IllegalArgumentException("unknown cache version: " + mc.javaClass)
+        } else throw IllegalArgumentException("unknown cache version: " + mc::class.simpleName)
     }
 
     public fun parseNodeBody2(mc: MicroCache2, hollowNodes: OsmNodesMap, expCtxWay: IByteArrayUnifier) {

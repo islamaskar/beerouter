@@ -110,11 +110,8 @@ public class NodesCache(
             return
         }
 
-        for (i in fileRows.indices) {
-            val fileRow = fileRows[i]
-            if (fileRow == null) {
-                continue
-            }
+        for (fileRow in fileRows) {
+            if (fileRow == null) continue
             for (osmf in fileRow) {
                 cacheSum -= if (garbageCollectionEnabled && !ghostCleaningDone) {
                     osmf!!.cleanGhosts()
@@ -305,9 +302,7 @@ public class NodesCache(
         }
 
         require(!firstFileAccessFailed) { "datafile $firstFileAccessName not found" }
-        val len = unmatchedWaypoints.size
-        for (i in 0..<len) {
-            val mwp = unmatchedWaypoints[i]
+        for ((i, mwp) in unmatchedWaypoints.withIndex()) {
             if (mwp.crosspoint == null) {
                 if (unmatchedWaypoints.size > 1 && i == unmatchedWaypoints.size - 1 && unmatchedWaypoints[i - 1].type == MatchedWaypoint.Type.DIRECT
                 ) {
@@ -362,18 +357,16 @@ public class NodesCache(
 
         currentFileName = "$filenameBase.rd5"
 
-        var ra: PhysicalFile? = null
-        if (!fileCache.containsKey(filenameBase)) {
+        val ra: PhysicalFile? = fileCache.getOrPut(filenameBase) {
             if (!forceSecondaryData) {
                 val primary = File(segmentDir, "$filenameBase.rd5")
                 if (primary.exists()) {
                     currentFileName = primary.name
-                    ra = PhysicalFile(primary, dataBuffers, lookupVersion, lookupMinorVersion)
+                    return@getOrPut PhysicalFile(primary, dataBuffers, lookupVersion, lookupMinorVersion)
                 }
             }
-            fileCache[filenameBase] = ra
+            null
         }
-        ra = fileCache[filenameBase]
         val osmf = OsmFile(ra, lonDegree, latDegree, dataBuffers)
 
         if (firstFileAccessName == null) {
