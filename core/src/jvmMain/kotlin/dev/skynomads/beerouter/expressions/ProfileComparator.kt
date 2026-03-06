@@ -1,7 +1,9 @@
 package dev.skynomads.beerouter.expressions
 
 import dev.skynomads.beerouter.util.readUtf8
+import kotlinx.io.buffered
 import kotlinx.io.files.Path
+import kotlinx.io.files.SystemFileSystem
 import kotlin.random.Random
 
 public object ProfileComparator {
@@ -48,12 +50,16 @@ public object ProfileComparator {
         println("nodeContext=$nodeContext nodeCount1=${expctx1.expressionNodeCount} nodeCount2=${expctx2.expressionNodeCount}")
 
         val rnd = Random.Default
-        for (i in 0..<nsamples) {
+        repeat(nsamples) {
             val data = expctx1.generateRandomValues(rnd)
             expctx1.evaluate(data)
             expctx2.evaluate(data)
             expctx1.assertAllVariablesEqual(expctx2)
         }
     }
+
+    private fun readUtf8(path: Path): String =
+        SystemFileSystem.source(path).buffered().use(::readUtf8)
+
     private fun fileName(path: String): String = path.substringAfterLast('/').substringAfterLast('\\')
 }
