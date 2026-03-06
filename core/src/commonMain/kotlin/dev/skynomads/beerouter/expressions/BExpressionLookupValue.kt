@@ -29,5 +29,5 @@ public class BExpressionLookupValue(public val value: String) {
 
     override fun hashCode(): Int = value.hashCode()
 
-    public fun matches(s: String?): Boolean = value == s || aliases.any { it == s }
+    public fun matches(s: String?): Boolean = value == s || s in aliases
 }
