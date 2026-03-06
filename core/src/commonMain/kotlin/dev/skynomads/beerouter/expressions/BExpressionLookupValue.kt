@@ -17,31 +17,20 @@ public class BExpressionLookupValue(public var value: String) {
         return value
     }
 
-    public fun addAlias(alias: String?) {
-        if (aliases == null) aliases = ArrayList()
-        aliases!!.add(alias!!)
+    public fun addAlias(alias: String) {
+        if (aliases == null) aliases = mutableListOf()
+        aliases!!.add(alias)
     }
 
     override fun equals(o: Any?): Boolean {
-        if (o is String) {
-            val v = o
-            return value == v
+        return when (o) {
+            is String -> value == o
+            is BExpressionLookupValue -> value == o.value
+            else -> false
         }
-        if (o is BExpressionLookupValue) {
-            val v = o
-
-            return value == v.value
-        }
-        return false
     }
 
     public fun matches(s: String?): Boolean {
-        if (value == s) return true
-        if (aliases != null) {
-            for (alias in aliases) {
-                if (alias == s) return true
-            }
-        }
-        return false
+        return value == s || aliases?.any { it == s } == true
     }
 }
