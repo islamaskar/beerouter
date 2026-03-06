@@ -14,13 +14,20 @@ public data class TurnRestriction(
     public var toLat: Int = 0,
     public var next: TurnRestriction? = null
 ) {
+    public enum class RestrictionException(public val bit: Int) {
+        BICYCLES(1),
+        MOTORCARS(2)
+    }
+
+    private fun hasException(exception: RestrictionException): Boolean =
+        (exceptions.toInt() and exception.bit) != 0
 
     public fun exceptBikes(): Boolean {
-        return (exceptions.toInt() and 1) != 0
+        return hasException(RestrictionException.BICYCLES)
     }
 
     public fun exceptMotorcars(): Boolean {
-        return (exceptions.toInt() and 2) != 0
+        return hasException(RestrictionException.MOTORCARS)
     }
 
     override fun toString(): String {
@@ -37,29 +44,19 @@ public data class TurnRestriction(
             bikeMode: Boolean,
             carMode: Boolean
         ): Boolean {
-            var hasAnyPositive = false
-            var hasPositive = false
-            var hasNegative = false
-            var tr = first
-            while (tr != null) {
-                if ((tr.exceptBikes() && bikeMode) || (tr.exceptMotorcars() && carMode)) {
-                    tr = tr.next
-                    continue
-                }
-                if (tr.fromLon == fromLon && tr.fromLat == fromLat) {
-                    if (tr.isPositive) {
-                        hasAnyPositive = true
-                    }
-                    if (tr.toLon == toLon && tr.toLat == toLat) {
-                        if (tr.isPositive) {
-                            hasPositive = true
-                        } else {
-                            hasNegative = true
-                        }
-                    }
-                }
-                tr = tr.next
+            val matchingRestrictions = generateSequence(first) { it.next }
+                .filterNot { (it.exceptBikes() && bikeMode) || (it.exceptMotorcars() && carMode) }
+                .filter { it.fromLon == fromLon && it.fromLat == fromLat }
+                .toList()
+
+            val hasAnyPositive = matchingRestrictions.any(TurnRestriction::isPositive)
+            val hasPositive = matchingRestrictions.any {
+                it.isPositive && it.toLon == toLon && it.toLat == toLat
             }
+            val hasNegative = matchingRestrictions.any {
+                !it.isPositive && it.toLon == toLon && it.toLat == toLat
+            }
+
             return !hasPositive && (hasAnyPositive || hasNegative)
         }
     }

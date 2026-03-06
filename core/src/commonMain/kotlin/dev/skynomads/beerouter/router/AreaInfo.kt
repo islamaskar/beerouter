@@ -21,41 +21,35 @@ public class AreaInfo(public val direction: Int) {
     public var elevStart: Double = 0.0
     public var elev50: Int = 0
 
+    private fun percentage(part: Int, total: Int): Int =
+        if (total == 0) 0 else (part * 100.0 / total).toInt()
+
     public fun checkAreaInfo(expctxWay: BExpressionContext, elev: Double, ab: ByteArray) {
         ways++
 
         val test = elevStart - elev
         if (abs(test) < 50) elev50++
 
-        val ld2 = expctxWay.createNewLookupData()
-        expctxWay.decode(ld2!!, false, ab)
+        val lookupData = requireNotNull(expctxWay.createNewLookupData())
+        expctxWay.decode(lookupData, false, ab)
 
-        if (numForest != -1 && ld2[numForest] > 1) {
+        if (numForest >= 0 && lookupData[numForest] > 1) {
             greenWays++
         }
 
-        if (numRiver != -1 && ld2[numRiver] > 1) {
+        if (numRiver >= 0 && lookupData[numRiver] > 1) {
             riverWays++
         }
     }
 
     public val elev50Weight: Int
-        get() {
-            if (ways == 0) return 0
-            return (elev50 * 100.0 / ways).toInt()
-        }
+        get() = percentage(elev50, ways)
 
     public val green: Int
-        get() {
-            if (ways == 0) return 0
-            return (greenWays * 100.0 / ways).toInt()
-        }
+        get() = percentage(greenWays, ways)
 
     public val river: Int
-        get() {
-            if (ways == 0) return 0
-            return (riverWays * 100.0 / ways).toInt()
-        }
+        get() = percentage(riverWays, ways)
 
     override fun toString(): String = buildString {
         append("Area $direction $elevStart m ways $ways")

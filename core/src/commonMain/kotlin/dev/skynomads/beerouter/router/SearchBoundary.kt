@@ -10,6 +10,19 @@ import dev.skynomads.beerouter.osm.toIntLatitude
 import dev.skynomads.beerouter.osm.toIntLongitude
 
 internal class SearchBoundary(n: OsmNode, private val radius: Int, val direction: Int) {
+    private enum class Direction(public val id: Int) {
+        NORTH(0),
+        WEST(1),
+        SOUTH(2),
+        EAST(3);
+
+        companion object {
+            fun fromId(id: Int): Direction =
+                entries.firstOrNull { it.id == id }
+                    ?: throw IllegalArgumentException("undefined direction: $id")
+        }
+    }
+
     private val minlon0: Int
     private val minlat0: Int
     private val maxlon0: Int
@@ -20,6 +33,7 @@ internal class SearchBoundary(n: OsmNode, private val radius: Int, val direction
     private val maxlon: Int
     private val maxlat: Int
     private val p: OsmNode = OsmNode(n.position)
+    private val searchDirection: Direction = Direction.fromId(direction)
 
     /**
      * @param radius Search radius in meters.
@@ -55,12 +69,11 @@ internal class SearchBoundary(n: OsmNode, private val radius: Int, val direction
     fun getBoundaryDistance(n: OsmNode): Int {
         val nLon = n.position.longitude.toIntLongitude()
         val nLat = n.position.latitude.toIntLatitude()
-        return when (direction) {
-            0 -> n.calcDistance(OsmNode(nLon, minlat))
-            1 -> n.calcDistance(OsmNode(minlon, nLat))
-            2 -> n.calcDistance(OsmNode(nLon, maxlat))
-            3 -> n.calcDistance(OsmNode(maxlon, nLat))
-            else -> throw IllegalArgumentException("undefined direction: $direction")
+        return when (searchDirection) {
+            Direction.NORTH -> n.calcDistance(OsmNode(nLon, minlat))
+            Direction.WEST -> n.calcDistance(OsmNode(minlon, nLat))
+            Direction.SOUTH -> n.calcDistance(OsmNode(nLon, maxlat))
+            Direction.EAST -> n.calcDistance(OsmNode(maxlon, nLat))
         }
     }
 

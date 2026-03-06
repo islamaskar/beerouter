@@ -29,6 +29,14 @@ public data class MessageData(
     public var vnode1: Int = 999,
     public var extraTime: Int = 0
 ) {
+    public enum class ClassifierFlag(public val bit: Int) {
+        BAD_ONEWAY(1),
+        GOOD_ONEWAY(2),
+        ROUNDABOUT(4),
+        LINK_TYPE(8),
+        GOOD_FOR_CARS(16)
+    }
+
     public fun add(d: MessageData) {
         linkdist += d.linkdist
         linkelevationcost += d.linkelevationcost
@@ -39,18 +47,20 @@ public data class MessageData(
 
     override fun toString(): String = "dist=$linkdist prio=$priorityclassifier turn=$turnangle"
 
+    private fun hasFlag(flag: ClassifierFlag): Boolean = (classifiermask and flag.bit) != 0
+
     public val isBadOneway: Boolean
-        get() = (classifiermask and 1) != 0
+        get() = hasFlag(ClassifierFlag.BAD_ONEWAY)
 
     public val isGoodOneway: Boolean
-        get() = (classifiermask and 2) != 0
+        get() = hasFlag(ClassifierFlag.GOOD_ONEWAY)
 
     public val isRoundabout: Boolean
-        get() = (classifiermask and 4) != 0
+        get() = hasFlag(ClassifierFlag.ROUNDABOUT)
 
     public val isLinktType: Boolean
-        get() = (classifiermask and 8) != 0
+        get() = hasFlag(ClassifierFlag.LINK_TYPE)
 
     public val isGoodForCars: Boolean
-        get() = (classifiermask and 16) != 0
+        get() = hasFlag(ClassifierFlag.GOOD_FOR_CARS)
 }
