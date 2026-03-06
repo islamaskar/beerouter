@@ -5,7 +5,6 @@
  */
 package dev.skynomads.beerouter.mapaccess
 
-import java.io.File
 import java.security.MessageDigest
 import kotlinx.io.buffered
 import kotlinx.io.files.Path
@@ -20,56 +19,46 @@ public object Rd5DiffManager {
      * Compute diffs for all RD5 files
      */
     public fun calcDiffs(oldDir: Path, newDir: Path) {
-        calcDiffs(File(oldDir.toString()), File(newDir.toString()))
-    }
+        val oldDiffDir = resolve(oldDir, "diff")
+        val newDiffDir = resolve(newDir, "diff")
 
-    public fun calcDiffs(oldDir: File, newDir: File) {
-        val oldDiffDir = File(oldDir, "diff")
-        val newDiffDir = File(newDir, "diff")
-
-        val filesNew = newDir.listFiles() ?: return
+        val filesNew = runCatching { SystemFileSystem.list(newDir) }.getOrElse { emptyList() }
 
         for (fn in filesNew) {
-            val name = fn.name
+            val name = fileName(fn)
             if (!name.endsWith(".rd5")) continue
-            if (fn.length() < 1024 * 1024) continue  // exclude very small files from diffing
+            if ((SystemFileSystem.metadataOrNull(fn)?.size ?: 0L) < 1024 * 1024) continue // exclude very small files from diffing
 
             val basename = name.dropLast(4)
-            val fo = File(oldDir, name)
-            if (!fo.isFile) continue
+            val fo = resolve(oldDir, name)
+            if (SystemFileSystem.metadataOrNull(fo)?.isRegularFile != true) continue
 
             val md5 = getMD5(fo)
             val md5New = getMD5(fn)
 
             println("name=$name md5=$md5")
 
-            val specificNewDiffs = File(newDiffDir, basename)
-            specificNewDiffs.mkdirs()
+            val specificNewDiffs = resolve(newDiffDir, basename)
+            SystemFileSystem.createDirectories(specificNewDiffs)
 
-            val diffFile = File(specificNewDiffs, "$md5.df5")
-            File(specificNewDiffs, "$md5New.df5").createNewFile()
+            val diffFile = resolve(specificNewDiffs, "$md5.df5")
+            SystemFileSystem.sink(resolve(specificNewDiffs, "$md5New.df5")).buffered().use { }
 
             Rd5DiffTool.diff2files(fo, fn, diffFile)
 
-            val specificOldDiffs = File(oldDiffDir, basename)
-            if (specificOldDiffs.isDirectory) {
-                val oldDiffs = specificOldDiffs.listFiles() ?: continue
+            val specificOldDiffs = resolve(oldDiffDir, basename)
+            if (SystemFileSystem.metadataOrNull(specificOldDiffs)?.isDirectory == true) {
+                val oldDiffs = runCatching { SystemFileSystem.list(specificOldDiffs) }.getOrElse { emptyList() }
                 for (od in oldDiffs) {
-                    if (!od.name.endsWith(".df5")) continue
-                    if (System.currentTimeMillis() - od.lastModified() > 9 * 86400000L) continue
+                    if (!fileName(od).endsWith(".df5")) continue
 
-                    val updatedDiff = File(specificNewDiffs, od.name)
-                    if (!updatedDiff.exists()) {
+                    val updatedDiff = resolve(specificNewDiffs, fileName(od))
+                    if (!SystemFileSystem.exists(updatedDiff)) {
                         Rd5DiffTool.addDeltas(od, diffFile, updatedDiff)
-                        updatedDiff.setLastModified(od.lastModified())
                     }
                 }
             }
         }
-    }
-
-    public fun getMD5(f: File): String {
-        return getMD5(Path(f.path))
     }
 
     public fun getMD5(path: Path): String {
@@ -97,4 +86,8 @@ public object Rd5DiffManager {
     private fun hexChar(v: Int): Char {
         return (if (v > 9) 'a'.code + (v - 10) else '0'.code + v).toChar()
     }
+
+    private fun resolve(base: Path, child: String): Path = Path("${base.toString()}/$child")
+
+    private fun fileName(path: Path): String = path.toString().substringAfterLast('/').substringAfterLast('\\')
 }

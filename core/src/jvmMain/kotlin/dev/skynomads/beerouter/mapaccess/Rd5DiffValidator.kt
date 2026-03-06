@@ -5,8 +5,8 @@
  */
 package dev.skynomads.beerouter.mapaccess
 
-import java.io.File
 import kotlinx.io.files.Path
+import kotlinx.io.files.SystemFileSystem
 
 public object Rd5DiffValidator {
     public fun main(args: Array<String>) {
@@ -17,31 +17,27 @@ public object Rd5DiffValidator {
      * Validate diffs for all DF5 files
      */
     public fun validateDiffs(oldDir: Path, newDir: Path) {
-        validateDiffs(File(oldDir.toString()), File(newDir.toString()))
-    }
+        val newDiffDir = resolve(newDir, "diff")
 
-    public fun validateDiffs(oldDir: File, newDir: File) {
-        val newDiffDir = File(newDir, "diff")
-
-        val filesNew = newDir.listFiles() ?: return
+        val filesNew = runCatching { SystemFileSystem.list(newDir) }.getOrElse { emptyList() }
 
         for (fn in filesNew) {
-            val name = fn.name
+            val name = fileName(fn)
             if (!name.endsWith(".rd5")) continue
-            if (fn.length() < 1024 * 1024) continue  // expecting no diff for small files
+            if ((SystemFileSystem.metadataOrNull(fn)?.size ?: 0L) < 1024 * 1024) continue // expecting no diff for small files
 
             val basename = name.dropLast(4)
-            val fo = File(oldDir, name)
-            if (!fo.isFile) continue
+            val fo = resolve(oldDir, name)
+            if (SystemFileSystem.metadataOrNull(fo)?.isRegularFile != true) continue
 
             val md5 = Rd5DiffManager.getMD5(fo)
             val md5New = Rd5DiffManager.getMD5(fn)
 
             println("name=$name md5=$md5")
 
-            val specificNewDiffs = File(newDiffDir, basename)
-            val diffFile = File(specificNewDiffs, "$md5.df5")
-            val fcmp = File(oldDir, "${name}_tmp")
+            val specificNewDiffs = resolve(newDiffDir, basename)
+            val diffFile = resolve(specificNewDiffs, "$md5.df5")
+            val fcmp = resolve(oldDir, "${name}_tmp")
 
             Rd5DiffTool.recoverFromDelta(fo, diffFile, fcmp, Rd5DiffTool())
             val md5Cmp = Rd5DiffManager.getMD5(fcmp)
@@ -51,4 +47,8 @@ public object Rd5DiffValidator {
             }
         }
     }
+
+    private fun resolve(base: Path, child: String): Path = Path("${base.toString()}/$child")
+
+    private fun fileName(path: Path): String = path.toString().substringAfterLast('/').substringAfterLast('\\')
 }

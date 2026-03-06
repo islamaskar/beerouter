@@ -11,7 +11,6 @@ import dev.skynomads.beerouter.codec.MicroCache2
 import dev.skynomads.beerouter.codec.StatCoderContext
 import dev.skynomads.beerouter.util.Crc32.crc
 import dev.skynomads.beerouter.util.ProgressListener
-import java.io.File
 import kotlinx.io.EOFException
 import kotlinx.io.Sink
 import kotlinx.io.Source
@@ -179,7 +178,7 @@ public class Rd5DiffTool : ProgressListener {
          * Compute the delta between 2 RD5 files and
          * show statistics on the expected size of the delta file
          */
-        public fun diff2files(f1: File, f2: File, outFile: File) {
+        public fun diff2files(f1: Path, f2: Path, outFile: Path) {
             val abBuf1 = ByteArray(10 * 1024 * 1024)
             val abBuf2 = ByteArray(10 * 1024 * 1024)
 
@@ -189,9 +188,9 @@ public class Rd5DiffTool : ProgressListener {
 
             val t0 = System.currentTimeMillis()
 
-            SystemFileSystem.source(Path(f1.path)).buffered().use { source1 ->
-            SystemFileSystem.source(Path(f2.path)).buffered().use { source2 ->
-            SystemFileSystem.sink(Path(outFile.path)).buffered().use { sink ->
+            SystemFileSystem.source(f1).buffered().use { source1 ->
+            SystemFileSystem.source(f2).buffered().use { source2 ->
+            SystemFileSystem.sink(outFile).buffered().use { sink ->
                 val mcOut = MCOutputStream(sink, abBuf1)
 
                 val fileIndex1: LongArray = readFileIndex(source1, null)
@@ -237,17 +236,13 @@ public class Rd5DiffTool : ProgressListener {
             }}}
         }
 
-        public fun diff2files(f1: Path, f2: Path, outFile: Path) {
-            diff2files(File(f1.toString()), File(f2.toString()), File(outFile.toString()))
-        }
-
         public fun recoverFromDelta(
-            f1: File,
-            f2: File,
-            outFile: File,
+            f1: Path,
+            f2: Path,
+            outFile: Path,
             progress: ProgressListener
         ) {
-            if (f2.length() == 0L) {
+            if ((SystemFileSystem.metadataOrNull(f2)?.size ?: 0L) == 0L) {
                 copyFile(f1, outFile, progress)
                 return
             }
@@ -257,9 +252,9 @@ public class Rd5DiffTool : ProgressListener {
 
             val t0 = System.currentTimeMillis()
 
-            SystemFileSystem.source(Path(f1.path)).buffered().use { source1 ->
-            SystemFileSystem.source(Path(f2.path)).buffered().use { source2 ->
-            SystemFileSystem.sink(Path(outFile.path)).buffered().use { sink ->
+            SystemFileSystem.source(f1).buffered().use { source1 ->
+            SystemFileSystem.source(f2).buffered().use { source2 ->
+            SystemFileSystem.sink(outFile).buffered().use { sink ->
                 val fileIndex1: LongArray = readFileIndex(source1, null)
                 val fileIndex2: LongArray = readFileIndex(source2, sink)
 
@@ -329,30 +324,15 @@ public class Rd5DiffTool : ProgressListener {
                 val t1 = System.currentTimeMillis()
                 println("recovering from diffs took ${t1 - t0}ms")
             }}}
-            if (progress.isCanceled) outFile.delete()
         }
 
-        public fun recoverFromDelta(
-            f1: Path,
-            f2: Path,
-            outFile: Path,
-            progress: ProgressListener
-        ) {
-            recoverFromDelta(
-                File(f1.toString()),
-                File(f2.toString()),
-                File(outFile.toString()),
-                progress
-            )
-        }
-
-        public fun copyFile(f1: File, outFile: File, progress: ProgressListener) {
-            val sizeTotal = f1.length()
+        public fun copyFile(f1: Path, outFile: Path, progress: ProgressListener) {
+            val sizeTotal = SystemFileSystem.metadataOrNull(f1)?.size ?: 0L
             var sizeRead = 0L
             var lastPct = -1
 
-            SystemFileSystem.source(Path(f1.path)).buffered().use { source ->
-            SystemFileSystem.sink(Path(outFile.path)).buffered().use { sink ->
+            SystemFileSystem.source(f1).buffered().use { source ->
+            SystemFileSystem.sink(outFile).buffered().use { sink ->
                 val buf = ByteArray(65536)
                 while (true) {
                     if (progress.isCanceled) {
@@ -369,22 +349,17 @@ public class Rd5DiffTool : ProgressListener {
                     sink.write(buf, 0, len)
                 }
             }}
-            if (progress.isCanceled) outFile.delete()
         }
 
-        public fun copyFile(f1: Path, outFile: Path, progress: ProgressListener) {
-            copyFile(File(f1.toString()), File(outFile.toString()), progress)
-        }
-
-        public fun addDeltas(f1: File, f2: File, outFile: File) {
+        public fun addDeltas(f1: Path, f2: Path, outFile: Path) {
             val abBuf1 = ByteArray(10 * 1024 * 1024)
             val abBuf2 = ByteArray(10 * 1024 * 1024)
 
             val t0 = System.currentTimeMillis()
 
-            SystemFileSystem.source(Path(f1.path)).buffered().use { source1 ->
-            SystemFileSystem.source(Path(f2.path)).buffered().use { source2 ->
-            SystemFileSystem.sink(Path(outFile.path)).buffered().use { sink ->
+            SystemFileSystem.source(f1).buffered().use { source1 ->
+            SystemFileSystem.source(f2).buffered().use { source2 ->
+            SystemFileSystem.sink(outFile).buffered().use { sink ->
                 val fileIndex1: LongArray = readFileIndex(source1, null)
                 val fileIndex2: LongArray = readFileIndex(source2, sink)
 
@@ -421,17 +396,13 @@ public class Rd5DiffTool : ProgressListener {
             }}}
         }
 
-        public fun addDeltas(f1: Path, f2: Path, outFile: Path) {
-            addDeltas(File(f1.toString()), File(f2.toString()), File(outFile.toString()))
-        }
-
-        public fun reEncode(f1: File, outFile: File) {
+        public fun reEncode(f1: Path, outFile: Path) {
             val abBuf1 = ByteArray(10 * 1024 * 1024)
 
             val t0 = System.currentTimeMillis()
 
-            SystemFileSystem.source(Path(f1.path)).buffered().use { source ->
-            SystemFileSystem.sink(Path(outFile.path)).buffered().use { sink ->
+            SystemFileSystem.source(f1).buffered().use { source ->
+            SystemFileSystem.sink(outFile).buffered().use { sink ->
                 val fileIndex1: LongArray = readFileIndex(source, sink)
 
                 val dataBuffers = DataBuffers()
@@ -455,10 +426,6 @@ public class Rd5DiffTool : ProgressListener {
                 val t1 = System.currentTimeMillis()
                 println("re-encoding took ${t1 - t0}ms")
             }}
-        }
-
-        public fun reEncode(f1: Path, outFile: Path) {
-            reEncode(File(f1.toString()), File(outFile.toString()))
         }
     }
 }
