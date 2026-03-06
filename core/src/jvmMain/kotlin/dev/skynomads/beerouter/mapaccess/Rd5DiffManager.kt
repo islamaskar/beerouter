@@ -19,6 +19,10 @@ public object Rd5DiffManager {
     /**
      * Compute diffs for all RD5 files
      */
+    public fun calcDiffs(oldDir: Path, newDir: Path) {
+        calcDiffs(File(oldDir.toString()), File(newDir.toString()))
+    }
+
     public fun calcDiffs(oldDir: File, newDir: File) {
         val oldDiffDir = File(oldDir, "diff")
         val newDiffDir = File(newDir, "diff")

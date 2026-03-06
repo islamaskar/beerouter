@@ -6,6 +6,7 @@
 package dev.skynomads.beerouter.mapaccess
 
 import java.io.File
+import kotlinx.io.files.Path
 
 public object Rd5DiffValidator {
     public fun main(args: Array<String>) {
@@ -15,6 +16,10 @@ public object Rd5DiffValidator {
     /**
      * Validate diffs for all DF5 files
      */
+    public fun validateDiffs(oldDir: Path, newDir: Path) {
+        validateDiffs(File(oldDir.toString()), File(newDir.toString()))
+    }
+
     public fun validateDiffs(oldDir: File, newDir: File) {
         val newDiffDir = File(newDir, "diff")
 
