@@ -18,7 +18,8 @@ import dev.skynomads.beerouter.osm.toIntLongitude
 import dev.skynomads.beerouter.util.CheapAngleMeter
 import dev.skynomads.beerouter.util.CheapRuler.getLonLatToMeterScales
 import dev.skynomads.beerouter.util.readUtf8
-import java.io.File
+import kotlinx.io.Source
+import kotlinx.io.buffered
 import kotlinx.io.files.Path
 import kotlin.math.abs
 import kotlin.math.max
@@ -26,27 +27,28 @@ import kotlin.math.roundToInt
 import kotlin.math.sqrt
 
 public class RoutingContext(
-    public val profile: File,
-    public val segmentDir: File,
-    public val lookupFile: File = File(profile.parentFile, "lookups.dat")
+    public val profileName: String,
+    public val segmentDir: Path,
+    private val profileContent: String,
+    private val lookupContent: String
 ) {
     public constructor(
-        profilePath: Path,
-        segmentDirPath: Path,
-        lookupPath: Path
+        profileName: String,
+        segmentDir: Path,
+        profileSource: Source,
+        lookupSource: Source
     ) : this(
-        profile = File(profilePath.toString()),
-        segmentDir = File(segmentDirPath.toString()),
-        lookupFile = File(lookupPath.toString())
+        profileName = profileName,
+        segmentDir = segmentDir,
+        profileContent = profileSource.buffered().use(::readUtf8),
+        lookupContent = lookupSource.buffered().use(::readUtf8)
     )
 
-    public constructor(
-        profilePath: Path,
-        segmentDirPath: Path
-    ) : this(
-        profile = File(profilePath.toString()),
-        segmentDir = File(segmentDirPath.toString()),
-        lookupFile = File(defaultLookupPath(profilePath).toString())
+    public constructor(template: RoutingContext) : this(
+        profileName = template.profileName,
+        segmentDir = template.segmentDir,
+        profileContent = template.profileContent,
+        lookupContent = template.lookupContent
     )
 
     public class Global(ctx: BExpressionContext) {
@@ -212,11 +214,10 @@ public class RoutingContext(
         way = BExpressionContextWay(memoryclass * 512, meta)
         node.setForeignContext(way)
 
-        meta.readMetaData(readUtf8(lookupFile))
+        meta.readMetaData(lookupContent)
 
-        val profileContent = readUtf8(profile)
-        way.parseProfile(profileContent, profile.name, "global", keyValues)
-        node.parseProfile(profileContent, profile.name, "global", keyValues)
+        way.parseProfile(profileContent, profileName, "global", keyValues)
+        node.parseProfile(profileContent, profileName, "global", keyValues)
 
         setModel(way._modelClass)
         global = Global(way)
@@ -247,8 +248,6 @@ public class RoutingContext(
     public var allowSamewayback: Boolean = false
 
     public var anglemeter: CheapAngleMeter = CheapAngleMeter()
-
-    private fun readUtf8(file: File): String = readUtf8(Path(file.path))
 
     public var nogoCost: Double = 0.0
     public var isEndpoint: Boolean = false
@@ -574,12 +573,6 @@ public class RoutingContext(
     }
 
     public companion object {
-        private fun defaultLookupPath(profilePath: Path): Path {
-            val profileFile = File(profilePath.toString())
-            val parentDir = profileFile.parentFile ?: File(".")
-            return Path(File(parentDir, "lookups.dat").path)
-        }
-
         public fun prepareNogoPoints(nogos: MutableList<OsmNodeNamed>) {
             for (nogo in nogos) {
                 if (nogo is OsmNogoPolygon) {

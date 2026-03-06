@@ -93,7 +93,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
                 // we are only looking for info
                 if (routingContext.ai != null) return null
 
-                track.name = "brouter_${routingContext.profile.name}_$i"
+                track.name = "brouter_${routingContext.profileName}_$i"
 
                 if (i != min(3, max(0, routingContext.alternativeIdx))) {
                     i++
@@ -318,7 +318,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
                 listStart.add(wpt)
             }
 
-            val rc = RoutingContext(routingContext.profile, routingContext.segmentDir)
+            val rc = RoutingContext(routingContext)
             val re = RoutingEngine(rc)
             rc.global.useDynamicDistance = true
             re.matchWaypointsToNodes(listStart)

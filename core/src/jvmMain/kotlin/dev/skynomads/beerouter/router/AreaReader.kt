@@ -12,7 +12,6 @@ import dev.skynomads.beerouter.mapaccess.OsmNodesMap
 import dev.skynomads.beerouter.mapaccess.PhysicalFile
 import dev.skynomads.beerouter.osm.toIntLatitude
 import dev.skynomads.beerouter.osm.toIntLongitude
-import java.io.File
 import kotlinx.io.Sink
 import kotlinx.io.Source
 import kotlinx.io.buffered
@@ -23,27 +22,7 @@ import kotlin.math.roundToInt
 
 public class AreaReader {
     public fun getDirectAllData(
-        folderPath: Path,
-        rc: RoutingContext,
-        wp: OsmNodeNamed,
-        maxscale: Int,
-        expctxWay: BExpressionContextWay,
-        searchRect: OsmNogoPolygon,
-        ais: MutableList<AreaInfo>
-    ) {
-        getDirectAllData(
-            folder = File(folderPath.toString()),
-            rc = rc,
-            wp = wp,
-            maxscale = maxscale,
-            expctxWay = expctxWay,
-            searchRect = searchRect,
-            ais = ais
-        )
-    }
-
-    public fun getDirectAllData(
-        folder: File,
+        folder: Path,
         rc: RoutingContext,
         wp: OsmNodeNamed,
         maxscale: Int,
@@ -168,7 +147,7 @@ public class AreaReader {
                 if (filenameBase != lastFilenameBase) {
                     currentPhysicalFile?.close()
                     lastFilenameBase = filenameBase
-                    val file = File(folder, "$filenameBase.rd5")
+                    val file = Path("${folder.toString()}/$filenameBase.rd5")
                     currentDataBuffers = DataBuffers()
                     currentPhysicalFile = PhysicalFile(file, currentDataBuffers, -1, -1)
                 }
@@ -303,10 +282,6 @@ public class AreaReader {
             sink.writeInt(ai.riverWays)
             sink.writeInt(ai.elev50)
         }
-    }
-
-    public fun readAreaInfo(fai: File, wp: MatchedWaypoint, ais: MutableList<AreaInfo>) {
-        readAreaInfo(Path(fai.path), wp, ais)
     }
 
     public fun readAreaInfo(path: Path, wp: MatchedWaypoint, ais: MutableList<AreaInfo>) {

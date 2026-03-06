@@ -45,6 +45,38 @@ class RoutingTest {
     }
 
     @Test
+    fun routingEqualsBrouterMini() {
+        val scenarios = listOf(
+            RouteScenario(
+                name = "mini-trekking-tuebingen-rottenburg",
+                profile = "trekking.brf",
+                waypoints = listOf(
+                    createWaypoint("Tübingen", 48.5203263, 9.053596),
+                    createWaypoint("Rottenburg", 48.47696, 8.9336788)
+                )
+            ),
+            RouteScenario(
+                name = "mini-fastbike-tuebingen-reutlingen",
+                profile = "fastbike.brf",
+                waypoints = listOf(
+                    createWaypoint("Tübingen", 48.5203263, 9.053596),
+                    createWaypoint("Reutlingen", 48.4914, 9.2043)
+                )
+            ),
+            RouteScenario(
+                name = "mini-car-tuebingen-stuttgart",
+                profile = "car-vario.brf",
+                waypoints = listOf(
+                    createWaypoint("Tübingen", 48.5203263, 9.053596),
+                    createWaypoint("Stuttgart", 48.7758, 9.1829)
+                )
+            )
+        )
+
+        assertScenariosEqualBrouter(scenarios)
+    }
+
+    @Test
     fun routingEqualsBrouter() {
         val scenarios = listOf(
             // trekking profile: short / medium / long / via route
@@ -169,6 +201,10 @@ class RoutingTest {
             ),
         )
 
+        assertScenariosEqualBrouter(scenarios)
+    }
+
+    private fun assertScenariosEqualBrouter(scenarios: List<RouteScenario>) {
         val failures = mutableListOf<String>()
         scenarios.forEach { scenario ->
             try {
@@ -283,10 +319,7 @@ class RoutingTest {
         assertTrue(profile.exists(), "profile exists ${profile.path}")
 
 
-        val ctx = RoutingContext(
-            profile,
-            segmentFile.parentFile
-        ).apply {
+        val ctx = routingContextFromFiles(profile, segmentFile.parentFile).apply {
             global.turnInstructionMode = 2
         }
 

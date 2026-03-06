@@ -8,6 +8,8 @@ import kotlinx.io.files.SystemFileSystem
 public fun readUtf8(path: Path): String =
     SystemFileSystem.source(path).buffered().use { source -> source.readUtf8Fully() }
 
+public fun readUtf8(source: Source): String = source.readUtf8Fully()
+
 private fun Source.readUtf8Fully(): String {
     var result = ByteArray(DEFAULT_BUFFER_SIZE)
     val scratch = ByteArray(DEFAULT_BUFFER_SIZE)

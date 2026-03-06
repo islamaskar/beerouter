@@ -40,7 +40,7 @@ class RoutingContextParityTest {
         )
         engine.doRouting(60_000)
 
-        val beerouterContext = RoutingContext(profile, segmentFile.parentFile).apply {
+        val beerouterContext = routingContextFromFiles(profile, segmentFile.parentFile).apply {
             global.turnInstructionMode = 2
         }
 

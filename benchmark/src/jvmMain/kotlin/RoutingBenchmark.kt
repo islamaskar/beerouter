@@ -11,6 +11,9 @@ import java.net.URL
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
 import kotlin.time.Duration.Companion.seconds
+import kotlinx.io.buffered
+import kotlinx.io.files.Path
+import kotlinx.io.files.SystemFileSystem
 
 @State(Scope.Benchmark)
 open class RoutingBenchmark {
@@ -53,12 +56,20 @@ open class RoutingBenchmark {
     fun beerouter() {
         val profile = File(root, "../misc/profiles2/trekking.brf")
         require(profile.exists())
+        val lookup = File(profile.parentFile, "lookups.dat")
+        require(lookup.exists())
 
-        val ctx = RoutingContext(
-            profile,
-            segmentFile.getParentFile()
-        ).apply {
-            global.turnInstructionMode = 2
+        val ctx = SystemFileSystem.source(Path(profile.path)).buffered().use { profileSource ->
+            SystemFileSystem.source(Path(lookup.path)).buffered().use { lookupSource ->
+                RoutingContext(
+                    profileName = profile.name,
+                    segmentDir = Path(segmentFile.parentFile.path),
+                    profileSource = profileSource,
+                    lookupSource = lookupSource
+                ).apply {
+                    global.turnInstructionMode = 2
+                }
+            }
         }
 
         val engine = RoutingEngine(ctx)
