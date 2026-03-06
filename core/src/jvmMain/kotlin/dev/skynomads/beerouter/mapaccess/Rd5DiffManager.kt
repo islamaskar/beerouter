@@ -7,6 +7,7 @@ package dev.skynomads.beerouter.mapaccess
 
 import java.nio.file.Files
 import java.nio.file.Paths
+import java.nio.file.attribute.FileTime
 import java.security.MessageDigest
 import kotlinx.io.buffered
 import kotlinx.io.files.Path
@@ -61,6 +62,12 @@ public object Rd5DiffManager {
                     val updatedDiff = resolve(specificNewDiffs, fileName(od))
                     if (!SystemFileSystem.exists(updatedDiff)) {
                         Rd5DiffTool.addDeltas(od, diffFile, updatedDiff)
+                        runCatching {
+                            Files.setLastModifiedTime(
+                                Paths.get(updatedDiff.toString()),
+                                FileTime.fromMillis(modifiedAt)
+                            )
+                        }
                     }
                 }
             }

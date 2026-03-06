@@ -33,10 +33,18 @@ kotlin {
         val jvmMain by getting {
             dependencies {
                 implementation("org.jetbrains.kotlinx:kotlinx-benchmark-runtime:0.4.15")
+                implementation("org.jetbrains.kotlinx:kotlinx-io-core:0.8.2")
                 implementation("com.github.abrensch.brouter:brouter-core:c09ddffad9")
                 implementation("com.github.abrensch.brouter:brouter-mapaccess:c09ddffad9")
             }
         }
+    }
+}
+
+
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(21)) 
     }
 }
 

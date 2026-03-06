@@ -16,6 +16,8 @@ import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
 
 @State(Scope.Benchmark)
+@Warmup(iterations = 1)
+@Measurement(iterations = 1)
 open class RoutingBenchmark {
     val root = File(System.getProperty("user.dir"))
 
