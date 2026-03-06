@@ -447,7 +447,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) : Thread(
                     val tmp = track.nodes[i]
                     if (tmp.message != null) {
                         val md = tmp.message!!.copy()
-                        val msg = md!!.wayTags
+                        val msg = md.wayTags
 
                         val reverse = msg?.get("reversedirection") == "yes"
 

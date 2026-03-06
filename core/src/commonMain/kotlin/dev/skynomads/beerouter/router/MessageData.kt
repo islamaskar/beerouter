@@ -6,7 +6,7 @@
 package dev.skynomads.beerouter.router
 
 
-public class MessageData : Cloneable {
+public class MessageData {
     public var linkdist: Int = 0
     public var linkelevationcost: Int = 0
     public var linkturncost: Int = 0
@@ -43,17 +43,32 @@ public class MessageData : Cloneable {
         linkinitcost += d.linkinitcost
     }
 
-    public fun copy(): MessageData? {
-        return try {
-            clone() as MessageData?
-        } catch (e: CloneNotSupportedException) {
-            throw RuntimeException(e)
-        }
+    public fun copy(): MessageData = MessageData().also {
+        it.linkdist = linkdist
+        it.linkelevationcost = linkelevationcost
+        it.linkturncost = linkturncost
+        it.linknodecost = linknodecost
+        it.linkinitcost = linkinitcost
+        it.costfactor = costfactor
+        it.priorityclassifier = priorityclassifier
+        it.classifiermask = classifiermask
+        it.turnangle = turnangle
+        it.wayTags = wayTags
+        it.nodeTags = nodeTags
+        it.lon = lon
+        it.lat = lat
+        it.ele = ele
+        it.time = time
+        it.energy = energy
+        it.vmaxExplicit = vmaxExplicit
+        it.vmax = vmax
+        it.vmin = vmin
+        it.vnode0 = vnode0
+        it.vnode1 = vnode1
+        it.extraTime = extraTime
     }
 
-    override fun toString(): String {
-        return "dist=" + linkdist + " prio=" + this.priorityclassifier + " turn=" + turnangle
-    }
+    override fun toString(): String = "dist=$linkdist prio=$priorityclassifier turn=$turnangle"
 
     public val isBadOneway: Boolean
         get() = (classifiermask and 1) != 0
