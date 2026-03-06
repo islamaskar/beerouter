@@ -138,28 +138,40 @@ public class AreaReader {
                 null,
                 false
             )
-        var pf: PhysicalFile? = null
+        var currentPhysicalFile: PhysicalFile? = null
+        var currentDataBuffers: DataBuffers? = null
         var lastFilenameBase = ""
-        var dataBuffers: DataBuffers? = null
         try {
             for (entry in list) {
                 val n = OsmNode(entry.key)
                 val filenameBase: String = entry.value
                 if (filenameBase != lastFilenameBase) {
-                    pf?.close()
+                    currentPhysicalFile?.close()
                     lastFilenameBase = filenameBase
                     val file = File(folder, "$filenameBase.rd5")
-                    dataBuffers = DataBuffers()
-
-                    pf = PhysicalFile(file, dataBuffers, -1, -1)
+                    currentDataBuffers = DataBuffers()
+                    currentPhysicalFile = PhysicalFile(file, currentDataBuffers, -1, -1)
                 }
-                if (getDirectData(pf!!, dataBuffers!!, n.position.longitude.toIntLongitude(), n.position.latitude.toIntLatitude(), rc, expctxWay, ais)) used++
+                val physicalFile = requireNotNull(currentPhysicalFile)
+                val dataBuffers = requireNotNull(currentDataBuffers)
+                if (getDirectData(
+                        physicalFile,
+                        dataBuffers,
+                        n.position.longitude.toIntLongitude(),
+                        n.position.latitude.toIntLatitude(),
+                        rc,
+                        expctxWay,
+                        ais
+                    )
+                ) {
+                    used++
+                }
             }
         } catch (e: Exception) {
             System.err.println("AreaReader error after used=$used / count=$count: ${e.message}")
             ais.clear()
         } finally {
-            runCatching { pf?.close() }
+            runCatching { currentPhysicalFile?.close() }
             nodesCache.close()
         }
     }
