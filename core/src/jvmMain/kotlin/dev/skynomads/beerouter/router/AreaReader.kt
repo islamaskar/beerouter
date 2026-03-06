@@ -22,8 +22,6 @@ import kotlin.math.abs
 import kotlin.math.roundToInt
 
 public class AreaReader {
-    public lateinit var segmentFolder: File
-
     public fun getDirectAllData(
         folder: File,
         rc: RoutingContext,
@@ -33,8 +31,6 @@ public class AreaReader {
         searchRect: OsmNogoPolygon,
         ais: MutableList<AreaInfo>
     ) {
-        segmentFolder = folder
-
         val div = 32
         val cellsize = 1000000 / div
         val scale = maxscale
@@ -135,7 +131,7 @@ public class AreaReader {
         val maxmem = rc.memoryclass * 1024L * 1024L // in MB
         val nodesCache =
             NodesCache(
-                segmentFolder,
+                folder,
                 expctxWay,
                 rc.global.forceSecondaryData,
                 maxmem,
@@ -152,7 +148,7 @@ public class AreaReader {
                 if (filenameBase != lastFilenameBase) {
                     pf?.close()
                     lastFilenameBase = filenameBase
-                    val file = File(segmentFolder, "$filenameBase.rd5")
+                    val file = File(folder, "$filenameBase.rd5")
                     dataBuffers = DataBuffers()
 
                     pf = PhysicalFile(file, dataBuffers, -1, -1)
