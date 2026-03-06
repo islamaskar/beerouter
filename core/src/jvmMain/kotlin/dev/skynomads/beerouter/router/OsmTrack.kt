@@ -12,7 +12,6 @@ import dev.skynomads.beerouter.mapaccess.OsmPos
 import dev.skynomads.beerouter.osm.toIntLatitude
 import dev.skynomads.beerouter.osm.toIntLongitude
 import org.maplibre.spatialk.geojson.Position
-import java.io.File
 import kotlinx.io.EOFException
 import kotlinx.io.Sink
 import kotlinx.io.Source
@@ -407,10 +406,10 @@ public class OsmTrack {
         ): OsmTrack? {
             var t: OsmTrack? = null
             if (filename != null) {
-                val f = File(filename)
-                if (f.exists()) {
+                val trackPath = Path(filename)
+                if (SystemFileSystem.exists(trackPath)) {
                     try {
-                        SystemFileSystem.source(Path(f.path)).buffered().use { source ->
+                        SystemFileSystem.source(trackPath).buffered().use { source ->
                             t = readBinary(source, newEp, nogoChecksums, profileChecksum, debugInfo)
                         }
                     } catch (e: Exception) {
