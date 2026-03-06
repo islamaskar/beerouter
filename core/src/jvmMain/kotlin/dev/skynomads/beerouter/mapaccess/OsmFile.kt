@@ -58,7 +58,7 @@ public class OsmFile(
                 posIdx = IntArray(ncaches)
                 microCaches = arrayOfNulls(ncaches)
                 raf!!.seek(fileOffset)
-                raf!!.readFully(iobuffer!!, 0, indexsize)
+                raf!!.readFully(iobuffer, 0, indexsize)
 
                 val headerCrc = crc(iobuffer, 0, indexsize)
                 if (rafile.fileHeaderCrcs[tileIndex] != headerCrc) {
@@ -126,7 +126,7 @@ public class OsmFile(
         val subIdx = (latIdx - divisor * latDegree) * divisor + (lonIdx - divisor * lonDegree)
 
         var ab = dataBuffers.iobuffer
-        var asize = getDataInputForSubIdx(subIdx, ab!!)
+        var asize = getDataInputForSubIdx(subIdx, ab)
 
         if (asize == 0) {
             return MicroCache.emptyCache()

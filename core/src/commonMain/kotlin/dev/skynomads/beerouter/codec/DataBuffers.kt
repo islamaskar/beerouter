@@ -5,7 +5,7 @@ import dev.skynomads.beerouter.util.BitCoderContext
 /**
  * Container for some re-usable databuffers for the decoder
  */
-public class DataBuffers(public var iobuffer: ByteArray? = ByteArray(65636)) {
+public class DataBuffers(public var iobuffer: ByteArray = ByteArray(65636)) {
     public var tagbuf1: ByteArray = ByteArray(256)
     public var bctx1: BitCoderContext = BitCoderContext(tagbuf1)
     public var bbuf1: ByteArray = ByteArray(65636)

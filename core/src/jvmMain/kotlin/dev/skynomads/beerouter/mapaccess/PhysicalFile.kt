@@ -29,7 +29,7 @@ public class PhysicalFile(f: File, dataBuffers: DataBuffers, lookupVersion: Int,
         val raf = RandomAccessFile(f, "r")
         ra = raf
         raf.readFully(iobuffer, 0, 200)
-        val fileIndexCrc = crc(iobuffer!!, 0, 200)
+        val fileIndexCrc = crc(iobuffer, 0, 200)
         var dis = ByteDataReader(iobuffer)
         for (i in 0..24) {
             val lv = dis.readLong()
@@ -68,10 +68,7 @@ public class PhysicalFile(f: File, dataBuffers: DataBuffers, lookupVersion: Int,
             for (i in 0..24) {
                 fileHeaderCrcs[i] = dis.readInt()
             }
-            try {
-                elevationType = dis.readByte()
-            } catch (e: Exception) {
-            }
+            runCatching { elevationType = dis.readByte() }
         }
     }
 
