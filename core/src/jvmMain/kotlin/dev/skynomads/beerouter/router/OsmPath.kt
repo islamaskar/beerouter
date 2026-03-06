@@ -121,18 +121,17 @@ public abstract class OsmPath : OsmLinkHolder {
     ) {
         val description = link.descriptionBitmap
         if (description == null) { // could be a beeline path
-            message = MessageData()
-            if (message != null) {
-                message!!.turnangle = 0f
-                message!!.time = 1f
-                message!!.energy = 0f
-                message!!.priorityclassifier = 0
-                message!!.classifiermask = 0
-                message!!.lon = targetNode!!.iLon
-                message!!.lat = targetNode!!.iLat
-                message!!.ele = Short.MIN_VALUE
-                message!!.linkdist = sourceNode!!.calcDistance(targetNode!!)
-                message!!.wayTags = mapOf("direct_segment" to "$seg")
+            message = MessageData().also {
+                it.turnangle = 0f
+                it.time = 1f
+                it.energy = 0f
+                it.priorityclassifier = 0
+                it.classifiermask = 0
+                it.lon = targetNode!!.iLon
+                it.lat = targetNode!!.iLat
+                it.ele = Short.MIN_VALUE
+                it.linkdist = sourceNode!!.calcDistance(targetNode!!)
+                it.wayTags = mapOf("direct_segment" to "$seg")
                 seg++
             }
             return
@@ -268,7 +267,7 @@ public abstract class OsmPath : OsmLinkHolder {
             }
 
             // if recording, new MessageData for each section (needed for turn-instructions)
-            if (message != null && message!!.wayTags != null) {
+            if (message?.wayTags != null) {
                 originElement!!.message = message
                 message = MessageData()
             }
@@ -312,9 +311,7 @@ public abstract class OsmPath : OsmLinkHolder {
                 }
             }
 
-            if (message != null) {
-                message!!.linkdist += dist
-            }
+            message?.let { it.linkdist += dist }
             linkdisttotal += dist
 
             // apply a start-direction if appropriate (by faking the origin position)
@@ -370,16 +367,16 @@ public abstract class OsmPath : OsmLinkHolder {
             // compute kinematic
             computeKinematic(rc, dist.toDouble(), delta_h, detailMode)
 
-            if (message != null) {
-                message!!.turnangle = angle.toFloat()
-                message!!.time = this.totalTime.toFloat()
-                message!!.energy = this.totalEnergy.toFloat()
-                message!!.priorityclassifier = priorityclassifier
-                message!!.classifiermask = classifiermask
-                message!!.lon = lon2
-                message!!.lat = lat2
-                message!!.ele = originEle2
-                message!!.wayTags = rc.way.getMap(isReverse, description)
+            message?.let {
+                it.turnangle = angle.toFloat()
+                it.time = this.totalTime.toFloat()
+                it.energy = this.totalEnergy.toFloat()
+                it.priorityclassifier = priorityclassifier
+                it.classifiermask = classifiermask
+                it.lon = lon2
+                it.lat = lat2
+                it.ele = originEle2
+                it.wayTags = rc.way.getMap(isReverse, description)
             }
 
             if (stopAtEndpoint) {
@@ -391,9 +388,7 @@ public abstract class OsmPath : OsmLinkHolder {
                         originElement
                     )
                     originElement!!.cost = cost
-                    if (message != null) {
-                        originElement!!.message = message
-                    }
+                    originElement!!.message = message
                 }
                 cost = if (rc.nogoCost < 0) {
                     -1

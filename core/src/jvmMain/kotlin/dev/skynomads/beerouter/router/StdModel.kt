@@ -5,7 +5,6 @@
  */
 package dev.skynomads.beerouter.router
 
-import dev.skynomads.beerouter.expressions.BExpressionContext
 import dev.skynomads.beerouter.expressions.BExpressionContextNode
 import dev.skynomads.beerouter.expressions.BExpressionContextWay
 
@@ -29,7 +28,5 @@ internal class StdModel : OsmPathModel() {
     ) {
         ctxWay = expctxWay
         ctxNode = expctxNode
-
-        val expctxGlobal: BExpressionContext? = expctxWay // just one of them...
     }
 }

@@ -54,8 +54,6 @@ internal class KinematicPrePath : OsmPrePath() {
             lat2 = transferNode.ilat
         }
 
-        val dist = rc.calcDistance(lon1, lat1, lon2, lat2)
-
         angle = rc.anglemeter.calcAngle(lon0, lat0, lon1, lat1, lon2, lat2)
         priorityclassifier = rc.way.priorityClassifier.toInt()
         classifiermask = rc.way.classifierMask.toInt()

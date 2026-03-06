@@ -41,7 +41,7 @@ internal class KinematicModel : OsmPathModel() {
 
     protected var ctxWay: BExpressionContextWay? = null
     protected var ctxNode: BExpressionContextNode? = null
-    protected var params: MutableMap<String, String>? = null
+    protected var params: MutableMap<String, String> = mutableMapOf()
 
     private var initDone = false
 
@@ -82,14 +82,12 @@ internal class KinematicModel : OsmPathModel() {
     }
 
     protected fun getParam(name: String, defaultValue: Float): Float {
-        val sval = if (params == null) null else params!![name]
+        val sval = params[name]
         if (sval != null) {
             return sval.toFloat()
         }
         val v = ctxWay!!.getVariableValue(name, defaultValue)
-        if (params != null) {
-            params!![name] = "" + v
-        }
+        params[name] = v.toString()
         return v
     }
 
