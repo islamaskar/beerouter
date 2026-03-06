@@ -1,0 +1,99 @@
+package dev.skynomads.beerouter.benchmark
+
+import dev.skynomads.beerouter.router.OsmNodeNamed
+import dev.skynomads.beerouter.router.RoutingContext
+import dev.skynomads.beerouter.router.RoutingEngine
+import kotlinx.benchmark.Benchmark
+import kotlinx.benchmark.Measurement
+import kotlinx.benchmark.Scope
+import kotlinx.benchmark.Setup
+import kotlinx.benchmark.State
+import kotlinx.benchmark.Warmup
+import kotlinx.coroutines.runBlocking
+import kotlinx.io.buffered
+import kotlinx.io.files.Path
+import kotlinx.io.files.SystemFileSystem
+import kotlinx.io.files.SystemTemporaryDirectory
+import org.maplibre.spatialk.geojson.Position
+
+@State(Scope.Benchmark)
+@Warmup(iterations = 1)
+@Measurement(iterations = 1)
+open class BeerouterRoutingBenchmark {
+    private val segmentDir = if (SystemFileSystem.exists(SystemTemporaryDirectory)) {
+        SystemTemporaryDirectory
+    } else {
+        Path("/tmp")
+    }
+    private val segmentFile = resolve(segmentDir, SEGMENT_FILE_NAME)
+    private val profile = findRequiredPath(
+        "misc/profiles2/trekking.brf",
+        "../misc/profiles2/trekking.brf"
+    )
+    private val lookup = resolve(parent(profile), "lookups.dat")
+
+    private val waypoints = listOf(
+        createWaypoint("Tuebingen", 48.5203263, 9.053596),
+        createWaypoint("Horb am Neckar", 48.4421, 8.6849)
+    )
+
+    @Setup
+    fun prepare() {
+        require(SystemFileSystem.exists(profile)) { "missing profile file at $profile" }
+        require(SystemFileSystem.exists(lookup)) { "missing lookup file at $lookup" }
+        ensureSegmentFile(segmentFile)
+    }
+
+    @Benchmark
+    fun beerouter() {
+        val ctx = SystemFileSystem.source(profile).buffered().use { profileSource ->
+            SystemFileSystem.source(lookup).buffered().use { lookupSource ->
+                RoutingContext(
+                    profileName = fileName(profile),
+                    segmentDir = segmentDir,
+                    profileSource = profileSource,
+                    lookupSource = lookupSource
+                ).apply {
+                    global.turnInstructionMode = 2
+                }
+            }
+        }
+
+        val engine = RoutingEngine(ctx)
+        val track = runBlocking { engine.doRouting(waypoints) }
+
+        require(track != null)
+    }
+
+    private fun createWaypoint(name: String, lat: Double, lon: Double): OsmNodeNamed {
+        val waypoint = OsmNodeNamed()
+        waypoint.name = name
+        waypoint.position = Position(lon, lat)
+        return waypoint
+    }
+
+    private fun findRequiredPath(vararg candidates: String): Path {
+        for (candidate in candidates) {
+            val path = Path(candidate)
+            if (SystemFileSystem.exists(path)) {
+                return path
+            }
+        }
+        error("none of the candidate files exist: ${candidates.joinToString()}")
+    }
+
+    private fun resolve(base: Path, child: String): Path = Path("${base.toString()}/$child")
+
+    private fun fileName(path: Path): String = path.toString().substringAfterLast('/').substringAfterLast('\\')
+
+    private fun parent(path: Path): Path {
+        val normalized = path.toString().replace('\\', '/')
+        return Path(normalized.substringBeforeLast('/', missingDelimiterValue = "."))
+    }
+
+    private companion object {
+        private const val SEGMENT_FILE_NAME = "E5_N45.rd5"
+    }
+}
+
+internal expect fun ensureSegmentFile(segmentFile: Path)

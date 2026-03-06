@@ -17,6 +17,7 @@ import kotlinx.io.Source
 import kotlinx.io.buffered
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
+import kotlin.time.TimeSource
 
 public class Rd5DiffTool : ProgressListener {
     override fun updateProgress(task: String?, progress: Int) {
@@ -186,7 +187,7 @@ public class Rd5DiffTool : ProgressListener {
             var diffedTiles = 0
             var bytesDiff = 0L
 
-            val t0 = System.currentTimeMillis()
+            val t0 = TimeSource.Monotonic.markNow()
 
             SystemFileSystem.source(f1).buffered().use { source1 ->
             SystemFileSystem.source(f2).buffered().use { source2 ->
@@ -231,8 +232,8 @@ public class Rd5DiffTool : ProgressListener {
                 }
 
                 source2.transferTo(sink)
-                val t1 = System.currentTimeMillis()
-                println("nodesDiff=$nodesDiff bytesDiff=$bytesDiff diffedTiles=$diffedTiles took ${t1 - t0}ms")
+                val elapsedMillis = t0.elapsedNow().inWholeMilliseconds
+                println("nodesDiff=$nodesDiff bytesDiff=$bytesDiff diffedTiles=$diffedTiles took ${elapsedMillis}ms")
             }}}
         }
 
@@ -250,7 +251,7 @@ public class Rd5DiffTool : ProgressListener {
             val abBuf1 = ByteArray(10 * 1024 * 1024)
             val abBuf2 = ByteArray(10 * 1024 * 1024)
 
-            val t0 = System.currentTimeMillis()
+            val t0 = TimeSource.Monotonic.markNow()
 
             SystemFileSystem.source(f1).buffered().use { source1 ->
             SystemFileSystem.source(f2).buffered().use { source2 ->
@@ -321,8 +322,8 @@ public class Rd5DiffTool : ProgressListener {
                     mcIn.finish()
                 }
                 source2.transferTo(sink)
-                val t1 = System.currentTimeMillis()
-                println("recovering from diffs took ${t1 - t0}ms")
+                val elapsedMillis = t0.elapsedNow().inWholeMilliseconds
+                println("recovering from diffs took ${elapsedMillis}ms")
             }}}
         }
 
@@ -355,7 +356,7 @@ public class Rd5DiffTool : ProgressListener {
             val abBuf1 = ByteArray(10 * 1024 * 1024)
             val abBuf2 = ByteArray(10 * 1024 * 1024)
 
-            val t0 = System.currentTimeMillis()
+            val t0 = TimeSource.Monotonic.markNow()
 
             SystemFileSystem.source(f1).buffered().use { source1 ->
             SystemFileSystem.source(f2).buffered().use { source2 ->
@@ -391,15 +392,15 @@ public class Rd5DiffTool : ProgressListener {
                     mcOut.finish()
                 }
                 source2.transferTo(sink)
-                val t1 = System.currentTimeMillis()
-                println("adding diffs took ${t1 - t0}ms")
+                val elapsedMillis = t0.elapsedNow().inWholeMilliseconds
+                println("adding diffs took ${elapsedMillis}ms")
             }}}
         }
 
         public fun reEncode(f1: Path, outFile: Path) {
             val abBuf1 = ByteArray(10 * 1024 * 1024)
 
-            val t0 = System.currentTimeMillis()
+            val t0 = TimeSource.Monotonic.markNow()
 
             SystemFileSystem.source(f1).buffered().use { source ->
             SystemFileSystem.sink(outFile).buffered().use { sink ->
@@ -423,8 +424,8 @@ public class Rd5DiffTool : ProgressListener {
                     }
                 }
                 source.transferTo(sink)
-                val t1 = System.currentTimeMillis()
-                println("re-encoding took ${t1 - t0}ms")
+                val elapsedMillis = t0.elapsedNow().inWholeMilliseconds
+                println("re-encoding took ${elapsedMillis}ms")
             }}
         }
     }

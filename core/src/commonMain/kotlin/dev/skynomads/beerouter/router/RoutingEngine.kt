@@ -23,6 +23,7 @@ import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
 import kotlin.math.roundToInt
+import kotlin.time.TimeSource
 
 public class RoutingEngine(private val routingContext: RoutingContext) {
     private var nodesCache: NodesCache? = null
@@ -270,7 +271,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
     }
 
     private fun getRandomDirectionFromData(wp: OsmNodeNamed, searchRadius: Double): Int {
-        val start = System.currentTimeMillis()
+        val start = TimeSource.Monotonic.markNow()
 
         val consider_elevation = routingContext.way.getVariableValue("consider_elevation", 0f) == 1f
         val consider_forest = routingContext.way.getVariableValue("consider_forest", 0f) == 1f
@@ -404,7 +405,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
             rc.ai = null
         }
 
-        log("round trip execution time=${(System.currentTimeMillis() - start) / 1000.0} seconds")
+        log("round trip execution time=${start.elapsedNow().inWholeMilliseconds / 1000.0} seconds")
 
         // for (AreaInfo ai: ais) {
         //  System.out.println("\n" + ai.toString());

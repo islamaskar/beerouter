@@ -11,8 +11,8 @@ public fun readUtf8(path: Path): String =
 public fun readUtf8(source: Source): String = source.readUtf8Fully()
 
 private fun Source.readUtf8Fully(): String {
-    var result = ByteArray(DEFAULT_BUFFER_SIZE)
-    val scratch = ByteArray(DEFAULT_BUFFER_SIZE)
+    var result = ByteArray(IO_BUFFER_SIZE)
+    val scratch = ByteArray(IO_BUFFER_SIZE)
     var size = 0
 
     while (true) {
@@ -36,3 +36,5 @@ private fun Source.readUtf8Fully(): String {
 
     return result.decodeToString(startIndex = 0, endIndex = size)
 }
+
+private const val IO_BUFFER_SIZE = 8 * 1024

@@ -13,7 +13,7 @@ import dev.skynomads.beerouter.codec.TagValueValidator
 import dev.skynomads.beerouter.codec.WaypointMatcher
 import dev.skynomads.beerouter.util.ByteDataReader
 import dev.skynomads.beerouter.util.Crc32.crc
-import java.io.IOException
+import kotlinx.io.IOException
 
 public class OsmFile(
     rafile: PhysicalFile?,

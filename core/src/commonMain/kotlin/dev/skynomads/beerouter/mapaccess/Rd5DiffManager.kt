@@ -5,10 +5,7 @@
  */
 package dev.skynomads.beerouter.mapaccess
 
-import java.nio.file.Files
-import java.nio.file.Paths
-import java.nio.file.attribute.FileTime
-import java.security.MessageDigest
+import dev.skynomads.beerouter.util.Md5
 import kotlinx.io.buffered
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
@@ -54,20 +51,10 @@ public object Rd5DiffManager {
                 val oldDiffs = runCatching { SystemFileSystem.list(specificOldDiffs) }.getOrElse { emptyList() }
                 for (od in oldDiffs) {
                     if (!fileName(od).endsWith(".df5")) continue
-                    val modifiedAt = runCatching {
-                        Files.getLastModifiedTime(Paths.get(od.toString())).toMillis()
-                    }.getOrNull() ?: continue
-                    if (System.currentTimeMillis() - modifiedAt > 9 * 86400000L) continue
 
                     val updatedDiff = resolve(specificNewDiffs, fileName(od))
                     if (!SystemFileSystem.exists(updatedDiff)) {
                         Rd5DiffTool.addDeltas(od, diffFile, updatedDiff)
-                        runCatching {
-                            Files.setLastModifiedTime(
-                                Paths.get(updatedDiff.toString()),
-                                FileTime.fromMillis(modifiedAt)
-                            )
-                        }
                     }
                 }
             }
@@ -75,9 +62,9 @@ public object Rd5DiffManager {
     }
 
     public fun getMD5(path: Path): String {
-        val md = MessageDigest.getInstance("MD5")
+        val md = Md5()
         SystemFileSystem.source(path).buffered().use { source ->
-            val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+            val buffer = ByteArray(IO_BUFFER_SIZE)
             while (true) {
                 val read = source.readAtMostTo(buffer)
                 if (read <= 0) {
@@ -103,4 +90,6 @@ public object Rd5DiffManager {
     private fun resolve(base: Path, child: String): Path = Path("${base.toString()}/$child")
 
     private fun fileName(path: Path): String = path.toString().substringAfterLast('/').substringAfterLast('\\')
+
+    private const val IO_BUFFER_SIZE = 8 * 1024
 }

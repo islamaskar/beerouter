@@ -172,7 +172,7 @@ public class AreaReader {
                 }
             }
         } catch (e: Exception) {
-            System.err.println("AreaReader error after used=$used / count=$count: ${e.message}")
+            println("AreaReader error after used=$used / count=$count: ${e.message}")
             ais.clear()
         } finally {
             runCatching { currentPhysicalFile?.close() }

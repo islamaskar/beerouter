@@ -402,22 +402,23 @@ public class RoutingContext(
         val model = if (className == null) {
             StdModel()
         } else {
-            try {
-                val effectiveClassName = when {
-                    className.startsWith("btools.router.") -> className.replace(
-                        "btools.router.",
-                        "dev.skynomads.beerouter.router."
-                    )
-                    else -> className
-                }
-                val clazz = Class.forName(effectiveClassName)
-                clazz.getDeclaredConstructor().newInstance() as OsmPathModel
-            } catch (e: Exception) {
-                throw RuntimeException("Cannot create path-model: $e")
+            when (normalizeModelName(className)) {
+                "StdModel" -> StdModel()
+                "KinematicModel" -> KinematicModel()
+                else -> throw RuntimeException("Cannot create path-model: unsupported model '$className'")
             }
         }
         model.init(way, node, keyValues ?: mutableMapOf())
         pm = model
+    }
+
+    private fun normalizeModelName(className: String): String {
+        val effectiveClassName = when {
+            className.startsWith("btools.router.") ->
+                className.replace("btools.router.", "dev.skynomads.beerouter.router.")
+            else -> className
+        }
+        return effectiveClassName.substringAfterLast('.')
     }
 
     public fun checkPendingEndpoint(): Boolean {

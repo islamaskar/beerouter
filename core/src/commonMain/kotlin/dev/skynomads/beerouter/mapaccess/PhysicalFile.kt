@@ -8,7 +8,7 @@ package dev.skynomads.beerouter.mapaccess
 import dev.skynomads.beerouter.codec.DataBuffers
 import dev.skynomads.beerouter.util.ByteDataReader
 import dev.skynomads.beerouter.util.Crc32.crc
-import java.io.IOException
+import kotlinx.io.IOException
 
 public class PhysicalFile(
     public val fileName: String,
