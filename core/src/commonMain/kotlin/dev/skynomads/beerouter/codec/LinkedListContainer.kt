@@ -20,7 +20,7 @@ public class LinkedListContainer(nlists: Int, defaultbuffer: IntArray?) {
      * @param defaultbuffer an optional data array for re-use (gets replaced if too small)
      */
     init {
-        ia = defaultbuffer ?: IntArray(nlists * 4)
+        ia = (defaultbuffer ?: IntArray(nlists * 4))
         startpointer = IntArray(nlists)
     }
 
@@ -72,8 +72,6 @@ public class LinkedListContainer(nlists: Int, defaultbuffer: IntArray?) {
         }
 
     private fun resize() {
-        val ia2 = IntArray(2 * ia.size)
-        ia.copyInto(ia2, 0, 0, ia.size)
-        ia = ia2
+        ia = ia.copyOf(ia.size * 2)
     }
 }

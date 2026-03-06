@@ -53,7 +53,7 @@ public class TagValueCoder {
                 val dummy = TagValueSet(nextTagValueSetId++)
                 identityMap[dummy] = dummy
             }
-            val comparator = TagValueSet.FrequencyComparator()
+            val comparator = TagValueSet.frequencyComparator
             val queue = ArrayDeque<TagValueSet>()
             queue.addAll(identityMap.values)
             queue.sortWith(comparator)
@@ -181,29 +181,31 @@ public class TagValueCoder {
 
         override fun equals(other: Any?): Boolean {
             if (other !is TagValueSet) return false
-            if (data == null) return other.data == null
-            if (other.data == null) return false
-            if (data!!.size != other.data!!.size) return false
-            return data!!.contentEquals(other.data!!)
+            val thisData = data
+            val otherData = other.data
+            if (thisData == null) return otherData == null
+            if (otherData == null || thisData.size != otherData.size) return false
+            return thisData.contentEquals(otherData)
         }
 
         override fun hashCode(): Int {
             return data?.contentHashCode() ?: 0
         }
 
-        public class FrequencyComparator : Comparator<TagValueSet> {
-            override fun compare(tvs1: TagValueSet, tvs2: TagValueSet): Int {
-                if (tvs1.frequency < tvs2.frequency) return -1
-                if (tvs1.frequency > tvs2.frequency) return 1
+        public companion object {
+            public val frequencyComparator: Comparator<TagValueSet> = Comparator { a, b ->
+                when {
+                    a.frequency < b.frequency -> -1
+                    a.frequency > b.frequency -> 1
+                    // to avoid ordering instability, decide on the id if frequency is equal
+                    a.id < b.id -> -1
+                    a.id > b.id -> 1
+                    a !== b -> {
+                        throw RuntimeException("identity corruption!")
+                    }
 
-                // to avoid ordering instability, decide on the id if frequency is equal
-                if (tvs1.id < tvs2.id) return -1
-                if (tvs1.id > tvs2.id) return 1
-
-                if (tvs1 !== tvs2) {
-                    throw RuntimeException("identity corruption!")
+                    else -> 0
                 }
-                return 0
             }
         }
     }
