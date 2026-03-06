@@ -7,6 +7,9 @@ package dev.skynomads.beerouter.mapaccess
 
 import java.io.File
 import java.security.MessageDigest
+import kotlinx.io.buffered
+import kotlinx.io.files.Path
+import kotlinx.io.files.SystemFileSystem
 
 public object Rd5DiffManager {
     public fun main(args: Array<String>) {
@@ -62,12 +65,14 @@ public object Rd5DiffManager {
     }
 
     public fun getMD5(f: File): String {
+        return getMD5(Path(f.path))
+    }
+
+    public fun getMD5(path: Path): String {
         val md = MessageDigest.getInstance("MD5")
-        f.inputStream().buffered().use { input ->
-            val buf = ByteArray(8192)
-            var read: Int
-            while (input.read(buf).also { read = it } > 0) {
-                md.update(buf, 0, read)
+        SystemFileSystem.source(path).buffered().use { source ->
+            while (!source.exhausted()) {
+                md.update(source.readByte())
             }
         }
         val bytes = md.digest()
