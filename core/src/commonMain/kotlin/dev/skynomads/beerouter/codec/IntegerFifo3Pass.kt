@@ -11,7 +11,7 @@ public class IntegerFifo3Pass(capacity: Int) {
     private var pass = 0
 
     init {
-        a = if (capacity < 4) IntArray(4) else IntArray(capacity)
+        a = IntArray(maxOf(capacity, MIN_CAPACITY))
     }
 
     /**
@@ -29,9 +29,7 @@ public class IntegerFifo3Pass(capacity: Int) {
     public fun add(value: Int) {
         if (pass == 2) {
             if (size == a.size) {
-                val aa = IntArray(2 * size)
-                a.copyInto(aa, 0, 0, size)
-                a = aa
+                a = a.copyOf(size * 2)
             }
             a[size++] = value
         }
@@ -44,9 +42,11 @@ public class IntegerFifo3Pass(capacity: Int) {
         get() = if (pass == 3) get(pos++) else 1
 
     private fun get(idx: Int): Int {
-        if (idx >= size) {
-            throw IndexOutOfBoundsException("list size=$size idx=$idx")
-        }
+        if (idx >= size) throw IndexOutOfBoundsException("list size=$size idx=$idx")
         return a[idx]
+    }
+
+    private companion object {
+        private const val MIN_CAPACITY = 4
     }
 }
