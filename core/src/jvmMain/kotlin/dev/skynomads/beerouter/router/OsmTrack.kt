@@ -374,12 +374,10 @@ public class OsmTrack {
     }
 
     public fun removeVoiceHint(i: Int): Boolean {
-        for (vh in voiceHints) {
-            if (vh.indexInTrack == i) {
-                return voiceHints.remove(vh)
-            }
-        }
-        return false
+        val removeIndex = voiceHints.indexOfFirst { it.indexInTrack == i }
+        if (removeIndex < 0) return false
+        voiceHints.removeAt(removeIndex)
+        return true
     }
 
     private fun startSection(element: OsmPathElement?, root: OsmPathElement): MessageData? {
