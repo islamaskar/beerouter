@@ -14,7 +14,7 @@ import dev.skynomads.beerouter.osm.toIntLongitude
 import java.io.File
 
 public class NodesCache(
-    private var segmentDir: File,
+    private val segmentDir: File,
     private val ctxWay: BExpressionContextWay,
     forceSecondaryData: Boolean,
     maxmem: Long,

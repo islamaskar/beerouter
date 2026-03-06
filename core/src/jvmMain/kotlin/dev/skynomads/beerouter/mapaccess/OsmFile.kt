@@ -18,8 +18,8 @@ import java.io.RandomAccessFile
 
 public class OsmFile(
     rafile: PhysicalFile?,
-    public var lonDegree: Int,
-    public var latDegree: Int,
+    public val lonDegree: Int,
+    public val latDegree: Int,
     dataBuffers: DataBuffers
 ) {
     private var raf: RandomAccessFile? = null

@@ -14,7 +14,7 @@ import java.io.RandomAccessFile
 
 public class PhysicalFile(f: File, dataBuffers: DataBuffers, lookupVersion: Int, lookupMinorVersion: Int) {
     public val ra: RandomAccessFile = RandomAccessFile(f, "r")
-    public var fileIndex: LongArray = LongArray(25)
+    public val fileIndex: LongArray = LongArray(25)
     public var fileHeaderCrcs: IntArray = IntArray(0)
 
     public var creationTime: Long = 0L
