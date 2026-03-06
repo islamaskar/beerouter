@@ -11,6 +11,7 @@ import dev.skynomads.beerouter.util.Crc32.crc
 import java.io.File
 import java.io.IOException
 import java.io.RandomAccessFile
+import kotlinx.io.files.Path
 
 public class PhysicalFile(f: File, dataBuffers: DataBuffers, lookupVersion: Int, lookupMinorVersion: Int) {
     public val ra: RandomAccessFile = RandomAccessFile(f, "r")
@@ -77,8 +78,12 @@ public class PhysicalFile(f: File, dataBuffers: DataBuffers, lookupVersion: Int,
 
     public companion object {
         public fun checkVersionIntegrity(f: File): Int {
+            return checkVersionIntegrity(Path(f.path))
+        }
+
+        public fun checkVersionIntegrity(path: Path): Int {
             return try {
-                RandomAccessFile(f, "r").use { raf ->
+                RandomAccessFile(File(path.toString()), "r").use { raf ->
                     val iobuffer = ByteArray(200)
                     raf.readFully(iobuffer, 0, 200)
                     val dis = ByteDataReader(iobuffer)
@@ -96,8 +101,12 @@ public class PhysicalFile(f: File, dataBuffers: DataBuffers, lookupVersion: Int,
          * @return the error message if file corrupt, else null
          */
         public fun checkFileIntegrity(f: File): String? {
+            return checkFileIntegrity(Path(f.path))
+        }
+
+        public fun checkFileIntegrity(path: Path): String? {
             val dataBuffers = DataBuffers()
-            val pf = PhysicalFile(f, dataBuffers, -1, -1)
+            val pf = PhysicalFile(File(path.toString()), dataBuffers, -1, -1)
             try {
                 val div = pf.divisor
                 for (lonDegree in 0..4) {
