@@ -11,9 +11,9 @@ package dev.skynomads.beerouter.codec
  */
 public class NoisyDiffCoder {
     private var tot = 0
-    private var freqs: IntArray? = null
+    private val freqs: IntArray = IntArray(14)
     private var noisybits = 0
-    private var bc: StatCoderContext? = null
+    private lateinit var bc: StatCoderContext
     private var pass = 0
 
     /**
@@ -34,7 +34,7 @@ public class NoisyDiffCoder {
      */
     public fun encodeSignedValue(value: Int) {
         if (pass == 3) {
-            bc!!.encodeNoisyDiff(value, noisybits)
+            bc.encodeNoisyDiff(value, noisybits)
         } else if (pass == 2) {
             count(if (value < 0) -value else value)
         }
@@ -44,7 +44,7 @@ public class NoisyDiffCoder {
      * decodes a signed int
      */
     public fun decodeSignedValue(): Int {
-        return bc!!.decodeNoisyDiff(noisybits)
+        return bc.decodeNoisyDiff(noisybits)
     }
 
     /**
@@ -56,7 +56,7 @@ public class NoisyDiffCoder {
             // how many noisy bits?
             noisybits = 0
             while (noisybits < 14 && tot > 0) {
-                if (freqs!![noisybits] < (tot shr 1)) break
+                if (freqs[noisybits] < (tot shr 1)) break
                 noisybits++
             }
             bc.encodeVarBits(noisybits)
@@ -65,11 +65,10 @@ public class NoisyDiffCoder {
     }
 
     private fun count(value: Int) {
-        if (freqs == null) freqs = IntArray(14)
         var bm = 1
         for (i in 0..13) {
             if (value < bm) break
-            else freqs!![i] = freqs!![i] + 1
+            else freqs[i] = freqs[i] + 1
             bm = bm shl 1
         }
         tot++

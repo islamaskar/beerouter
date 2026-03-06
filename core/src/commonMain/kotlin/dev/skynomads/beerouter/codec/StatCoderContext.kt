@@ -14,13 +14,10 @@ public class StatCoderContext(ab: ByteArray) : BitCoderContext(ab) {
      */
     public fun assignBits(name: String?) {
         val bitpos = writingBitPosition.toLong()
-        if (statsPerName == null) {
-            statsPerName = mutableMapOf()
-        }
-        var stats: LongArray? = statsPerName!![name]
+        var stats: LongArray? = statsPerName[name]
         if (stats == null) {
             stats = LongArray(2)
-            statsPerName!![name] = stats
+            statsPerName[name] = stats
         }
         stats[0] += bitpos - lastbitpos
         stats[1] += 1
@@ -210,7 +207,7 @@ public class StatCoderContext(ab: ByteArray) : BitCoderContext(ab) {
     }
 
     public companion object {
-        private var statsPerName: MutableMap<String?, LongArray>? = null
+        private val statsPerName: MutableMap<String?, LongArray> = mutableMapOf()
         private val noisyBits = IntArray(1024)
 
         init {
@@ -229,15 +226,15 @@ public class StatCoderContext(ab: ByteArray) : BitCoderContext(ab) {
 
         public val bitReport: String
             get() {
-                if (statsPerName == null) {
+                if (statsPerName.isEmpty()) {
                     return "<empty bit report>"
                 }
                 val sb = StringBuilder()
-                for (name in statsPerName!!.keys) {
-                    val stats: LongArray = statsPerName!![name]!!
+                for (name in statsPerName.keys) {
+                    val stats: LongArray = statsPerName[name]!!
                     sb.append(name + " count=" + stats[1] + " bits=" + stats[0] + "\n")
                 }
-                statsPerName = null
+                statsPerName.clear()
                 return sb.toString()
             }
     }
