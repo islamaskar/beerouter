@@ -17,7 +17,8 @@ import dev.skynomads.beerouter.util.CheapRuler.destination
 import dev.skynomads.beerouter.util.SortedHeap
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
-import java.io.File
+import kotlinx.io.files.Path
+import kotlinx.io.files.SystemFileSystem
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
@@ -290,9 +291,9 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
         val ais = mutableListOf<AreaInfo>()
         val areareader = AreaReader()
         routingContext.rawAreaPath?.let { path ->
-            val fai = File(path)
-            if (fai.exists()) {
-                areareader.readAreaInfo(fai, wpt1, ais)
+            val areaPath = Path(path)
+            if (SystemFileSystem.exists(areaPath)) {
+                areareader.readAreaInfo(areaPath, wpt1, ais)
             }
         }
 
@@ -393,7 +394,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
             routingContext.rawAreaPath?.let { path ->
                 try {
                     wpt1.radius = searchRadius * 1.5
-                    areareader.writeAreaInfo(path, wpt1, ais)
+                    areareader.writeAreaInfo(Path(path), wpt1, ais)
                 } catch (e: Exception) {
                     // Silently ignore exceptions
                 }

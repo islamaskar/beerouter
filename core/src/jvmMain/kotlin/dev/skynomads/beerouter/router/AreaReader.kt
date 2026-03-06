@@ -258,9 +258,11 @@ public class AreaReader {
     }
 
     public fun writeAreaInfo(filename: String, wp: MatchedWaypoint, ais: MutableList<AreaInfo>) {
-        SystemFileSystem.sink(Path(filename)).buffered().use { sink ->
-            writeAreaInfo(sink, wp, ais)
-        }
+        writeAreaInfo(Path(filename), wp, ais)
+    }
+
+    public fun writeAreaInfo(path: Path, wp: MatchedWaypoint, ais: MutableList<AreaInfo>) {
+        SystemFileSystem.sink(path).buffered().use { sink -> writeAreaInfo(sink, wp, ais) }
     }
 
     public fun writeAreaInfo(sink: Sink, wp: MatchedWaypoint, ais: MutableList<AreaInfo>) {
@@ -276,10 +278,12 @@ public class AreaReader {
     }
 
     public fun readAreaInfo(fai: File, wp: MatchedWaypoint, ais: MutableList<AreaInfo>) {
+        readAreaInfo(Path(fai.path), wp, ais)
+    }
+
+    public fun readAreaInfo(path: Path, wp: MatchedWaypoint, ais: MutableList<AreaInfo>) {
         try {
-            SystemFileSystem.source(Path(fai.path)).buffered().use { source ->
-                readAreaInfo(source, wp, ais)
-            }
+            SystemFileSystem.source(path).buffered().use { source -> readAreaInfo(source, wp, ais) }
         } catch (e: Exception) {
             ais.clear()
         }
