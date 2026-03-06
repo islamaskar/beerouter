@@ -122,8 +122,10 @@ class OsmNodeNamedTest {
 
         var i = 0
         while (i <= 360) {
-            val pos = destination(node.iLon, node.iLat, startDist, i.toDouble())
-            val dist = distance(node.iLon, node.iLat, pos[0], pos[1])
+            val nodeLon = node.position.longitude.toIntLongitude()
+            val nodeLat = node.position.latitude.toIntLatitude()
+            val pos = destination(nodeLon, nodeLat, startDist, i.toDouble())
+            val dist = distance(nodeLon, nodeLat, pos[0], pos[1])
             assertTrue(
                 dist - 1 < startDist && dist + 1 > startDist,
                 "pos " + pos[0] + " " + pos[1] + " distance (" + dist + ") should be around (" + startDist + ")"

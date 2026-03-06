@@ -68,8 +68,8 @@ class CoordinateConversionTest {
             val node = OsmNode(position)
 
             // Check that the derived iLat/iLon properties match the original values (with tolerance for precision)
-            assertEquals(lon, node.iLon, message = "iLon should match original")
-            assertEquals(lat, node.iLat, message = "iLat should match original")
+            assertEquals(lon, node.position.longitude.toIntLongitude(), message = "iLon should match original")
+            assertEquals(lat, node.position.latitude.toIntLatitude(), message = "iLat should match original")
 
             // Check that the position is calculated correctly
             val expectedLon = lon.toDoubleLongitude()
@@ -114,12 +114,12 @@ class CoordinateConversionTest {
 
             assertEquals(
                 expectedILon,
-                node.iLon,
+                node.position.longitude.toIntLongitude(),
                 message = "iLon should be calculated correctly from longitude $lon"
             )
             assertEquals(
                 expectedILat,
-                node.iLat,
+                node.position.latitude.toIntLatitude(),
                 message = "iLat should be calculated correctly from latitude $lat"
             )
         }
@@ -144,8 +144,8 @@ class CoordinateConversionTest {
             )
             val node = OsmNode(position)
 
-            assertEquals(lon, node.iLon, message = "iLon should match original for extreme value")
-            assertEquals(lat, node.iLat, message = "iLat should match original for extreme value")
+            assertEquals(lon, node.position.longitude.toIntLongitude(), message = "iLon should match original for extreme value")
+            assertEquals(lat, node.position.latitude.toIntLatitude(), message = "iLat should match original for extreme value")
         }
     }
 
