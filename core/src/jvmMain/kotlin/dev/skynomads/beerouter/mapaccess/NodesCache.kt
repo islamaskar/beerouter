@@ -12,6 +12,7 @@ import dev.skynomads.beerouter.expressions.BExpressionContextWay
 import dev.skynomads.beerouter.osm.toIntLatitude
 import dev.skynomads.beerouter.osm.toIntLongitude
 import java.io.File
+import kotlinx.io.files.Path
 
 public class NodesCache(
     private val segmentDir: File,
@@ -21,6 +22,22 @@ public class NodesCache(
     oldCache: NodesCache?,
     detailed: Boolean
 ) {
+    public constructor(
+        segmentDirPath: Path,
+        ctxWay: BExpressionContextWay,
+        forceSecondaryData: Boolean,
+        maxmem: Long,
+        oldCache: NodesCache?,
+        detailed: Boolean
+    ) : this(
+        segmentDir = File(segmentDirPath.toString()),
+        ctxWay = ctxWay,
+        forceSecondaryData = forceSecondaryData,
+        maxmem = maxmem,
+        oldCache = oldCache,
+        detailed = detailed
+    )
+
     private val MAX_DYNAMIC_CATCHES = 20 // used with RoutingEngine MAX_DYNAMIC_RANGE = 60000m
 
     public var nodesMap: OsmNodesMap = OsmNodesMap()
