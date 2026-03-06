@@ -27,6 +27,9 @@ public class NodesCache(
     private val lookupMinorVersion: Int
     private val forceSecondaryData: Boolean
     private var currentFileName: String? = null
+    private var lastLonDegree: Int = Int.MIN_VALUE
+    private var lastLatDegree: Int = Int.MIN_VALUE
+    private var lastOsmFile: OsmFile? = null
 
     private var fileCache: MutableMap<String, PhysicalFile?> = HashMap(4)
     private var dataBuffers: DataBuffers = DataBuffers()
@@ -136,23 +139,36 @@ public class NodesCache(
         try {
             val lonDegree = ilon / 1000000
             val latDegree = ilat / 1000000
-            var osmf: OsmFile? = null
-            val fileRow = fileRows[latDegree]
-            val ndegrees = fileRow?.size ?: 0
-            for (i in 0..<ndegrees) {
-                if (fileRow!![i]!!.lonDegree == lonDegree) {
-                    osmf = fileRow[i]
-                    break
+            var osmf: OsmFile? =
+                if (lonDegree == lastLonDegree && latDegree == lastLatDegree) {
+                    lastOsmFile
+                } else {
+                    null
                 }
-            }
+
             if (osmf == null) {
-                osmf = fileForSegment(lonDegree, latDegree)
-                val newFileRow = arrayOfNulls<OsmFile>(ndegrees + 1)
+                val fileRow = fileRows[latDegree]
+                val ndegrees = fileRow?.size ?: 0
                 for (i in 0..<ndegrees) {
-                    newFileRow[i] = fileRow!![i]
+                    if (fileRow!![i]!!.lonDegree == lonDegree) {
+                        osmf = fileRow[i]
+                        break
+                    }
                 }
-                newFileRow[ndegrees] = osmf
-                fileRows[latDegree] = newFileRow
+
+                if (osmf == null) {
+                    osmf = fileForSegment(lonDegree, latDegree)
+                    val newFileRow = arrayOfNulls<OsmFile>(ndegrees + 1)
+                    for (i in 0..<ndegrees) {
+                        newFileRow[i] = fileRow!![i]
+                    }
+                    newFileRow[ndegrees] = osmf
+                    fileRows[latDegree] = newFileRow
+                }
+
+                lastLonDegree = lonDegree
+                lastLatDegree = latDegree
+                lastOsmFile = osmf
             }
             currentFileName = osmf.filename
 
