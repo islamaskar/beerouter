@@ -482,7 +482,8 @@ public abstract class OsmPath : OsmLinkHolder {
     public open val totalEnergy: Double
         get() = 0.0
 
-    private fun toSElev(altitude: Double?): Short = (altitude ?: 0.0).times(4.0).toInt().toShort()
+    private fun toSElev(altitude: Double?): Short =
+        altitude?.times(4.0)?.toInt()?.toShort() ?: Short.MIN_VALUE
 
     public companion object {
         private const val PATH_START_BIT = 1

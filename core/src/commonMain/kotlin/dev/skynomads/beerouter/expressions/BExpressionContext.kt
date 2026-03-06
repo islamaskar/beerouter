@@ -44,11 +44,11 @@ public abstract class BExpressionContext protected constructor(
 
     private var variableData: FloatArray? = null
 
-    private var cache: LruCache<Int, CacheNode>? = null
+    private var cache: LruCache<ByteArrayKey, CacheNode>? = null
 
     private val probeVarSet = VarWrapper()
 
-    private var resultVarCache: LruCache<Int, VarWrapper>? = null
+    private var resultVarCache: LruCache<FloatArrayKey, VarWrapper>? = null
     private var expressionList: MutableList<BExpression?>? = null
 
     public var minWriteIdx: Int = 0
@@ -123,7 +123,10 @@ public abstract class BExpressionContext protected constructor(
         decode(ld2, false, ab)
         for (inum in 1..<lookupValues.size) {
             if (ld2[inum] != ld[inum]) throw RuntimeException(
-                "assertion failed encoding inum=" + inum + " val=" + ld[inum] + " " + getKeyValueDescription(false, ab)
+                "assertion failed encoding inum=" + inum + " val=" + ld[inum] + " " + getKeyValueDescription(
+                    false,
+                    ab
+                )
             )
         }
 
@@ -264,30 +267,35 @@ public abstract class BExpressionContext protected constructor(
 
     private var lastCacheNode: CacheNode? = CacheNode()
 
+    private data class ByteArrayKey(val hash: Int, val bytes: ByteArray) {
+        override fun hashCode(): Int = hash
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            val o = other as? ByteArrayKey ?: return false
+            return hash == o.hash && bytes.contentEquals(o.bytes)
+        }
+    }
+
+    private data class FloatArrayKey(val hash: Int, val values: FloatArray) {
+        override fun hashCode(): Int = hash
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            val o = other as? FloatArrayKey ?: return false
+            return hash == o.hash && values.contentEquals(o.values)
+        }
+    }
+
     override fun unify(ab: ByteArray, offset: Int, len: Int): ByteArray? {
         val hash = crc(ab, offset, len)
 
-        val cn = cache!![hash]
-
+        val probe = ByteArray(len)
+        ab.copyInto(probe, 0, offset, offset + len)
+        val cn = cache!![ByteArrayKey(hash, probe)]
         if (cn != null) {
-            val cab = cn.ab
-            if (cab!!.size == len) {
-                var match = true
-                for (i in 0..<len) {
-                    if (cab[i] != ab[i + offset]) {
-                        match = false
-                        break
-                    }
-                }
-                if (match) {
-                    lastCacheNode = cn
-                    return cn.ab
-                }
-            }
+            lastCacheNode = cn
+            return cn.ab
         }
-        val nab = ByteArray(len)
-        ab.copyInto(nab, 0, offset, offset + len)
-        return nab
+        return probe
     }
 
     public fun evaluate(inverseDirection: Boolean, ab: ByteArray) {
@@ -305,21 +313,17 @@ public abstract class BExpressionContext protected constructor(
 
         var cn: CacheNode?
 
-        if (lastCacheNode!!.ab.contentEquals(ab)) {
+        if (lastCacheNode!!.ab === ab) {
             cn = lastCacheNode
         } else {
             val hash = crc(ab, 0, ab.size)
-            cn = cache!![hash]
-
-            if (cn != null && !cn.ab.contentEquals(ab)) {
-                cn = null
-            }
+            cn = cache!![ByteArrayKey(hash, ab)]
 
             if (cn == null) {
                 cn = CacheNode()
                 cn.hash = hash
                 cn.ab = ab
-                cache!!.put(hash, cn)
+                cache!!.put(ByteArrayKey(hash, ab), cn)
 
                 if (probeVarSet.vars == null) {
                     probeVarSet.vars = FloatArray(2 * nBuildInVars)
@@ -333,14 +337,15 @@ public abstract class BExpressionContext protected constructor(
 
                 probeVarSet.hash = probeVarSet.vars.contentHashCode()
 
-                var vw = resultVarCache!![probeVarSet.hash]
+                val probeVarKey = FloatArrayKey(probeVarSet.hash, probeVarSet.vars!!)
+                var vw = resultVarCache!![probeVarKey]
 
                 if (vw == null) {
                     vw = VarWrapper()
                     vw.hash = probeVarSet.hash
                     vw.vars = probeVarSet.vars
                     probeVarSet.vars = null
-                    resultVarCache!!.put(vw.hash, vw)
+                    resultVarCache!!.put(FloatArrayKey(vw.hash, vw.vars!!), vw)
                 }
                 cn.vars = vw.vars
             }
@@ -517,16 +522,21 @@ public abstract class BExpressionContext protected constructor(
                         } else if (value.contains("meter")) {
                             value = value.substringBefore("m")
                         } else if (value.contains("mph")) {
-                            val sa = value.split("mph").dropLastWhile { it.isEmpty() }.toTypedArray()
+                            val sa =
+                                value.split("mph").dropLastWhile { it.isEmpty() }.toTypedArray()
                             if (sa.isNotEmpty()) value = sa[0]
                             val mph = value.toFloat()
                             value = formatOneDecimal(mph * 1.609344f)
                         } else if (value.contains("knot")) {
-                            val sa = value.split("knot").dropLastWhile { it.isEmpty() }.toTypedArray()
+                            val sa =
+                                value.split("knot").dropLastWhile { it.isEmpty() }.toTypedArray()
                             if (sa.isNotEmpty()) value = sa[0]
                             val nm = value.toFloat()
                             value = formatOneDecimal(nm * 1.852f)
-                        } else if (value.contains("kmh") || value.contains("km/h") || value.contains("kph")) {
+                        } else if (value.contains("kmh") || value.contains("km/h") || value.contains(
+                                "kph"
+                            )
+                        ) {
                             val sa = value.split("k").dropLastWhile { it.isEmpty() }.toTypedArray()
                             if (sa.size > 1) value = sa[0]
                         } else if (value.contains("m")) {
@@ -821,21 +831,31 @@ public abstract class BExpressionContext protected constructor(
                 if (c == '\r' || c == '\n') inComment = false
                 if (!inComment) {
                     val num = variableNumbers["check_start_way"]
-                    if (num != null && noStartWays.isEmpty() && sbcom.toString().contains("noStartWay")) {
+                    if (num != null && noStartWays.isEmpty() && sbcom.toString()
+                            .contains("noStartWay")
+                    ) {
                         var `var` = sbcom.toString().trim()
-                        val savar = `var`.split("\\|".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
+                        val savar = `var`.split("\\|".toRegex()).dropLastWhile { it.isEmpty() }
+                            .toTypedArray()
                         if (savar.size == 4) {
                             `var` = savar[3].substring(savar[3].indexOf("=") + 1).trim()
-                            val sa = `var`.split(";".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
+                            val sa = `var`.split(";".toRegex()).dropLastWhile { it.isEmpty() }
+                                .toTypedArray()
                             for (s in sa) {
-                                val sa2 = s.split(",".toRegex()).dropLastWhile { it.isEmpty() }.toTypedArray()
+                                val sa2 = s.split(",".toRegex()).dropLastWhile { it.isEmpty() }
+                                    .toTypedArray()
                                 val name: String = sa2[0]
                                 val value: String = sa2[1]
                                 val nidx = getLookupNameIdx(name)
                                 if (nidx == -1) break
                                 val vidx = getLookupValueIdx(nidx, value)
                                 val tmp = IntArray(noStartWays.size + 2)
-                                if (noStartWays.isNotEmpty()) noStartWays.copyInto(tmp, 0, 0, noStartWays.size)
+                                if (noStartWays.isNotEmpty()) noStartWays.copyInto(
+                                    tmp,
+                                    0,
+                                    0,
+                                    noStartWays.size
+                                )
                                 noStartWays = tmp
                                 noStartWays[noStartWays.size - 2] = nidx
                                 noStartWays[noStartWays.size - 1] = vidx

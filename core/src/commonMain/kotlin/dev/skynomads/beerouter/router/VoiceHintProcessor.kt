@@ -108,6 +108,7 @@ internal class VoiceHintProcessor // this.catchingRange = catchingRange;
                             badWay.isGoodForCars
                         ) {
                             isExit = true
+                            break
                         }
                     }
                 }
@@ -200,10 +201,6 @@ internal class VoiceHintProcessor // this.catchingRange = catchingRange;
                         }
 
                         continue  // ways from the back should not trigger a slight turn
-                    }
-
-                    if (badWay.costfactor < 20f && abs(badTurn) < minAbsAngeRaw) {
-                        minAbsAngeRaw = abs(badTurn)
                     }
 
                     if (badPrio > maxPrioCandidates) {

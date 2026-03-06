@@ -23,14 +23,14 @@ public open class OsmNode : OsmLink, OsmPos {
      * The position
      */
     override var position: Position =
-        Position(0.0, 0.0, 0.0)
+        Position(0.0, 0.0, Short.MIN_VALUE.toDouble() / 4.0)
 
     /**
      * The elevation
      */
     @Deprecated("Use position.altitude instead")
     public val sElev: Short
-        get() = (position.altitude ?: 0.0).times(4.0).toInt().toShort()
+        get() = position.altitude?.times(4.0)?.toInt()?.toShort() ?: Short.MIN_VALUE
 
     /**
      * The node-tags, if any
@@ -57,7 +57,7 @@ public open class OsmNode : OsmLink, OsmPos {
         this.position = Position(
             ilon.toDoubleLongitude(),
             ilat.toDoubleLatitude(),
-            0.0
+            Short.MIN_VALUE.toDouble() / 4.0
         )
     }
 
@@ -67,7 +67,7 @@ public open class OsmNode : OsmLink, OsmPos {
         this.position = Position(
             lon.toDoubleLongitude(),
             lat.toDoubleLatitude(),
-            0.0
+            Short.MIN_VALUE.toDouble() / 4.0
         )
     }
 
@@ -204,7 +204,7 @@ public open class OsmNode : OsmLink, OsmPos {
 
 
     public val isHollow: Boolean
-        get() = (position.altitude ?: 0.0).times(4.0).toInt() == -12345
+        get() = sElev.toInt() == -12345
 
     public fun setHollow() {
         position = Position(position.longitude, position.latitude, (-12345).toDouble() / 4.0)

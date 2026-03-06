@@ -57,7 +57,7 @@ public class RoutingContext(
         public var useDynamicDistance: Boolean
         public val buildBeelineOnRange: Boolean
 
-        public var turnInstructionMode: Int   // 0=none, 1=auto, 2=locus, 3=osmand, 4=comment-style, 5=gpsies-style
+        public var turnInstructionMode: Int = 0  // 0=none, 1=auto, 2=locus, 3=osmand, 4=comment-style, 5=gpsies-style
         public val turnInstructionCatchingRange: Double
         public val turnInstructionRoundabouts: Boolean
 
@@ -88,9 +88,9 @@ public class RoutingContext(
             ) != 0f
 
             correctMisplacedViaPoints =
-                ctx.getVariableValue("correctMisplacedViaPoints", 1f) != 0f
+                ctx.getVariableValue("correctMisplacedViaPoints", 0f) != 0f
             correctMisplacedViaPointsDistance =
-                ctx.getVariableValue("correctMisplacedViaPointsDistance", 0f)
+                ctx.getVariableValue("correctMisplacedViaPointsDistance", 400f)
                     .toDouble() // 0 == don't use distance
 
             continueStraight = ctx.getVariableValue("continueStraight", 0f) != 0f
@@ -125,7 +125,11 @@ public class RoutingContext(
             inverseRouting = ctx.getVariableValue("inverseRouting", 0f) != 0f
             showTime = ctx.getVariableValue("showtime", 0f) != 0f
 
-            turnInstructionMode = ctx.getVariableValue("turnInstructionMode", 0f).toInt()
+            val tiMode = ctx.getVariableValue("turnInstructionMode", 0f).toInt()
+            if (tiMode != 1) {
+                // Preserve externally provided mode for profile auto mode ("1"), as in brouter.
+                turnInstructionMode = tiMode
+            }
 
             turnInstructionCatchingRange =
                 ctx.getVariableValue("turnInstructionCatchingRange", 40f).toDouble()
@@ -369,7 +373,14 @@ public class RoutingContext(
             StdModel()
         } else {
             try {
-                val clazz = Class.forName(className)
+                val effectiveClassName = when {
+                    className.startsWith("btools.router.") -> className.replace(
+                        "btools.router.",
+                        "dev.skynomads.beerouter.router."
+                    )
+                    else -> className
+                }
+                val clazz = Class.forName(effectiveClassName)
                 clazz.getDeclaredConstructor().newInstance() as OsmPathModel
             } catch (e: Exception) {
                 throw RuntimeException("Cannot create path-model: $e")

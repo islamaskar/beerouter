@@ -84,7 +84,9 @@ public class OsmTrack {
 
     public fun addDetours(source: OsmTrack) {
         source.detourMap.forEach { id, value ->
-            detourMap.put(id, value)
+            if (!detourMap.contains(id) && source.nodesMap.contains(id)) {
+                detourMap.put(id, value)
+            }
         }
     }
 
@@ -363,21 +365,15 @@ public class OsmTrack {
 
     public val minDistance: Int
         get() {
-            if (voiceHints.isNotEmpty()) {
-                return when (voiceHints.transportMode) {
-                    VoiceHintList.TransportMode.CAR -> 20
-                    VoiceHintList.TransportMode.FOOT -> 3
-                    VoiceHintList.TransportMode.BIKE -> 5
-                }
+            return when (voiceHints.transportMode) {
+                VoiceHintList.TransportMode.CAR -> 20
+                VoiceHintList.TransportMode.FOOT -> 3
+                VoiceHintList.TransportMode.BIKE -> 5
             }
-            return 2
         }
 
     public fun getVoiceHintTime(i: Int): Float {
-        if (voiceHints.list.isEmpty()) {
-            return 0f
-        }
-        if (i < voiceHints.list.size) {
+        if (voiceHints.list.isNotEmpty() && i < voiceHints.list.size) {
             return voiceHints.list[i].time
         }
         if (nodes.isEmpty()) {
@@ -398,9 +394,9 @@ public class OsmTrack {
     private fun startSection(element: OsmPathElement?, root: OsmPathElement): MessageData? {
         var e = element
         var cnt = 0
+        val rootId = root.idFromPos
         while (e != null && e.origin != null) {
-            if (e.origin!!.position.longitude.toIntLongitude() == root.position.longitude.toIntLongitude() &&
-                e.origin!!.position.latitude.toIntLatitude() == root.position.latitude.toIntLatitude()) {
+            if (e.origin!!.idFromPos == rootId) {
                 return e.message
             }
             e = e.origin
@@ -512,6 +508,7 @@ public class OsmTrack {
             return sb.toString()
         }
 
-        private fun toSElev(altitude: Double?): Short = (altitude ?: 0.0).times(4.0).toInt().toShort()
+        private fun toSElev(altitude: Double?): Short =
+            altitude?.times(4.0)?.toInt()?.toShort() ?: Short.MIN_VALUE
     }
 }

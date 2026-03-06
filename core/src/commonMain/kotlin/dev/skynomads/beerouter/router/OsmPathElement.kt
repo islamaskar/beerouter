@@ -23,7 +23,7 @@ public class OsmPathElement protected constructor() : OsmPos {
 
     @Deprecated("Use position.altitude instead")
     public val sElev: Short
-        get() = (position.altitude ?: 0.0).times(4.0).toInt().toShort()
+        get() = position.altitude?.times(4.0)?.toInt()?.toShort() ?: Short.MIN_VALUE
 
     public var message: MessageData? = null // description
 
@@ -81,7 +81,8 @@ public class OsmPathElement protected constructor() : OsmPos {
         sink.writeInt(cost)
     }
 
-    private fun toSElev(altitude: Double?): Short = (altitude ?: 0.0).times(4.0).toInt().toShort()
+    private fun toSElev(altitude: Double?): Short =
+        altitude?.times(4.0)?.toInt()?.toShort() ?: Short.MIN_VALUE
 
     public companion object {
         public fun create(

@@ -441,12 +441,15 @@ public class VoiceHint {
     }
 
     public fun hasGiveWay(): Boolean {
-        val tags = oldWay?.wayTags
-        if (tags != null) {
-            return if (tags["reversedirection"] == "yes") {
-                (tags["highway"] == "give_way" || tags["highway"] == "stop") && tags["direction"] == "backward"
+        val wayTags = oldWay?.wayTags
+        val nodeTags = oldWay?.nodeTags
+        if (wayTags != null && nodeTags != null) {
+            return if (wayTags["reversedirection"] == "yes") {
+                (nodeTags["highway"] == "give_way" || nodeTags["highway"] == "stop") &&
+                        nodeTags["direction"] == "backward"
             } else {
-                (tags["highway"] == "give_way" || tags["highway"] == "stop") && tags["direction"] != "backward"
+                (nodeTags["highway"] == "give_way" || nodeTags["highway"] == "stop") &&
+                        nodeTags["direction"] != "backward"
             }
         }
         return false

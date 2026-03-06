@@ -306,7 +306,12 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
             val listOne = mutableListOf<OsmNodeNamed>()
 
             for (a in 45..315 step 90) {
-                val pos = destination(wp.position.longitude.toIntLongitude(), wp.position.latitude.toIntLatitude(), searchRadius * 1.5, a.toDouble())
+                val pos = destination(
+                    wp.position.longitude.toIntLongitude(),
+                    wp.position.latitude.toIntLatitude(),
+                    searchRadius * 1.5,
+                    a.toDouble()
+                )
                 val onn = OsmNodeNamed(OsmNode(pos[0], pos[1])).apply { name = "via$a" }
                 listOne.add(onn)
 
@@ -356,10 +361,22 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
 
                 val polygon = OsmNogoPolygon(true)
                 rc.ai!!.polygon = polygon
-                polygon.addVertex(wp.position.longitude.toIntLongitude(), wp.position.latitude.toIntLatitude())
-                polygon.addVertex(listOne[a].position.longitude.toIntLongitude(), listOne[a].position.latitude.toIntLatitude())
-                if (a == 3) polygon.addVertex(listOne[0].position.longitude.toIntLongitude(), listOne[0].position.latitude.toIntLatitude())
-                else polygon.addVertex(listOne[a + 1].position.longitude.toIntLongitude(), listOne[a + 1].position.latitude.toIntLatitude())
+                polygon.addVertex(
+                    wp.position.longitude.toIntLongitude(),
+                    wp.position.latitude.toIntLatitude()
+                )
+                polygon.addVertex(
+                    listOne[a].position.longitude.toIntLongitude(),
+                    listOne[a].position.latitude.toIntLatitude()
+                )
+                if (a == 3) polygon.addVertex(
+                    listOne[0].position.longitude.toIntLongitude(),
+                    listOne[0].position.latitude.toIntLatitude()
+                )
+                else polygon.addVertex(
+                    listOne[a + 1].position.longitude.toIntLongitude(),
+                    listOne[a + 1].position.latitude.toIntLatitude()
+                )
 
                 ais.add(rc.ai!!)
             }
@@ -429,7 +446,8 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
                 if (lastPt != null) dist += n.calcDistance(lastPt)
             } else if (toSElev(n.position.altitude) != Short.MIN_VALUE && lastElev == Short.MIN_VALUE && startElev != Short.MIN_VALUE) {
                 // end one point behind exit point to get better elevation results
-                if (idx + 1 < track.nodes.size) endElev = toSElev(track.nodes[idx + 1].position.altitude)
+                if (idx + 1 < track.nodes.size) endElev =
+                    toSElev(track.nodes[idx + 1].position.altitude)
                 if (endElev == Short.MIN_VALUE) endElev = toSElev(n.position.altitude)
                 endIdx = idx
                 var tmpPt = track.nodes[if (startIdx > 1) startIdx - 2 else startIdx - 1]
@@ -1305,7 +1323,10 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
      */
     private fun elevationFilter(n: OsmPos): Double {
         if (nodesCache != null) {
-            val r = nodesCache!!.getElevationType(n.position.longitude.toIntLongitude(), n.position.latitude.toIntLatitude())
+            val r = nodesCache!!.getElevationType(
+                n.position.longitude.toIntLongitude(),
+                n.position.latitude.toIntLatitude()
+            )
             if (r == 1) return -5.0
         }
         return -10.0
@@ -2118,5 +2139,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
         return track
     }
 
-    private fun toSElev(altitude: Double?): Short = (altitude ?: 0.0).times(4.0).toInt().toShort()
+    @Deprecated("use altitude")
+    private fun toSElev(altitude: Double?): Short =
+        altitude?.times(4.0)?.toInt()?.toShort() ?: Short.MIN_VALUE
 }

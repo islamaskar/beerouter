@@ -134,7 +134,10 @@ internal class StdPath : OsmPath() {
                 elevationCost += min(reduce.toFloat(), distInt * downhillmaxslope) / downhillcostdiv
             }
             if (downhillmaxslopecostdiv > 0) {
-                elevationCost += max(0f, reduce - distInt * downhillmaxslope) / downhillmaxslopecostdiv
+                elevationCost += max(
+                    0f,
+                    reduce - distInt * downhillmaxslope
+                ) / downhillmaxslopecostdiv
             }
             if (elevationCost > 0) {
                 sectionCost += elevationCost.toDouble()
@@ -262,7 +265,7 @@ internal class StdPath : OsmPath() {
         }
 
         // compute incline
-        elevation_buffer += delta_h.toFloat()
+        elevation_buffer = (elevation_buffer + delta_h).toFloat()
         val incline = calcIncline(dist)
 
         var maxSpeed = rc.global.maxSpeed
@@ -286,7 +289,7 @@ internal class StdPath : OsmPath() {
         // (Count only positive, negative would mean braking to enforce maxspeed)
         val energy = dist * (rc.global.S_C_x * speed * speed + f_roll)
         if (energy > 0.0) {
-            totalEnergy += energy.toFloat()
+            totalEnergy = (totalEnergy + energy).toFloat().toDouble()
         }
     }
 

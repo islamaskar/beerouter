@@ -45,7 +45,7 @@ class RoutingTest {
     }
 
     @Test
-    fun routeEqualsBrouterComprehensive() {
+    fun routingEqualsBrouter() {
         val scenarios = listOf(
             // trekking profile: short / medium / long / via route
             RouteScenario(
@@ -221,7 +221,15 @@ class RoutingTest {
             val hint = btrack.getVoiceHint(idx)
             if (hint != null) {
                 val actual = beetrack.getVoiceHint(idx)
-                assertNotNull(actual, "$scenario: node[$idx] missing voice hint")
+                assertNotNull(
+                    actual,
+                    "$scenario: node[$idx] missing voice hint (${
+                        describeNearestHints(
+                            beetrack,
+                            idx
+                        )
+                    })"
+                )
                 assertEquals(
                     hint.cruiserCommandString,
                     actual.cruiserCommandString,
@@ -233,6 +241,13 @@ class RoutingTest {
         assertEquals(List(btrack.nodes.size) { idx ->
             btrack.getVoiceHint(idx)
         }.filterNotNull().size, beetrack.voiceHints.size, "$scenario: voice hint count")
+    }
+
+    private fun describeNearestHints(track: OsmTrack, idx: Int): String {
+        val nearby = track.voiceHints
+            .map { it.indexInTrack to it.cruiserCommandString }
+            .filter { kotlin.math.abs(it.first - idx) <= 3 }
+        return if (nearby.isEmpty()) "no nearby hints" else "nearby hints=$nearby"
     }
 
     fun routeBrouter(waypoints: List<OsmNodeNamed>, profileName: String): btools.router.OsmTrack {
@@ -280,5 +295,6 @@ class RoutingTest {
         return engine.doRouting(waypoints)
     }
 
-    private fun toSElev(altitude: Double?): Short = (altitude ?: 0.0).times(4.0).toInt().toShort()
+    private fun toSElev(altitude: Double?): Short =
+        altitude?.times(4.0)?.toInt()?.toShort() ?: Short.MIN_VALUE
 }

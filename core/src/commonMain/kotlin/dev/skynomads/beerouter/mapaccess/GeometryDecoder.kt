@@ -17,7 +17,7 @@ public class GeometryDecoder {
     // result-cache
     private var firstTransferNode: OsmTransferNode? = null
     private var lastReverse = false
-    private var lastGeometry: ByteArray = ByteArray(0)
+    private var lastGeometry: ByteArray? = null
 
     init {
         // create some caches
@@ -30,7 +30,7 @@ public class GeometryDecoder {
         targetNode: OsmNode,
         reverseLink: Boolean
     ): OsmTransferNode? {
-        if ((lastGeometry.contentEquals(geometry)) && (lastReverse == reverseLink)) {
+        if (lastGeometry === geometry && lastReverse == reverseLink) {
             return firstTransferNode
         }
 
@@ -70,5 +70,6 @@ public class GeometryDecoder {
         return firstTransferNode
     }
 
-    private fun toSElev(altitude: Double?): Short = (altitude ?: 0.0).times(4.0).toInt().toShort()
+    private fun toSElev(altitude: Double?): Short =
+        altitude?.times(4.0)?.toInt()?.toShort() ?: Short.MIN_VALUE
 }
