@@ -12,9 +12,9 @@ import dev.skynomads.beerouter.util.BitCoderContext
  * but doesn't do anything at pass1
  */
 public class TagValueCoder {
-    private var identityMap: MutableMap<TagValueSet?, TagValueSet?>? = null
+    private val identityMap: MutableMap<TagValueSet, TagValueSet> = mutableMapOf()
     private var tree: Any? = null
-    private var bc: BitCoderContext? = null
+    private lateinit var bc: BitCoderContext
     private var pass = 0
     private var nextTagValueSetId = 0
 
@@ -24,14 +24,14 @@ public class TagValueCoder {
         }
         val tvsProbe = TagValueSet(nextTagValueSetId)
         tvsProbe.data = data
-        var tvs = identityMap!![tvsProbe]
+        var tvs = identityMap[tvsProbe]
         if (pass == 3) {
-            bc!!.encodeBounded(tvs!!.range - 1, tvs.code)
+            bc.encodeBounded(requireNotNull(tvs).range - 1, tvs.code)
         } else if (pass == 2) {
             if (tvs == null) {
                 tvs = tvsProbe
                 nextTagValueSetId++
-                identityMap!![tvs] = tvs
+                identityMap[tvs] = tvs
             }
             tvs.frequency++
         }
@@ -41,7 +41,7 @@ public class TagValueCoder {
         var node = tree
         while (node is TreeNode) {
             val tn = node
-            val nextBit = bc!!.decodeBit()
+            val nextBit = bc.decodeBit()
             node = if (nextBit) tn.child2 else tn.child1
         }
         return node as TagValueWrapper?
@@ -49,13 +49,13 @@ public class TagValueCoder {
 
     public fun encodeDictionary(bc: BitCoderContext) {
         if (++pass == 3) {
-            if (identityMap!!.isEmpty()) {
+            if (identityMap.isEmpty()) {
                 val dummy = TagValueSet(nextTagValueSetId++)
-                identityMap!![dummy] = dummy
+                identityMap[dummy] = dummy
             }
             val comparator = TagValueSet.FrequencyComparator()
             val queue = ArrayDeque<TagValueSet>()
-            queue.addAll(identityMap!!.values.filterNotNull())
+            queue.addAll(identityMap.values)
             queue.sortWith(comparator)
             while (queue.size > 1) {
                 val node = TagValueSet(nextTagValueSetId++)
@@ -76,9 +76,7 @@ public class TagValueCoder {
         this.bc = bc
     }
 
-    public constructor() {
-        identityMap = HashMap()
-    }
+    public constructor()
 
     private fun decodeTree(
         bc: BitCoderContext,
