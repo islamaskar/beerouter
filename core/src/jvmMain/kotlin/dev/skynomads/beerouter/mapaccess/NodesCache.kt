@@ -11,33 +11,17 @@ import dev.skynomads.beerouter.codec.WaypointMatcher
 import dev.skynomads.beerouter.expressions.BExpressionContextWay
 import dev.skynomads.beerouter.osm.toIntLatitude
 import dev.skynomads.beerouter.osm.toIntLongitude
-import java.io.File
 import kotlinx.io.files.Path
+import kotlinx.io.files.SystemFileSystem
 
 public class NodesCache(
-    private val segmentDir: File,
+    private val segmentDir: Path,
     private val ctxWay: BExpressionContextWay,
     forceSecondaryData: Boolean,
     maxmem: Long,
     oldCache: NodesCache?,
     detailed: Boolean
 ) {
-    public constructor(
-        segmentDirPath: Path,
-        ctxWay: BExpressionContextWay,
-        forceSecondaryData: Boolean,
-        maxmem: Long,
-        oldCache: NodesCache?,
-        detailed: Boolean
-    ) : this(
-        segmentDir = File(segmentDirPath.toString()),
-        ctxWay = ctxWay,
-        forceSecondaryData = forceSecondaryData,
-        maxmem = maxmem,
-        oldCache = oldCache,
-        detailed = detailed
-    )
-
     private val MAX_DYNAMIC_CATCHES = 20 // used with RoutingEngine MAX_DYNAMIC_RANGE = 60000m
 
     public var nodesMap: OsmNodesMap = OsmNodesMap()
@@ -86,7 +70,9 @@ public class NodesCache(
         firstFileAccessFailed = false
         firstFileAccessName = null
 
-        if (!this.segmentDir.isDirectory) throw RuntimeException("segment directory ${segmentDir.absolutePath} does not exist")
+        if (SystemFileSystem.metadataOrNull(this.segmentDir)?.isDirectory != true) {
+            throw RuntimeException("segment directory ${segmentDir.toString()} does not exist")
+        }
 
         if (oldCache != null) {
             fileCache = oldCache.fileCache
@@ -376,9 +362,9 @@ public class NodesCache(
 
         val ra: PhysicalFile? = fileCache.getOrPut(filenameBase) {
             if (!forceSecondaryData) {
-                val primary = File(segmentDir, "$filenameBase.rd5")
-                if (primary.exists()) {
-                    currentFileName = primary.name
+                val primary = Path("${segmentDir.toString()}/$filenameBase.rd5")
+                if (SystemFileSystem.exists(primary)) {
+                    currentFileName = "$filenameBase.rd5"
                     return@getOrPut PhysicalFile(primary, dataBuffers, lookupVersion, lookupMinorVersion)
                 }
             }

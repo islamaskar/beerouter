@@ -8,22 +8,18 @@ package dev.skynomads.beerouter.mapaccess
 import dev.skynomads.beerouter.codec.DataBuffers
 import dev.skynomads.beerouter.util.ByteDataReader
 import dev.skynomads.beerouter.util.Crc32.crc
-import java.io.File
 import java.io.IOException
 import java.io.RandomAccessFile
 import kotlinx.io.files.Path
 
-public class PhysicalFile(f: File, dataBuffers: DataBuffers, lookupVersion: Int, lookupMinorVersion: Int) {
-    public constructor(path: Path, dataBuffers: DataBuffers, lookupVersion: Int, lookupMinorVersion: Int) :
-        this(File(path.toString()), dataBuffers, lookupVersion, lookupMinorVersion)
-
-    public val ra: RandomAccessFile = RandomAccessFile(f, "r")
+public class PhysicalFile(path: Path, dataBuffers: DataBuffers, lookupVersion: Int, lookupMinorVersion: Int) {
+    public val ra: RandomAccessFile = RandomAccessFile(path.toString(), "r")
     public val fileIndex: LongArray = LongArray(25)
     public var fileHeaderCrcs: IntArray = IntArray(0)
 
     public var creationTime: Long = 0L
 
-    public val fileName: String = f.name
+    public val fileName: String = fileNameFromPath(path)
 
     public var divisor: Int = 80
     public var elevationType: Byte = 3
@@ -39,7 +35,7 @@ public class PhysicalFile(f: File, dataBuffers: DataBuffers, lookupVersion: Int,
             val readVersion = (lv shr 48).toShort()
             if (i == 0 && lookupVersion != -1 && readVersion.toInt() != lookupVersion) {
                 throw IOException(
-                    "lookup version mismatch (old rd5?) lookups.dat=$lookupVersion ${f.name}=$readVersion"
+                    "lookup version mismatch (old rd5?) lookups.dat=$lookupVersion $fileName=$readVersion"
                 )
             }
             fileIndex[i] = lv and 0xffffffffffffL
@@ -80,13 +76,9 @@ public class PhysicalFile(f: File, dataBuffers: DataBuffers, lookupVersion: Int,
     }
 
     public companion object {
-        public fun checkVersionIntegrity(f: File): Int {
-            return checkVersionIntegrity(Path(f.path))
-        }
-
         public fun checkVersionIntegrity(path: Path): Int {
             return try {
-                RandomAccessFile(File(path.toString()), "r").use { raf ->
+                RandomAccessFile(path.toString(), "r").use { raf ->
                     val iobuffer = ByteArray(200)
                     raf.readFully(iobuffer, 0, 200)
                     val dis = ByteDataReader(iobuffer)
@@ -103,13 +95,9 @@ public class PhysicalFile(f: File, dataBuffers: DataBuffers, lookupVersion: Int,
          *
          * @return the error message if file corrupt, else null
          */
-        public fun checkFileIntegrity(f: File): String? {
-            return checkFileIntegrity(Path(f.path))
-        }
-
         public fun checkFileIntegrity(path: Path): String? {
             val dataBuffers = DataBuffers()
-            val pf = PhysicalFile(File(path.toString()), dataBuffers, -1, -1)
+            val pf = PhysicalFile(path, dataBuffers, -1, -1)
             try {
                 val div = pf.divisor
                 for (lonDegree in 0..4) {
@@ -132,6 +120,14 @@ public class PhysicalFile(f: File, dataBuffers: DataBuffers, lookupVersion: Int,
                 pf.close()
             }
             return null
+        }
+
+        private fun fileNameFromPath(path: Path): String {
+            val raw = path.toString()
+            val slash = raw.lastIndexOf('/')
+            val backslash = raw.lastIndexOf('\\')
+            val cut = maxOf(slash, backslash)
+            return if (cut >= 0 && cut < raw.length - 1) raw.substring(cut + 1) else raw
         }
     }
 }
