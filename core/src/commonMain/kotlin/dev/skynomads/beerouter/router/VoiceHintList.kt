@@ -7,7 +7,7 @@
 package dev.skynomads.beerouter.router
 
 public class VoiceHintList(
-    public val list: MutableList<VoiceHint> = ArrayList()
+    public val list: MutableList<VoiceHint> = mutableListOf()
 ) : MutableList<VoiceHint> by list {
     public var transportMode: Int = TRANS_MODE_BIKE
         private set

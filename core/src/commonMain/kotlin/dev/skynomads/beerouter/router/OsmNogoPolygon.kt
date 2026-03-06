@@ -19,7 +19,7 @@ import kotlin.math.sqrt
 public class OsmNogoPolygon(public val isClosed: Boolean) : OsmNodeNamed() {
     public class Point internal constructor(public val x: Int, public val y: Int)
 
-    public val points: MutableList<Point> = ArrayList<Point>()
+    public val points: MutableList<Point> = mutableListOf()
 
     init {
         this.isNogo = true

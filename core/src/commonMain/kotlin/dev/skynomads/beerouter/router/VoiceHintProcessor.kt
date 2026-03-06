@@ -59,7 +59,7 @@ internal class VoiceHintProcessor // this.catchingRange = catchingRange;
      * @return voice hints, in forward order
      */
     fun process(inputs: MutableList<VoiceHint>): MutableList<VoiceHint> {
-        val results: MutableList<VoiceHint> = ArrayList()
+        val results= mutableListOf<VoiceHint>()
         var distance = 0.0
         var roundAboutTurnAngle = 0f // sums up angles in roundabout
 
@@ -125,7 +125,7 @@ internal class VoiceHintProcessor // this.catchingRange = catchingRange;
                 input.exitNumber = if (roundAboutTurnAngle < 0) roundaboutExit else -roundaboutExit
                 var tmpangle = 0f
                 val tmpRndAbt = VoiceHint()
-                tmpRndAbt.badWays = ArrayList()
+                tmpRndAbt.badWays = mutableListOf()
                 for (i in hintIdx - 1 downTo roundaboudStartIdx + 1) {
                     val vh = inputs[i]
                     tmpangle += inputs[i].goodWay!!.turnangle
@@ -314,7 +314,7 @@ internal class VoiceHintProcessor // this.catchingRange = catchingRange;
 
         // go through the hint list again in reverse order (=travel direction)
         // and filter out non-significant hints and hints too close to its predecessor
-        val results2: MutableList<VoiceHint> = ArrayList()
+        val results2= mutableListOf<VoiceHint>()
         var i = results.size
         while (i > 0) {
             var hint = results[--i]
@@ -360,7 +360,7 @@ internal class VoiceHintProcessor // this.catchingRange = catchingRange;
         catchingRange: Double,
         minRange: Double
     ): MutableList<VoiceHint> {
-        val results: MutableList<VoiceHint> = ArrayList()
+        val results= mutableListOf<VoiceHint>()
         var inputLast: VoiceHint? = null
         var inputLastSaved: VoiceHint? = null
         var hintIdx = 0

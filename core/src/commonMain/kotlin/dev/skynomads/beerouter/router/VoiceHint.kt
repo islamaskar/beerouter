@@ -40,7 +40,7 @@ public class VoiceHint {
             return
         }
         if (badWays == null) {
-            badWays = ArrayList()
+            badWays = mutableListOf()
         }
         badWays!!.add(badWay)
     }

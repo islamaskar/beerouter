@@ -37,7 +37,7 @@ public class MatchedWaypoint {
     public var directionToNext: Double = -1.0
     public var directionDiff: Double = 361.0
 
-    public var wayNearest: MutableList<MatchedWaypoint> = ArrayList<MatchedWaypoint>()
+    public var wayNearest: MutableList<MatchedWaypoint> = mutableListOf()
     public var hasUpdate: Boolean = false
 
     public fun writeToStream(sink: Sink) {
