@@ -187,8 +187,8 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
             minIdx + 1
         }
         val otherdist = t.nodes[otherIdx].calcDistance(listOne[0].crosspoint!!)
-        val minSElev = t.nodes[minIdx].sElev.toInt()
-        val otherSElev = t.nodes[otherIdx].sElev.toInt()
+        val minSElev = toSElev(t.nodes[minIdx].position.altitude).toInt()
+        val otherSElev = toSElev(t.nodes[otherIdx].position.altitude).toInt()
         val diffSElev = otherSElev - minSElev
         val diff = mindist.toDouble() / (mindist + otherdist) * diffSElev
 
@@ -419,18 +419,18 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
         val ourSize = track.nodes.size
         for (idx in 0..<ourSize) {
             val n = track.nodes[idx]
-            if (n.sElev == Short.MIN_VALUE && lastElev != Short.MIN_VALUE && idx < ourSize - 1) {
+            if (toSElev(n.position.altitude) == Short.MIN_VALUE && lastElev != Short.MIN_VALUE && idx < ourSize - 1) {
                 // start one point before entry point to get better elevation results
-                if (idx > 1) startElev = track.nodes[idx - 2].sElev
+                if (idx > 1) startElev = toSElev(track.nodes[idx - 2].position.altitude)
                 if (startElev == Short.MIN_VALUE) startElev = lastElev
                 startIdx = idx
                 startPt = lastPt
                 dist = 0
                 if (lastPt != null) dist += n.calcDistance(lastPt)
-            } else if (n.sElev != Short.MIN_VALUE && lastElev == Short.MIN_VALUE && startElev != Short.MIN_VALUE) {
+            } else if (toSElev(n.position.altitude) != Short.MIN_VALUE && lastElev == Short.MIN_VALUE && startElev != Short.MIN_VALUE) {
                 // end one point behind exit point to get better elevation results
-                if (idx + 1 < track.nodes.size) endElev = track.nodes[idx + 1].sElev
-                if (endElev == Short.MIN_VALUE) endElev = n.sElev
+                if (idx + 1 < track.nodes.size) endElev = toSElev(track.nodes[idx + 1].position.altitude)
+                if (endElev == Short.MIN_VALUE) endElev = toSElev(n.position.altitude)
                 endIdx = idx
                 var tmpPt = track.nodes[if (startIdx > 1) startIdx - 2 else startIdx - 1]
                 val diffElev = endElev - startElev
@@ -440,7 +440,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
                 var incline = diffElev / (dist / 100.0)
                 var tmpincline = 0.0
                 var startincline = 0.0
-                var selev = track.nodes[startIdx - 2].sElev.toDouble()
+                var selev = toSElev(track.nodes[startIdx - 2].position.altitude).toDouble()
                 var hasInclineTags = false
                 for (i in startIdx - 1..<endIdx + 1) {
                     val tmp = track.nodes[i]
@@ -485,16 +485,16 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
                     tmpPt = tmp
                 }
                 dist = 0
-            } else if (n.sElev != Short.MIN_VALUE && lastElev == Short.MIN_VALUE && startIdx == 0) {
+            } else if (toSElev(n.position.altitude) != Short.MIN_VALUE && lastElev == Short.MIN_VALUE && startIdx == 0) {
                 // fill at start
                 track.nodes.subList(0, idx).forEach {
                     it.position = Position(
                         it.position.longitude,
                         it.position.latitude,
-                        n.sElev.toDouble() / 4.0
+                        toSElev(n.position.altitude).toDouble() / 4.0
                     )
                 }
-            } else if (n.sElev == Short.MIN_VALUE && idx == track.nodes.size - 1) {
+            } else if (toSElev(n.position.altitude) == Short.MIN_VALUE && idx == track.nodes.size - 1) {
                 // fill at end
                 startIdx = idx
                 track.nodes.subList(startIdx, track.nodes.size).forEach {
@@ -504,10 +504,10 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
                         lastElev.toDouble() / 4.0
                     )
                 }
-            } else if (n.sElev == Short.MIN_VALUE) {
+            } else if (toSElev(n.position.altitude) == Short.MIN_VALUE) {
                 if (lastPt != null) dist += n.calcDistance(lastPt)
             }
-            lastElev = n.sElev
+            lastElev = toSElev(n.position.altitude)
             lastPt = n
         }
     }
@@ -1244,12 +1244,12 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
             lastenergy = n.energy
             lasttime = n.time
 
-            val ele = n.sElev
+            val ele = toSElev(n.position.altitude)
             if (ele != Short.MIN_VALUE) eleEnd = ele
             if (eleStart == Short.MIN_VALUE) eleStart = ele
 
             if (nLast != null) {
-                val eleLast = nLast.sElev
+                val eleLast = toSElev(nLast.position.altitude)
                 if (eleLast != Short.MIN_VALUE) {
                     ehb += (eleLast - ele) * eleFactor
                 }
@@ -1278,7 +1278,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
             if (key > 0) {
                 val GRAVITY = 9.81 // in meters per second^(-2)
                 val incline =
-                    (if (t.nodes[key - 1].sElev == Short.MIN_VALUE || t.nodes[key].sElev == Short.MIN_VALUE) 0.0 else ((t.nodes[key - 1].position.altitude
+                    (if (toSElev(t.nodes[key - 1].position.altitude) == Short.MIN_VALUE || toSElev(t.nodes[key].position.altitude) == Short.MIN_VALUE) 0.0 else ((t.nodes[key - 1].position.altitude
                         ?: 0.0) - (t.nodes[key].position.altitude ?: 0.0)) / value)
                 val f_roll =
                     routingContext.global.totalMass * GRAVITY * (routingContext.global.defaultC_r + incline)
@@ -2028,7 +2028,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
         return OsmPathElement.create(
             n.position.longitude.toIntLongitude(),
             n.position.latitude.toIntLatitude(),
-            n.sElev,
+            toSElev(n.position.altitude),
             originElement
         ).also {
             it.cost = cost
@@ -2117,4 +2117,6 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
         track.buildMap()
         return track
     }
+
+    private fun toSElev(altitude: Double?): Short = (altitude ?: 0.0).times(4.0).toInt().toShort()
 }
