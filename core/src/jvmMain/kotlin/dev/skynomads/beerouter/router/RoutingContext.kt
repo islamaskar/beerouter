@@ -46,7 +46,7 @@ public class RoutingContext(
     ) : this(
         profile = File(profilePath.toString()),
         segmentDir = File(segmentDirPath.toString()),
-        lookupFile = File(profilePath.toString().replaceAfterLast('/', "lookups.dat").replaceAfterLast('\\', "lookups.dat"))
+        lookupFile = File(defaultLookupPath(profilePath).toString())
     )
 
     public class Global(ctx: BExpressionContext) {
@@ -570,6 +570,13 @@ public class RoutingContext(
     }
 
     public companion object {
+        private fun defaultLookupPath(profilePath: Path): Path {
+            val raw = profilePath.toString()
+            val unixBase = raw.substringBeforeLast('/', missingDelimiterValue = raw)
+            val platformBase = unixBase.substringBeforeLast('\\', missingDelimiterValue = unixBase)
+            return Path("$platformBase/lookups.dat")
+        }
+
         public fun prepareNogoPoints(nogos: MutableList<OsmNodeNamed>) {
             for (nogo in nogos) {
                 if (nogo is OsmNogoPolygon) {
