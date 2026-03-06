@@ -60,7 +60,7 @@ public class RoutingContext(
         public var useDynamicDistance: Boolean
         public val buildBeelineOnRange: Boolean
 
-        public var turnInstructionMode: Int = 0  // 0=none, 1=auto, 2=locus, 3=osmand, 4=comment-style, 5=gpsies-style
+        public var turnInstructionMode: Int = 0  // see TurnInstructionMode ids
         public val turnInstructionCatchingRange: Double
         public val turnInstructionRoundabouts: Boolean
 

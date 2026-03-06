@@ -397,8 +397,7 @@ public class OsmTrack {
     }
 
     private fun supportsBeelineCommand(turnInstructionMode: Int): Boolean =
-        turnInstructionMode == 8 || turnInstructionMode == 4 ||
-            turnInstructionMode == 2 || turnInstructionMode == 9
+        TurnInstructionMode.supportsBeelineHints(turnInstructionMode)
 
     public companion object {
         public fun readBinary(

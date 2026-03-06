@@ -58,7 +58,8 @@ public class VoiceHint {
     public val isRoundabout: Boolean
         get() = this.exitNumber != 0
 
-    private fun usesExplicitExitCommands(timode: Int): Boolean = timode == 2 || timode == 9
+    private fun usesExplicitExitCommands(timode: Int): Boolean =
+        TurnInstructionMode.usesExplicitExitCommands(timode)
 
     public fun addBadWay(badWay: MessageData?) {
         if (badWay != null) {
