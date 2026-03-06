@@ -32,5 +32,5 @@ private fun Source.readUtf8Fully(): String {
         size = required
     }
 
-    return result.copyOf(size).decodeToString()
+    return result.decodeToString(startIndex = 0, endIndex = size)
 }
