@@ -48,12 +48,7 @@ kotlin {
             }
         }
 
-        val jvmMain by getting {
-            dependencies {
-                implementation("org.slf4j:slf4j-api:2.0.17")
-                implementation(kotlin("reflect"))
-            }
-        }
+        val jvmMain by getting
 
         val jvmTest by getting {
             dependencies {
