@@ -106,9 +106,9 @@ public class RoutingEngine(private val routingContext: RoutingContext) : Thread(
             }
             return track
         } finally {
-            if (nodesCache != null) {
-                logger.info("NodesCache status before close={}", nodesCache!!.formatStatus())
-                nodesCache!!.close()
+            nodesCache?.let {
+                logger.info("NodesCache status before close={}", it.formatStatus())
+                it.close()
                 nodesCache = null
             }
             openSet.clear()
