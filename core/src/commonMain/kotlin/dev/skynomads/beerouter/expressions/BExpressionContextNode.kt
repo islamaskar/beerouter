@@ -8,7 +8,7 @@ package dev.skynomads.beerouter.expressions
 
 public class BExpressionContextNode : BExpressionContext {
     override val buildInVariableNames: Array<String?>
-        get() = buildInVariables
+        get() = BUILD_IN_VARIABLES
 
     public val initialcost: Float
         get() = getBuildInVariable(0)
@@ -24,6 +24,6 @@ public class BExpressionContextNode : BExpressionContext {
     public constructor(hashSize: Int, meta: BExpressionMetaData) : super("node", hashSize, meta)
 
     public companion object {
-        private val buildInVariables = arrayOf<String?>("initialcost")
+        private val BUILD_IN_VARIABLES: Array<String?> = arrayOf("initialcost")
     }
 }

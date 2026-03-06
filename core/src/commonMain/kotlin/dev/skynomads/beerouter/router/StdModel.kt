@@ -9,24 +9,14 @@ import dev.skynomads.beerouter.expressions.BExpressionContextNode
 import dev.skynomads.beerouter.expressions.BExpressionContextWay
 
 internal class StdModel : OsmPathModel() {
-    override fun createPrePath(): OsmPrePath? {
-        return null
-    }
+    override fun createPrePath(): OsmPrePath? = null
 
-    override fun createPath(): OsmPath {
-        return StdPath()
-    }
-
-    protected var ctxWay: BExpressionContextWay? = null
-    protected var ctxNode: BExpressionContextNode? = null
+    override fun createPath(): OsmPath = StdPath()
 
 
     override fun init(
         expctxWay: BExpressionContextWay?,
         expctxNode: BExpressionContextNode?,
         keyValues: MutableMap<String, String>
-    ) {
-        ctxWay = expctxWay
-        ctxNode = expctxNode
-    }
+    ) = Unit
 }

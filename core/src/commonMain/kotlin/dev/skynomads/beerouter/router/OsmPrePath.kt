@@ -16,9 +16,10 @@ public abstract class OsmPrePath {
     public var next: OsmPrePath? = null
 
     public fun init(origin: OsmPath, link: OsmLink, rc: RoutingContext) {
+        val originTargetNode = requireNotNull(origin.targetNode)
         this.link = link
-        this.sourceNode = origin.targetNode!!
-        this.targetNode = link.getTarget(sourceNode)
+        sourceNode = originTargetNode
+        targetNode = link.getTarget(originTargetNode)
         initPrePath(origin, rc)
     }
 
