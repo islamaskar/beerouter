@@ -15,7 +15,7 @@ public object Rd5DiffValidator {
     /**
      * Validate diffs for all DF5 files
      */
-    public fun validateDiffs(oldDir: File?, newDir: File) {
+    public fun validateDiffs(oldDir: File, newDir: File) {
         val newDiffDir = File(newDir, "diff")
 
         val filesNew = newDir.listFiles() ?: return

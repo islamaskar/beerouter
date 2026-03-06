@@ -5,9 +5,7 @@
  */
 package dev.skynomads.beerouter.mapaccess
 
-import java.io.BufferedInputStream
 import java.io.File
-import java.io.FileInputStream
 import java.security.DigestInputStream
 import java.security.MessageDigest
 
@@ -19,7 +17,7 @@ public object Rd5DiffManager {
     /**
      * Compute diffs for all RD5 files
      */
-    public fun calcDiffs(oldDir: File?, newDir: File) {
+    public fun calcDiffs(oldDir: File, newDir: File) {
         val oldDiffDir = File(oldDir, "diff")
         val newDiffDir = File(newDir, "diff")
 
@@ -66,9 +64,11 @@ public object Rd5DiffManager {
 
     public fun getMD5(f: File): String {
         val md = MessageDigest.getInstance("MD5")
-        DigestInputStream(BufferedInputStream(FileInputStream(f)), md).use { dis ->
-            val buf = ByteArray(8192)
-            while (dis.read(buf) > 0) { /* read all */ }
+        f.inputStream().buffered().use { input ->
+            DigestInputStream(input, md).use { digestInput ->
+                val buf = ByteArray(8192)
+                while (digestInput.read(buf) > 0) { /* read all */ }
+            }
         }
         val bytes = md.digest()
         return buildString {
