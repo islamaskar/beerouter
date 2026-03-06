@@ -37,7 +37,7 @@ public class MatchedWaypoint {
     public var directionToNext: Double = -1.0
     public var directionDiff: Double = 361.0
 
-    public var wayNearest: MutableList<MatchedWaypoint> = mutableListOf()
+    public val wayNearest: MutableList<MatchedWaypoint> = mutableListOf()
     public var hasUpdate: Boolean = false
 
     public fun writeToStream(sink: Sink) {
@@ -57,6 +57,11 @@ public class MatchedWaypoint {
     }
 
     public companion object {
+        private fun nodeFromCoordinates(lon: Int, lat: Int): OsmNode =
+            OsmNode().also {
+                it.position = Position(lon.toDoubleLongitude(), lat.toDoubleLatitude(), 0.0)
+            }
+
         public fun readFromStream(source: Source): MatchedWaypoint {
             val node1Lat = source.readInt()
             val node1Lon = source.readInt()
@@ -67,18 +72,13 @@ public class MatchedWaypoint {
             val waypointLat = source.readInt()
             val waypointLon = source.readInt()
 
-            val node1 = OsmNode().also { it.position = Position(node1Lon.toDoubleLongitude(), node1Lat.toDoubleLatitude(), 0.0) }
-            val node2 = OsmNode().also { it.position = Position(node2Lon.toDoubleLongitude(), node2Lat.toDoubleLatitude(), 0.0) }
-            val crosspoint = OsmNode().also { it.position = Position(crosspointLon.toDoubleLongitude(), crosspointLat.toDoubleLatitude(), 0.0) }
-            val waypoint = OsmNode().also { it.position = Position(waypointLon.toDoubleLongitude(), waypointLat.toDoubleLatitude(), 0.0) }
-
-            val mwp = MatchedWaypoint()
-            mwp.node1 = node1
-            mwp.node2 = node2
-            mwp.crosspoint = crosspoint
-            mwp.waypoint = waypoint
-            mwp.radius = Double.fromBits(source.readLong())
-            return mwp
+            return MatchedWaypoint().apply {
+                node1 = nodeFromCoordinates(node1Lon, node1Lat)
+                node2 = nodeFromCoordinates(node2Lon, node2Lat)
+                crosspoint = nodeFromCoordinates(crosspointLon, crosspointLat)
+                waypoint = nodeFromCoordinates(waypointLon, waypointLat)
+                radius = Double.fromBits(source.readLong())
+            }
         }
     }
 }
