@@ -30,6 +30,25 @@ public class RoutingContext(
     public val segmentDir: File,
     public val lookupFile: File = File(profile.parentFile, "lookups.dat")
 ) {
+    public constructor(
+        profilePath: Path,
+        segmentDirPath: Path,
+        lookupPath: Path
+    ) : this(
+        profile = File(profilePath.toString()),
+        segmentDir = File(segmentDirPath.toString()),
+        lookupFile = File(lookupPath.toString())
+    )
+
+    public constructor(
+        profilePath: Path,
+        segmentDirPath: Path
+    ) : this(
+        profile = File(profilePath.toString()),
+        segmentDir = File(segmentDirPath.toString()),
+        lookupFile = File(profilePath.toString().replaceAfterLast('/', "lookups.dat").replaceAfterLast('\\', "lookups.dat"))
+    )
+
     public class Global(ctx: BExpressionContext) {
         public val carMode: Boolean
         public val bikeMode: Boolean
