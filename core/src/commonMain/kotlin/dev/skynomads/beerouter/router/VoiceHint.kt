@@ -20,7 +20,7 @@ public class VoiceHint {
     public var indexInTrack: Int = 0
 
     public val time: Float
-        get() = if (oldWay == null) 0f else oldWay!!.time
+        get() = oldWay?.time ?: 0f
 
     public var angle: Float = Float.MAX_VALUE
     public var lowerBadWayAngle: Float = -181f
@@ -36,13 +36,9 @@ public class VoiceHint {
         get() = this.exitNumber != 0
 
     public fun addBadWay(badWay: MessageData?) {
-        if (badWay == null) {
-            return
-        }
-        if (badWays == null) {
-            badWays = mutableListOf()
-        }
-        badWays!!.add(badWay)
+        if (badWay == null) return
+        val list = badWays ?: mutableListOf<MessageData>().also { badWays = it }
+        list.add(badWay)
     }
 
     public fun getJsonCommandIndex(timode: Int): Int {
@@ -426,7 +422,7 @@ public class VoiceHint {
     }
 
     public fun formatGeometry(): String {
-        val oldPrio = if (oldWay == null) 0f else oldWay!!.priorityclassifier.toFloat()
+        val oldPrio = oldWay?.priorityclassifier?.toFloat() ?: 0f
         val sb = StringBuilder(30)
         sb.append(' ').append(oldPrio.toInt())
         appendTurnGeometry(sb, goodWay!!)

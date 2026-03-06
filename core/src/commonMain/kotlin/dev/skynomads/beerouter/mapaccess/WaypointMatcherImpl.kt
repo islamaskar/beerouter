@@ -99,8 +99,7 @@ public class WaypointMatcherImpl(
                         waypoints[i - 1].type == MatchedWaypoint.Type.DIRECT)
             ) {
                 if (mwp.crosspoint == null) {
-                    mwp.crosspoint = OsmNode()
-                    mwp.crosspoint!!.position = mwp.waypoint!!.position
+                    mwp.crosspoint = OsmNode().also { it.position = mwp.waypoint!!.position }
                     mwp.hasUpdate = true
                     anyUpdate = true
                 }
@@ -138,26 +137,26 @@ public class WaypointMatcherImpl(
                 mwp.hasUpdate = true
                 anyUpdate = true
                 // calculate crosspoint
-                if (mwp.crosspoint == null) mwp.crosspoint = OsmNode()
+                val cp = mwp.crosspoint ?: OsmNode().also { mwp.crosspoint = it }
                 if (s2 < 0.0) {
                     val wayfraction = -s2 / (d * d)
                     val xm = x2 - wayfraction * dx
                     val ym = y2 - wayfraction * dy
                     val newLon = (xm / dlon2m + wpLon).toInt()
                     val newLat = (ym / dlat2m + wpLat).toInt()
-                    mwp.crosspoint!!.position = Position(
+                    cp.position = Position(
                         newLon.toDoubleLongitude(),
                         newLat.toDoubleLatitude(),
                         0.0
                     )
                 } else if (s1 > s2) {
-                    mwp.crosspoint!!.position = Position(
+                    cp.position = Position(
                         lon2.toDoubleLongitude(),
                         lat2.toDoubleLatitude(),
                         0.0
                     )
                 } else {
-                    mwp.crosspoint!!.position = Position(
+                    cp.position = Position(
                         lon1.toDoubleLongitude(),
                         lat1.toDoubleLatitude(),
                         0.0
@@ -208,11 +207,12 @@ public class WaypointMatcherImpl(
 
                     mwp.hasUpdate = false
 
+                    val waypointPos = mwp.waypoint!!.position
+                    val crosspointPos = mwp.crosspoint!!.position
+
                     var mw = MatchedWaypoint()
-                    mw.waypoint = OsmNode()
-                    mw.waypoint!!.position = mwp.waypoint!!.position
-                    mw.crosspoint = OsmNode()
-                    mw.crosspoint!!.position = mwp.crosspoint!!.position
+                    mw.waypoint = OsmNode().also { it.position = waypointPos }
+                    mw.crosspoint = OsmNode().also { it.position = crosspointPos }
                     mw.node1 = OsmNode(lonStart, latStart)
                     mw.node2 = OsmNode(lonTarget, latTarget)
                     mw.name = mwp.name + "_w_" + mwp.crosspoint.hashCode()
@@ -226,10 +226,8 @@ public class WaypointMatcherImpl(
                     angle = getDirection(lonTarget, latTarget, lonStart, latStart)
                     diff = getDifferenceFromDirection(mwp.directionToNext, angle)
                     mw = MatchedWaypoint()
-                    mw.waypoint = OsmNode()
-                    mw.waypoint!!.position = mwp.waypoint!!.position
-                    mw.crosspoint = OsmNode()
-                    mw.crosspoint!!.position = mwp.crosspoint!!.position
+                    mw.waypoint = OsmNode().also { it.position = waypointPos }
+                    mw.crosspoint = OsmNode().also { it.position = crosspointPos }
                     mw.node1 = OsmNode(lonTarget, latTarget)
                     mw.node2 = OsmNode(lonStart, latStart)
                     mw.name = mwp.name + "_w2_" + mwp.crosspoint.hashCode()
@@ -240,9 +238,9 @@ public class WaypointMatcherImpl(
                     updateWayList(mwp.wayNearest, mw)
 
                     val way = mwp.wayNearest[0]
-                    mwp.crosspoint!!.position = way.crosspoint!!.position
-                    mwp.node1 = OsmNode(way.node1!!.position)
-                    mwp.node2 = OsmNode(way.node2!!.position)
+                    mwp.crosspoint!!.position = requireNotNull(way.crosspoint).position
+                    mwp.node1 = OsmNode(requireNotNull(way.node1).position)
+                    mwp.node2 = OsmNode(requireNotNull(way.node2).position)
                     mwp.directionDiff = way.directionDiff
                     mwp.radius = way.radius
                 }
@@ -252,7 +250,8 @@ public class WaypointMatcherImpl(
 
     override public fun hasMatch(lon: Int, lat: Int): Boolean {
         for (mwp in waypoints) {
-            if (mwp.waypoint!!.position.longitude.toIntLongitude() == lon && mwp.waypoint!!.position.latitude.toIntLatitude() == lat &&
+            val wpPos = mwp.waypoint?.position ?: continue
+            if (wpPos.longitude.toIntLongitude() == lon && wpPos.latitude.toIntLatitude() == lat &&
                 (mwp.radius < this.maxDistance || mwp.crosspoint != null)
             ) {
                 return true
@@ -262,8 +261,8 @@ public class WaypointMatcherImpl(
     }
 
     // check limit of list size (avoid long runs)
-    public fun updateWayList(ways: MutableList<MatchedWaypoint>, mw: MatchedWaypoint?) {
-        ways.add(mw!!)
+    public fun updateWayList(ways: MutableList<MatchedWaypoint>, mw: MatchedWaypoint) {
+        ways.add(mw)
         // use only shortest distances by smallest direction difference
         ways.sortWith(comparator)
         if (ways.size > MAX_POINTS) ways.removeAt(MAX_POINTS)

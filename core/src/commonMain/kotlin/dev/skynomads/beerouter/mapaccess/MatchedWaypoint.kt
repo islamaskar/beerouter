@@ -41,25 +41,23 @@ public class MatchedWaypoint {
     public var hasUpdate: Boolean = false
 
     public fun writeToStream(sink: Sink) {
-        sink.writeInt(node1!!.position.latitude.toIntLatitude())
-        sink.writeInt(node1!!.position.longitude.toIntLongitude())
-        sink.writeInt(node2!!.position.latitude.toIntLatitude())
-        sink.writeInt(node2!!.position.longitude.toIntLongitude())
-        sink.writeInt(crosspoint!!.position.latitude.toIntLatitude())
-        sink.writeInt(crosspoint!!.position.longitude.toIntLongitude())
-        sink.writeInt(waypoint!!.position.latitude.toIntLatitude())
-        sink.writeInt(waypoint!!.position.longitude.toIntLongitude())
+        val n1 = requireNotNull(node1)
+        val n2 = requireNotNull(node2)
+        val cp = requireNotNull(crosspoint)
+        val wp = requireNotNull(waypoint)
+        sink.writeInt(n1.position.latitude.toIntLatitude())
+        sink.writeInt(n1.position.longitude.toIntLongitude())
+        sink.writeInt(n2.position.latitude.toIntLatitude())
+        sink.writeInt(n2.position.longitude.toIntLongitude())
+        sink.writeInt(cp.position.latitude.toIntLatitude())
+        sink.writeInt(cp.position.longitude.toIntLongitude())
+        sink.writeInt(wp.position.latitude.toIntLatitude())
+        sink.writeInt(wp.position.longitude.toIntLongitude())
         sink.writeLong(radius.toBits())
     }
 
     public companion object {
         public fun readFromStream(source: Source): MatchedWaypoint {
-            val mwp = MatchedWaypoint()
-            mwp.node1 = OsmNode()
-            mwp.node2 = OsmNode()
-            mwp.crosspoint = OsmNode()
-            mwp.waypoint = OsmNode()
-
             val node1Lat = source.readInt()
             val node1Lon = source.readInt()
             val node2Lat = source.readInt()
@@ -69,10 +67,16 @@ public class MatchedWaypoint {
             val waypointLat = source.readInt()
             val waypointLon = source.readInt()
 
-            mwp.node1!!.position = Position(node1Lon.toDoubleLongitude(), node1Lat.toDoubleLatitude(), 0.0)
-            mwp.node2!!.position = Position(node2Lon.toDoubleLongitude(), node2Lat.toDoubleLatitude(), 0.0)
-            mwp.crosspoint!!.position = Position(crosspointLon.toDoubleLongitude(), crosspointLat.toDoubleLatitude(), 0.0)
-            mwp.waypoint!!.position = Position(waypointLon.toDoubleLongitude(), waypointLat.toDoubleLatitude(), 0.0)
+            val node1 = OsmNode().also { it.position = Position(node1Lon.toDoubleLongitude(), node1Lat.toDoubleLatitude(), 0.0) }
+            val node2 = OsmNode().also { it.position = Position(node2Lon.toDoubleLongitude(), node2Lat.toDoubleLatitude(), 0.0) }
+            val crosspoint = OsmNode().also { it.position = Position(crosspointLon.toDoubleLongitude(), crosspointLat.toDoubleLatitude(), 0.0) }
+            val waypoint = OsmNode().also { it.position = Position(waypointLon.toDoubleLongitude(), waypointLat.toDoubleLatitude(), 0.0) }
+
+            val mwp = MatchedWaypoint()
+            mwp.node1 = node1
+            mwp.node2 = node2
+            mwp.crosspoint = crosspoint
+            mwp.waypoint = waypoint
             mwp.radius = Double.fromBits(source.readLong())
             return mwp
         }

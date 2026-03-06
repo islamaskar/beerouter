@@ -16,15 +16,9 @@ internal class BExpression {
         if (lookupNameIdx >= 0) {
             ctx.markLookupIdxUsed(lookupNameIdx)
         }
-        if (op1 != null) {
-            nodeCount += op1!!.markLookupIdxUsed(ctx)
-        }
-        if (op2 != null) {
-            nodeCount += op2!!.markLookupIdxUsed(ctx)
-        }
-        if (op3 != null) {
-            nodeCount += op3!!.markLookupIdxUsed(ctx)
-        }
+        nodeCount += op1?.markLookupIdxUsed(ctx) ?: 0
+        nodeCount += op2?.markLookupIdxUsed(ctx) ?: 0
+        nodeCount += op3?.markLookupIdxUsed(ctx) ?: 0
         return nodeCount
     }
 
@@ -105,24 +99,15 @@ internal class BExpression {
         return v1 / v2
     }
 
-    override fun toString(): String {
-        if (typ == NUMBER_EXP) {
-            return "" + numberValue
-        }
-        if (typ == VARIABLE_EXP) {
-            return "vidx=$variableIdx"
-        }
-        val sb = StringBuilder("typ=$typ ops=(")
-        addOp(sb, op1)
-        addOp(sb, op2)
-        addOp(sb, op3)
-        sb.append(')')
-        return sb.toString()
-    }
-
-    private fun addOp(sb: StringBuilder, e: BExpression?) {
-        if (e != null) {
-            sb.append('[').append(e.toString()).append(']')
+    override fun toString(): String = when (typ) {
+        NUMBER_EXP -> numberValue.toString()
+        VARIABLE_EXP -> "vidx=$variableIdx"
+        else -> buildString {
+            append("typ=$typ ops=(")
+            op1?.let { append('[').append(it).append(']') }
+            op2?.let { append('[').append(it).append(']') }
+            op3?.let { append('[').append(it).append(']') }
+            append(')')
         }
     }
 
@@ -359,11 +344,12 @@ internal class BExpression {
             val e = BExpression()
             e.typ = ASSIGN_EXP
             e.variableIdx = ctx.getVariableIdx(key, true)
-            e.op1 = BExpression()
-            e.op1!!.typ = NUMBER_EXP
-            e.op1!!.numberValue = value.toFloat()
-            e.op1!!.doNotChange = true
-            ctx.lastAssignedExpression!![e.variableIdx] = e.op1
+            val op = BExpression()
+            op.typ = NUMBER_EXP
+            op.numberValue = value.toFloat()
+            op.doNotChange = true
+            e.op1 = op
+            ctx.lastAssignedExpression!![e.variableIdx] = op
             return e
         }
     }

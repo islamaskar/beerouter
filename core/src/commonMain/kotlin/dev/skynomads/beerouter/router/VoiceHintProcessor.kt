@@ -125,7 +125,8 @@ internal class VoiceHintProcessor // this.catchingRange = catchingRange;
                 input.exitNumber = if (roundAboutTurnAngle < 0) roundaboutExit else -roundaboutExit
                 var tmpangle = 0f
                 val tmpRndAbt = VoiceHint()
-                tmpRndAbt.badWays = mutableListOf()
+                val tmpRndAbtBadWays = mutableListOf<MessageData>()
+                tmpRndAbt.badWays = tmpRndAbtBadWays
                 for (i in hintIdx - 1 downTo roundaboudStartIdx + 1) {
                     val vh = inputs[i]
                     tmpangle += inputs[i].goodWay!!.turnangle
@@ -136,7 +137,7 @@ internal class VoiceHintProcessor // this.catchingRange = catchingRange;
                                 md.linkdist = vh.goodWay!!.linkdist
                                 md.priorityclassifier = vh.goodWay!!.priorityclassifier
                                 md.turnangle = tmpangle
-                                tmpRndAbt.badWays!!.add(md)
+                                tmpRndAbtBadWays.add(md)
                             }
                         }
                     }
@@ -349,7 +350,7 @@ internal class VoiceHintProcessor // this.catchingRange = catchingRange;
             } else if (hint.command == VoiceHint.BL) {
                 results2.add(hint)
             } else {
-                if (results2.isNotEmpty()) results2[results2.size - 1]!!.distanceToNext += hint.distanceToNext
+                if (results2.isNotEmpty()) results2[results2.size - 1].distanceToNext += hint.distanceToNext
             }
         }
         return results2
@@ -518,9 +519,7 @@ internal class VoiceHintProcessor // this.catchingRange = catchingRange;
         }
         if (results.isNotEmpty()) {
             // don't use END tag
-            if (results[results.size - 1]!!.command == VoiceHint.END) results.removeAt(
-                results.size - 1
-            )
+            if (results.last().command == VoiceHint.END) results.removeAt(results.size - 1)
         }
 
         return results
