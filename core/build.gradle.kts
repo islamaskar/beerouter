@@ -72,3 +72,14 @@ tasks.withType<Test> {
         exceptionFormat = org.gradle.api.tasks.testing.logging.TestExceptionFormat.FULL
     }
 }
+
+tasks.register<Test>("routingParityMiniTest") {
+    description = "Runs the fast BRouter parity smoke test for pre-commit checks"
+    group = "verification"
+    val jvmTestTask = tasks.named<Test>("jvmTest").get()
+    testClassesDirs = jvmTestTask.testClassesDirs
+    classpath = jvmTestTask.classpath
+    filter {
+        includeTestsMatching("dev.skynomads.beerouter.router.RoutingTest.routingEqualsBrouterMini")
+    }
+}
