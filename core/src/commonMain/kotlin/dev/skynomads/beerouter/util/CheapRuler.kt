@@ -9,14 +9,11 @@ import kotlin.math.sqrt
 
 public object CheapRuler {
     /**
-     * Cheap-Ruler Java implementation
-     * See
-     * https://blog.mapbox.com/fast-geodesic-approximations-with-cheap-ruler-106f229ad016
+     * Cheap-Ruler implementation
+     * See https://blog.mapbox.com/fast-geodesic-approximations-with-cheap-ruler-106f229ad016
      * for more details.
      *
-     *
      * Original code is at https://github.com/mapbox/cheap-ruler under ISC license.
-     *
      *
      * This is implemented as a Singleton to have a unique cache for the cosine
      * values across all the code.
@@ -25,7 +22,6 @@ public object CheapRuler {
     public const val ILATLNG_TO_LATLNG: Double = 1e-6 // From integer to degrees
     public const val KILOMETERS_TO_METERS: Int = 1000
 
-    @JvmField
     public val DEG_TO_RAD: Double = kotlin.math.PI / 180.0
 
     // Scale cache constants
@@ -37,13 +33,6 @@ public object CheapRuler {
         calcKxKyFromILat(i * SCALE_CACHE_INCREMENT + SCALE_CACHE_INCREMENT / 2)
     }
 
-    /**
-     * build the cache of cosine values.
-     */
-    init {
-        // Cache is pre-populated in the array initialization above
-    }
-
     private fun calcKxKyFromILat(ilat: Int): DoubleArray {
         val lat = DEG_TO_RAD * (ilat * ILATLNG_TO_LATLNG - 90)
         val cos = cos(lat)
@@ -53,7 +42,6 @@ public object CheapRuler {
         val cos5 = 2 * cos * cos4 - cos3
 
         // Multipliers for converting integer longitude and latitude into distance
-        // (http://1.usa.gov/1Wb1bv7)
         val kxky = DoubleArray(2)
         kxky[0] =
             (111.41513 * cos - 0.09455 * cos3 + 0.00012 * cos5) * ILATLNG_TO_LATLNG * KILOMETERS_TO_METERS
@@ -63,23 +51,17 @@ public object CheapRuler {
     }
 
     /**
-     * Calculate the degree-&gt;meter scale for given latitude
+     * Calculate the degree->meter scale for given latitude
      *
-     * @return [lon-&gt;meter,lat-&gt;meter]
+     * @return [lon->meter,lat->meter]
      */
-    @JvmStatic
     public fun getLonLatToMeterScales(ilat: Int): DoubleArray? {
         return SCALE_CACHE[ilat / SCALE_CACHE_INCREMENT]
     }
 
     /**
      * Compute the distance (in meters) between two Position objects.
-     *
-     * @param p1 First position
-     * @param p2 Second position
-     * @return The distance between the two points, in meters.
      */
-    @JvmStatic
     public fun distance(p1: Position, p2: Position): Double {
         val ilon1 = p1.longitude.toIntLongitude()
         val ilat1 = p1.latitude.toIntLatitude()
@@ -91,19 +73,7 @@ public object CheapRuler {
     /**
      * Compute the distance (in meters) between two points represented by their
      * (integer) latitude and longitude.
-     *
-     * @param ilon1 Integer longitude for the start point. this is (longitude in degrees + 180) * 1e6.
-     * @param ilat1 Integer latitude for the start point, this is (latitude + 90) * 1e6.
-     * @param ilon2 Integer longitude for the end point, this is (longitude + 180) * 1e6.
-     * @param ilat2 Integer latitude for the end point, this is (latitude + 90) * 1e6.
-     * @return The distance between the two points, in meters.
-     *
-     *
-     * Note:
-     * Integer longitude is ((longitude in degrees) + 180) * 1e6.
-     * Integer latitude is ((latitude in degrees) + 90) * 1e6.
      */
-    @JvmStatic
     public fun distance(ilon1: Int, ilat1: Int, ilon2: Int, ilat2: Int): Double {
         val kxky = getLonLatToMeterScales((ilat1 + ilat2) shr 1)!!
         val dlon = (ilon1 - ilon2) * kxky[0]
@@ -111,7 +81,6 @@ public object CheapRuler {
         return sqrt(dlat * dlat + dlon * dlon) // in m
     }
 
-    @JvmStatic
     public fun destination(lon1: Int, lat1: Int, distance: Double, angle: Double): IntArray {
         val lonlat2m = getLonLatToMeterScales(lat1)!!
         val lon2m = lonlat2m[0]

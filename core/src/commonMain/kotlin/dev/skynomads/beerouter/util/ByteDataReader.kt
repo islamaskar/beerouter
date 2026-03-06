@@ -7,13 +7,8 @@ package dev.skynomads.beerouter.util
 
 
 public open class ByteDataReader {
-    @JvmField
     protected var ab: ByteArray = ByteArray(0)
-
-    @JvmField
     protected var aboffset: Int = 0
-
-    @JvmField
     protected var aboffsetEnd: Int
 
     public constructor(byteArray: ByteArray = ByteArray(0)) {

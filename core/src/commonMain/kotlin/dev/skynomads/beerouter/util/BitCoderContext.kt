@@ -234,10 +234,7 @@ public open class BitCoderContext(private var ab: ByteArray) {
         }
 
     public companion object {
-        @JvmField
         public val vlValues: IntArray = IntArray(4096)
-
-        @JvmField
         public val vlLength: IntArray = IntArray(4096)
 
         private val vcValues = IntArray(4096)

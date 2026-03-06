@@ -6,7 +6,6 @@ package dev.skynomads.beerouter.util
  * @author ab
  */
 public object Crc32 {
-    @JvmStatic
     public fun crc(ab: ByteArray, offset: Int, len: Int): Int {
         var crc = -0x1
         val end = offset + len

@@ -7,6 +7,7 @@ package dev.skynomads.beerouter.util
 import dev.skynomads.beerouter.osm.toIntLatitude
 import dev.skynomads.beerouter.osm.toIntLongitude
 import org.maplibre.spatialk.geojson.Position
+import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.atan2
 import kotlin.math.sqrt
@@ -63,22 +64,16 @@ public class CheapAngleMeter {
     }
 
     public companion object {
-        @JvmStatic
         public fun getAngle(lon1: Int, lat1: Int, lon2: Int, lat2: Int): Double {
-            var res: Double
             val xdiff = (lat2 - lat1).toDouble()
             val ydiff = (lon2 - lon1).toDouble()
-            res = Math.toDegrees(atan2(ydiff, xdiff))
-            return res
+            return atan2(ydiff, xdiff) * (180.0 / PI)
         }
 
-        @JvmStatic
         public fun getDirection(lon1: Int, lat1: Int, lon2: Int, lat2: Int): Double {
-            val res: Double = getAngle(lon1, lat1, lon2, lat2)
-            return normalize(res)
+            return normalize(getAngle(lon1, lat1, lon2, lat2))
         }
 
-        @JvmStatic
         public fun getDirection(p1: Position, p2: Position): Double {
             return getDirection(
                 p1.longitude.toIntLongitude(),
@@ -88,7 +83,6 @@ public class CheapAngleMeter {
             )
         }
 
-        @JvmStatic
         public fun normalize(a: Double): Double {
             return if (a >= 360)
                 a - (360 * (a / 360).toInt())
@@ -96,7 +90,6 @@ public class CheapAngleMeter {
                 if (a < 0) a - (360 * ((a / 360).toInt() - 1)) else a
         }
 
-        @JvmStatic
         public fun getDifferenceFromDirection(b1: Double, b2: Double): Double {
             var r = (b2 - b1) % 360.0
             if (r < -180.0) r += 360.0
