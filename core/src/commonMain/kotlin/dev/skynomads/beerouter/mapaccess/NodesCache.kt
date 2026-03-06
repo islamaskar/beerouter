@@ -35,6 +35,7 @@ public class NodesCache(
     private var dataBuffers: DataBuffers = DataBuffers()
 
     private var fileRows: Array<Array<OsmFile?>?>
+    private var fileGrid: Array<Array<OsmFile?>> = Array(180) { arrayOfNulls(360) }
 
     public var waypointMatcher: WaypointMatcher? = null
 
@@ -78,6 +79,7 @@ public class NodesCache(
             // re-use old, virgin caches (if same detail-mode)
             if (oldCache.detailed == detailed) {
                 fileRows = oldCache.fileRows
+                fileGrid = oldCache.fileGrid
                 for (fileRow in fileRows) {
                     if (fileRow == null) continue
                     for (osmf in fileRow) {
@@ -147,16 +149,11 @@ public class NodesCache(
                 }
 
             if (osmf == null) {
-                val fileRow = fileRows[latDegree]
-                val ndegrees = fileRow?.size ?: 0
-                for (i in 0..<ndegrees) {
-                    if (fileRow!![i]!!.lonDegree == lonDegree) {
-                        osmf = fileRow[i]
-                        break
-                    }
-                }
+                osmf = fileGrid[latDegree][lonDegree]
 
                 if (osmf == null) {
+                    val fileRow = fileRows[latDegree]
+                    val ndegrees = fileRow?.size ?: 0
                     osmf = fileForSegment(lonDegree, latDegree)
                     val newFileRow = arrayOfNulls<OsmFile>(ndegrees + 1)
                     for (i in 0..<ndegrees) {
@@ -164,6 +161,7 @@ public class NodesCache(
                     }
                     newFileRow[ndegrees] = osmf
                     fileRows[latDegree] = newFileRow
+                    fileGrid[latDegree][lonDegree] = osmf
                 }
 
                 lastLonDegree = lonDegree
@@ -405,16 +403,7 @@ public class NodesCache(
     public fun getElevationType(ilon: Int, ilat: Int): Int {
         val lonDegree = ilon / 1000000
         val latDegree = ilat / 1000000
-        val fileRow = fileRows[latDegree]
-        val ndegrees = fileRow?.size ?: 0
-        for (i in 0..<ndegrees) {
-            if (fileRow!![i]!!.lonDegree == lonDegree) {
-                val osmf = fileRow[i]
-                if (osmf != null) return osmf.elevationType.toInt()
-                break
-            }
-        }
-        return 3
+        return fileGrid[latDegree][lonDegree]?.elevationType?.toInt() ?: 3
     }
 
     public companion object {
