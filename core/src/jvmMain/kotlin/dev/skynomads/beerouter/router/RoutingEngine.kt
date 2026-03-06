@@ -516,8 +516,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) : Thread(
     private suspend fun doSearch(waypoints: List<OsmNodeNamed>) {
         val seedPoint = MatchedWaypoint()
         seedPoint.waypoint = waypoints[0]
-        val listOne: MutableList<MatchedWaypoint> = ArrayList()
-        listOne.add(seedPoint)
+        val listOne = mutableListOf(seedPoint)
         matchWaypointsToNodes(listOne)
 
         findTrack(seedPoint, null, null, null, false)
@@ -749,7 +748,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) : Thread(
     }
 
     private suspend fun getExtraSegment(start: OsmPathElement, end: OsmPathElement): OsmTrack? {
-        val wptlist: MutableList<MatchedWaypoint?> = ArrayList()
+        val wptlist = mutableListOf<MatchedWaypoint?>()
         val wpt1 = MatchedWaypoint()
         wpt1.waypoint = OsmNode(start.position)
         wpt1.name = "wptx1"
@@ -840,7 +839,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) : Thread(
             indexEnd = indexStartFore
         }
 
-        val removeList: MutableList<OsmPathElement?> = ArrayList()
+        val removeList = mutableListOf<OsmPathElement?>()
         if (!bMeetsRoundaboutStart) {
             indexStartBack = indexMeetingBack
             while (!tt.nodes[indexStartBack].message!!.isRoundabout) {
@@ -994,9 +993,9 @@ public class RoutingEngine(private val routingContext: RoutingContext) : Thread(
                 val dist = node.calcDistance(startWp.crosspoint!!)
                 if (dist < routingContext.global.waypointCatchingRange) return false
             }
-            val removeBackList: MutableList<OsmPathElement?> = ArrayList()
-            val removeForeList: MutableList<OsmPathElement?> = ArrayList()
-            val removeVoiceHintList: MutableList<Int> = ArrayList()
+            val removeBackList = mutableListOf<OsmPathElement?>()
+            val removeForeList = mutableListOf<OsmPathElement?>()
+            val removeVoiceHintList = mutableListOf<Int>()
             var last: OsmPathElement? = null
             val lastJunctions = MutableLongObjectMap<OsmPathElementHolder>()
             var newJunction: OsmPathElement?
@@ -1609,7 +1608,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) : Thread(
         fastPartialRecalc: Boolean
     ): OsmTrack? {
         try {
-            val wpts2: MutableList<OsmNode> = ArrayList()
+            val wpts2 = mutableListOf<OsmNode>()
             if (startWp != null) wpts2.add(startWp.waypoint!!)
             if (endWp != null) wpts2.add(endWp.waypoint!!)
             routingContext.cleanNogoList(wpts2)
@@ -1718,7 +1717,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) : Thread(
         addToOpenset(startPath1)
         addToOpenset(startPath2)
 
-        val openBorderList: MutableList<OsmPath> = ArrayList(4096)
+        val openBorderList = ArrayList<OsmPath>(4096)
 
         while (true) {
             currentCoroutineContext().ensureActive()

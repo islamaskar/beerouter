@@ -33,14 +33,14 @@ public class OsmTrack {
 
     public var params: MutableMap<String, String>? = null
 
-    public var pois: MutableList<OsmNodeNamed> = ArrayList()
+    public var pois: MutableList<OsmNodeNamed> = mutableListOf()
 
     public class OsmPathElementHolder {
         public var node: OsmPathElement? = null
         public var nextHolder: OsmPathElementHolder? = null
     }
 
-    public var nodes: MutableList<OsmPathElement> = ArrayList()
+    public var nodes: MutableList<OsmPathElement> = mutableListOf()
 
     private var nodesMap: MutableLongObjectMap<OsmPathElementHolder> = MutableLongObjectMap()
 
@@ -273,7 +273,7 @@ public class OsmTrack {
         }
 
         node = nodes[nodeNr]
-        val inputs: MutableList<VoiceHint> = ArrayList()
+        val inputs = mutableListOf<VoiceHint>()
         while (node != null) {
             val origin = node.origin
             if (origin != null) {
