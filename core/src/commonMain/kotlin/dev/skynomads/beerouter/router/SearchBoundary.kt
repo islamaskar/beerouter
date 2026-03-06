@@ -39,9 +39,7 @@ internal class SearchBoundary(n: OsmNode, private val radius: Int, val direction
      * @param radius Search radius in meters.
      */
     init {
-
-        val lon: Int = (n.position.longitude.toIntLongitude() / 5000000) * 5000000
-        val lat = (n.position.latitude.toIntLatitude() / 5000000) * 5000000
+        val (lon, lat) = tileOrigin(n)
 
         minlon0 = lon - 5000000
         minlat0 = lat - 5000000
@@ -78,9 +76,14 @@ internal class SearchBoundary(n: OsmNode, private val radius: Int, val direction
     }
 
     companion object {
-        fun getFileName(n: OsmNode): String {
-            val lon: Int = (n.position.longitude.toIntLongitude() / 5000000) * 5000000
+        private fun tileOrigin(n: OsmNode): Pair<Int, Int> {
+            val lon = (n.position.longitude.toIntLongitude() / 5000000) * 5000000
             val lat = (n.position.latitude.toIntLatitude() / 5000000) * 5000000
+            return lon to lat
+        }
+
+        fun getFileName(n: OsmNode): String {
+            val (lon, lat) = tileOrigin(n)
 
             val dlon = lon / 1000000 - 180
             val dlat = lat / 1000000 - 90
