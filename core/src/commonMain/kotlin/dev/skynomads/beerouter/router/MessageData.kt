@@ -58,8 +58,12 @@ public data class MessageData(
     public val isRoundabout: Boolean
         get() = hasFlag(ClassifierFlag.ROUNDABOUT)
 
-    public val isLinktType: Boolean
+    public val isLinkType: Boolean
         get() = hasFlag(ClassifierFlag.LINK_TYPE)
+
+    @Deprecated("Use isLinkType")
+    public val isLinktType: Boolean
+        get() = isLinkType
 
     public val isGoodForCars: Boolean
         get() = hasFlag(ClassifierFlag.GOOD_FOR_CARS)
