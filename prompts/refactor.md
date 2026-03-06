@@ -12,14 +12,17 @@ classes.
 Java dependencies should be removed since we aim to support Kotlin Native. One exception, do not
 remove the brouter dependency for testing.
 
-File system access should be removed in favor of input streams or the MapAccessFileSystem interface. Only callers of the library like tests and benchmarks should use the file system.
+File system access should be removed in favor of input streams or the MapAccessFileSystem interface.
+Only callers of the library like tests and benchmarks should use the file system.
 
 Use proper enum classes instead of consts where appropriate.
 
-Prefer already included libraries over custom implementations. Use the maplibre spatialk library for geospatial calculations where applicable.
+Prefer already included libraries over custom implementations. Use the maplibre spatialk library for
+geospatial calculations where applicable.
 
 You should create a Git commit for each major changeset. Before making a commit for a change, look
 for other files that need similar refactorings and include them in the commit. It is crucial that
-the routing behavior does not change, so you should run routingEqualsBrouterMini before comitting to verify the code still works as intended. Every couple of commits, run all other tests as well.
+the routing behavior does not change, so you should run routingEqualsBrouterMini before comitting to
+verify the code still works as intended. Every couple of commits, run all other tests as well.
 
-Please do not stop until the code base is fully refactored. I repeat, do not stop early.
+Please do not stop until the code base is fully refactored.

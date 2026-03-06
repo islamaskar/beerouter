@@ -8,4 +8,4 @@ refactor: image
 
 .PHONY: claude
 claude: image
-	podman run --rm -it -e IS_SANDBOX=1 -v ~/.claude:/root/.claude -v .:/root/src -w /root/src claude claude --dangerously-skip-permissions
+	podman run --rm -it -e IS_SANDBOX=1 -v ~/.claude:/root/.claude -v ~/.claude.json:/root/.claude.json  -v .:/root/src -w /root/src claude claude --dangerously-skip-permissions
