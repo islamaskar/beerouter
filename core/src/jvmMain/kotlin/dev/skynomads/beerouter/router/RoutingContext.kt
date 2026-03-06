@@ -149,7 +149,7 @@ public class RoutingContext(
             val tiMode = ctx.getVariableValue("turnInstructionMode", 0f).toInt()
             if (tiMode != TurnInstructionMode.AUTO.id) {
                 // Preserve externally provided mode for profile auto mode ("1"), as in brouter.
-                turnInstructionMode = (TurnInstructionMode.fromId(tiMode) ?: TurnInstructionMode.NONE).id
+                turnInstructionMode = tiMode
             }
 
             turnInstructionCatchingRange =

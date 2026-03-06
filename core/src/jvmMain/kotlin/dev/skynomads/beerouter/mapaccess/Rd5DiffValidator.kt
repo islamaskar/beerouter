@@ -10,7 +10,7 @@ import kotlinx.io.files.Path
 
 public object Rd5DiffValidator {
     public fun main(args: Array<String>) {
-        validateDiffs(File(args[0]), File(args[1]))
+        validateDiffs(Path(args[0]), Path(args[1]))
     }
 
     /**

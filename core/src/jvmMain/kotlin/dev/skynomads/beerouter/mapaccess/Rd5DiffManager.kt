@@ -13,7 +13,7 @@ import kotlinx.io.files.SystemFileSystem
 
 public object Rd5DiffManager {
     public fun main(args: Array<String>) {
-        calcDiffs(File(args[0]), File(args[1]))
+        calcDiffs(Path(args[0]), Path(args[1]))
     }
 
     /**
@@ -75,8 +75,13 @@ public object Rd5DiffManager {
     public fun getMD5(path: Path): String {
         val md = MessageDigest.getInstance("MD5")
         SystemFileSystem.source(path).buffered().use { source ->
-            while (!source.exhausted()) {
-                md.update(source.readByte())
+            val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+            while (true) {
+                val read = source.readAtMostTo(buffer)
+                if (read <= 0) {
+                    break
+                }
+                md.update(buffer, 0, read)
             }
         }
         val bytes = md.digest()
