@@ -124,25 +124,26 @@ public class OsmNodesMap {
         return total <= currentmaxmem
     }
 
-    private var nodes2check: MutableList<OsmNode>? = null
+    private val nodesToCheck: MutableList<OsmNode> = mutableListOf()
+    private var hasTempNodes: Boolean = false
 
     // is there an escape from this node
     // to a hollow node (or destination node) ?
     public fun canEscape(n0: OsmNode?): Boolean {
-        val n2c = nodes2check ?: return false
+        if (!hasTempNodes || n0 == null) return false
         var sawLowIDs = false
         lastVisitID++
-        n2c.clear()
-        n2c.add(n0!!)
-        while (n2c.isNotEmpty()) {
-            val n = n2c.removeAt(n2c.size - 1)
+        nodesToCheck.clear()
+        nodesToCheck.add(n0)
+        while (nodesToCheck.isNotEmpty()) {
+            val n = nodesToCheck.removeAt(nodesToCheck.size - 1)
             if (n.visitID < baseID) {
                 n.visitID = lastVisitID
                 nodesCreated++
                 var l = n.firstlink
                 while (l != null) {
                     val t = l.getTarget(n)
-                    n2c.add(t!!)
+                    nodesToCheck.add(t!!)
                     l = l.getNext(n)
                 }
             } else if (n.visitID < lastVisitID) {
@@ -153,16 +154,16 @@ public class OsmNodesMap {
             return true
         }
 
-        n2c.add(n0)
-        while (n2c.isNotEmpty()) {
-            val n = n2c.removeAt(n2c.size - 1)
+        nodesToCheck.add(n0)
+        while (nodesToCheck.isNotEmpty()) {
+            val n = nodesToCheck.removeAt(nodesToCheck.size - 1)
             if (n.visitID == lastVisitID) {
                 n.visitID = lastVisitID
                 nodesCreated--
                 var l = n.firstlink
                 while (l != null) {
                     val t = l.getTarget(n)
-                    n2c.add(t!!)
+                    nodesToCheck.add(t!!)
                     l = l.getNext(n)
                 }
                 n.vanish()
@@ -179,29 +180,30 @@ public class OsmNodesMap {
     }
 
     public fun clearTemp() {
-        nodes2check = null
+        hasTempNodes = false
+        nodesToCheck.clear()
     }
 
     public fun collectOutreachers() {
-        val n2c = ArrayList<OsmNode>(nodesCreated)
-        nodes2check = n2c
+        hasTempNodes = true
+        nodesToCheck.clear()
         nodesCreated = 0
         hmap.forEach { _, node ->
-            addActiveNode(n2c, node)
+            addActiveNode(nodesToCheck, node)
         }
 
         lastVisitID++
         baseID = lastVisitID
 
-        while (n2c.isNotEmpty()) {
-            val n = n2c.removeAt(n2c.size - 1)
+        while (nodesToCheck.isNotEmpty()) {
+            val n = nodesToCheck.removeAt(nodesToCheck.size - 1)
             n.visitID = lastVisitID
 
             var l = n.firstlink
             while (l != null) {
                 val t = l.getTarget(n)
                 if (t!!.visitID != lastVisitID) {
-                    addActiveNode(n2c, t)
+                    addActiveNode(nodesToCheck, t)
                 }
                 l = l.getNext(n)
             }
