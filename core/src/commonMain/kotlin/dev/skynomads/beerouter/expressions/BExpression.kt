@@ -1,7 +1,7 @@
 package dev.skynomads.beerouter.expressions
 
 internal class BExpression {
-    private var typ = 0
+    private var typ: ExprType = ExprType.NUMBER
     private var op1: BExpression? = null
     private var op2: BExpression? = null
     private var op3: BExpression? = null
@@ -24,70 +24,69 @@ internal class BExpression {
 
     // Evaluate the expression
     fun evaluate(ctx: BExpressionContext?): Float {
-        when (typ) {
-            OR_EXP -> return if (op1!!.evaluate(ctx) != 0f) 1f else (if (op2!!.evaluate(ctx) != 0f) 1f else 0f)
-            XOR_EXP -> return (if ((op1!!.evaluate(ctx) != 0f) xor (op2!!.evaluate(ctx) != 0f)) 1f else 0f)
-            AND_EXP -> return if (op1!!.evaluate(ctx) != 0f) (if (op2!!.evaluate(ctx) != 0f) 1f else 0f) else 0f
-            ADD_EXP -> return op1!!.evaluate(ctx) + op2!!.evaluate(ctx)
-            SUB_EXP -> return op1!!.evaluate(ctx) - op2!!.evaluate(ctx)
-            MULTIPLY_EXP -> return op1!!.evaluate(ctx) * op2!!.evaluate(ctx)
-            DIVIDE_EXP -> return divide(op1!!.evaluate(ctx), op2!!.evaluate(ctx))
-            MAX_EXP -> return maxOf(op1!!.evaluate(ctx), op2!!.evaluate(ctx))
-            MIN_EXP -> return minOf(op1!!.evaluate(ctx), op2!!.evaluate(ctx))
-            EQUAL_EXP -> return if (op1!!.evaluate(ctx) == op2!!.evaluate(ctx)) 1f else 0f
-            GREATER_EXP -> return if (op1!!.evaluate(ctx) > op2!!.evaluate(ctx)) 1f else 0f
-            LESSER_EXP -> return if (op1!!.evaluate(ctx) < op2!!.evaluate(ctx)) 1f else 0f
-            SWITCH_EXP -> return if (op1!!.evaluate(ctx) != 0f) op2!!.evaluate(ctx) else op3!!.evaluate(ctx)
-            ASSIGN_EXP -> return ctx!!.assign(variableIdx, op1!!.evaluate(ctx))
-            LOOKUP_EXP -> return ctx!!.getLookupMatch(lookupNameIdx, lookupValueIdxArray)
-            NUMBER_EXP -> return numberValue
-            VARIABLE_EXP -> return ctx!!.getVariableValue(variableIdx)
-            FOREIGN_VARIABLE_EXP -> return ctx!!.getForeignVariableValue(variableIdx)
-            VARIABLE_GET_EXP -> return ctx!!.getLookupValue(lookupNameIdx)
-            NOT_EXP -> return if (op1!!.evaluate(ctx) == 0f) 1f else 0f
-            else -> throw IllegalArgumentException("unknown op-code: $typ")
+        return when (typ) {
+            ExprType.OR -> if (op1!!.evaluate(ctx) != 0f) 1f else (if (op2!!.evaluate(ctx) != 0f) 1f else 0f)
+            ExprType.XOR -> if ((op1!!.evaluate(ctx) != 0f) xor (op2!!.evaluate(ctx) != 0f)) 1f else 0f
+            ExprType.AND -> if (op1!!.evaluate(ctx) != 0f) (if (op2!!.evaluate(ctx) != 0f) 1f else 0f) else 0f
+            ExprType.ADD -> op1!!.evaluate(ctx) + op2!!.evaluate(ctx)
+            ExprType.SUB -> op1!!.evaluate(ctx) - op2!!.evaluate(ctx)
+            ExprType.MULTIPLY -> op1!!.evaluate(ctx) * op2!!.evaluate(ctx)
+            ExprType.DIVIDE -> divide(op1!!.evaluate(ctx), op2!!.evaluate(ctx))
+            ExprType.MAX -> maxOf(op1!!.evaluate(ctx), op2!!.evaluate(ctx))
+            ExprType.MIN -> minOf(op1!!.evaluate(ctx), op2!!.evaluate(ctx))
+            ExprType.EQUAL -> if (op1!!.evaluate(ctx) == op2!!.evaluate(ctx)) 1f else 0f
+            ExprType.GREATER -> if (op1!!.evaluate(ctx) > op2!!.evaluate(ctx)) 1f else 0f
+            ExprType.LESSER -> if (op1!!.evaluate(ctx) < op2!!.evaluate(ctx)) 1f else 0f
+            ExprType.SWITCH -> if (op1!!.evaluate(ctx) != 0f) op2!!.evaluate(ctx) else op3!!.evaluate(ctx)
+            ExprType.ASSIGN -> ctx!!.assign(variableIdx, op1!!.evaluate(ctx))
+            ExprType.LOOKUP -> ctx!!.getLookupMatch(lookupNameIdx, lookupValueIdxArray)
+            ExprType.NUMBER -> numberValue
+            ExprType.VARIABLE -> ctx!!.getVariableValue(variableIdx)
+            ExprType.FOREIGN_VARIABLE -> ctx!!.getForeignVariableValue(variableIdx)
+            ExprType.VARIABLE_GET -> ctx!!.getLookupValue(lookupNameIdx)
+            ExprType.NOT -> if (op1!!.evaluate(ctx) == 0f) 1f else 0f
         }
     }
 
     // Try to collapse the expression if logically possible
     private fun tryCollapse(): BExpression? {
-        when (typ) {
-            OR_EXP -> return if (NUMBER_EXP == op1!!.typ)
+        return when (typ) {
+            ExprType.OR -> if (op1!!.typ == ExprType.NUMBER)
                 (if (op1!!.numberValue != 0f) op1 else op2)
             else
-                (if (NUMBER_EXP == op2!!.typ)
+                (if (op2!!.typ == ExprType.NUMBER)
                     (if (op2!!.numberValue != 0f) op2 else op1)
                 else
                     this)
 
-            AND_EXP -> return if (NUMBER_EXP == op1!!.typ)
+            ExprType.AND -> if (op1!!.typ == ExprType.NUMBER)
                 (if (op1!!.numberValue == 0f) op1 else op2)
             else
-                (if (NUMBER_EXP == op2!!.typ)
+                (if (op2!!.typ == ExprType.NUMBER)
                     (if (op2!!.numberValue == 0f) op2 else op1)
                 else
                     this)
 
-            ADD_EXP -> return if (NUMBER_EXP == op1!!.typ)
+            ExprType.ADD -> if (op1!!.typ == ExprType.NUMBER)
                 (if (op1!!.numberValue == 0f) op2 else this)
             else
-                (if (NUMBER_EXP == op2!!.typ)
+                (if (op2!!.typ == ExprType.NUMBER)
                     (if (op2!!.numberValue == 0f) op1 else this)
                 else
                     this)
 
-            SWITCH_EXP -> return if (NUMBER_EXP == op1!!.typ) (if (op1!!.numberValue == 0f) op3 else op2) else this
-            else -> return this
+            ExprType.SWITCH -> if (op1!!.typ == ExprType.NUMBER) (if (op1!!.numberValue == 0f) op3 else op2) else this
+            else -> this
         }
     }
 
     // Try to evaluate the expression if all operands are constant
     private fun tryEvaluateConstant(): BExpression {
-        if (op1 != null && NUMBER_EXP == op1!!.typ && (op2 == null || NUMBER_EXP == op2!!.typ)
-            && (op3 == null || NUMBER_EXP == op3!!.typ)
+        if (op1 != null && op1!!.typ == ExprType.NUMBER && (op2 == null || op2!!.typ == ExprType.NUMBER)
+            && (op3 == null || op3!!.typ == ExprType.NUMBER)
         ) {
             val exp = BExpression()
-            exp.typ = NUMBER_EXP
+            exp.typ = ExprType.NUMBER
             exp.numberValue = evaluate(null)
             return exp
         }
@@ -100,8 +99,8 @@ internal class BExpression {
     }
 
     override fun toString(): String = when (typ) {
-        NUMBER_EXP -> numberValue.toString()
-        VARIABLE_EXP -> "vidx=$variableIdx"
+        ExprType.NUMBER -> numberValue.toString()
+        ExprType.VARIABLE -> "vidx=$variableIdx"
         else -> buildString {
             append("typ=$typ ops=(")
             op1?.let { append('[').append(it).append(']') }
@@ -111,31 +110,14 @@ internal class BExpression {
         }
     }
 
+    private enum class ExprType {
+        OR, AND, NOT,
+        ADD, MULTIPLY, DIVIDE, MAX, EQUAL, GREATER, MIN,
+        SUB, LESSER, XOR,
+        SWITCH, ASSIGN, LOOKUP, NUMBER, VARIABLE, FOREIGN_VARIABLE, VARIABLE_GET
+    }
+
     companion object {
-        private const val OR_EXP = 10
-        private const val AND_EXP = 11
-        private const val NOT_EXP = 12
-
-        private const val ADD_EXP = 20
-        private const val MULTIPLY_EXP = 21
-        private const val DIVIDE_EXP = 22
-        private const val MAX_EXP = 23
-        private const val EQUAL_EXP = 24
-        private const val GREATER_EXP = 25
-        private const val MIN_EXP = 26
-
-        private const val SUB_EXP = 27
-        private const val LESSER_EXP = 28
-        private const val XOR_EXP = 29
-
-        private const val SWITCH_EXP = 30
-        private const val ASSIGN_EXP = 31
-        private const val LOOKUP_EXP = 32
-        private const val NUMBER_EXP = 33
-        private const val VARIABLE_EXP = 34
-        private const val FOREIGN_VARIABLE_EXP = 35
-        private const val VARIABLE_GET_EXP = 36
-
         // Parse the expression and all subexpression
         @Throws(Exception::class)
         fun parse(ctx: BExpressionContext, level: Int): BExpression? {
@@ -153,7 +135,7 @@ internal class BExpression {
                 return null
             }
 
-            if (ASSIGN_EXP == e.typ) {
+            if (e.typ == ExprType.ASSIGN) {
                 // manage assigned an injected values
                 val assignedBefore = ctx.lastAssignedExpression!![e.variableIdx]
                 if (assignedBefore != null && assignedBefore.doNotChange) {
@@ -163,9 +145,9 @@ internal class BExpression {
                 ctx.lastAssignedExpression!![e.variableIdx] = e.op1
             } else if (!ctx.skipConstantExpressionOptimizations) {
                 // try to simplify the expression
-                if (VARIABLE_EXP == e.typ) {
+                if (e.typ == ExprType.VARIABLE) {
                     val ae = ctx.lastAssignedExpression!![e.variableIdx]
-                    if (ae != null && ae.typ == NUMBER_EXP) {
+                    if (ae != null && ae.typ == ExprType.NUMBER) {
                         e = ae
                     }
                 } else {
@@ -217,42 +199,42 @@ internal class BExpression {
             var ifThenElse = false
 
             if ("switch" == operator) {
-                exp.typ = SWITCH_EXP
+                exp.typ = ExprType.SWITCH
             } else if ("if" == operator) {
-                exp.typ = SWITCH_EXP
+                exp.typ = ExprType.SWITCH
                 ifThenElse = true
             } else {
                 nops = 2 // check binary expressions
 
                 if ("or" == operator) {
-                    exp.typ = OR_EXP
+                    exp.typ = ExprType.OR
                 } else if ("and" == operator) {
-                    exp.typ = AND_EXP
+                    exp.typ = ExprType.AND
                 } else if ("multiply" == operator) {
-                    exp.typ = MULTIPLY_EXP
+                    exp.typ = ExprType.MULTIPLY
                 } else if ("divide" == operator) {
-                    exp.typ = DIVIDE_EXP
+                    exp.typ = ExprType.DIVIDE
                 } else if ("add" == operator) {
-                    exp.typ = ADD_EXP
+                    exp.typ = ExprType.ADD
                 } else if ("max" == operator) {
-                    exp.typ = MAX_EXP
+                    exp.typ = ExprType.MAX
                 } else if ("min" == operator) {
-                    exp.typ = MIN_EXP
+                    exp.typ = ExprType.MIN
                 } else if ("equal" == operator) {
-                    exp.typ = EQUAL_EXP
+                    exp.typ = ExprType.EQUAL
                 } else if ("greater" == operator) {
-                    exp.typ = GREATER_EXP
+                    exp.typ = ExprType.GREATER
                 } else if ("sub" == operator) {
-                    exp.typ = SUB_EXP
+                    exp.typ = ExprType.SUB
                 } else if ("lesser" == operator) {
-                    exp.typ = LESSER_EXP
+                    exp.typ = ExprType.LESSER
                 } else if ("xor" == operator) {
-                    exp.typ = XOR_EXP
+                    exp.typ = ExprType.XOR
                 } else {
                     nops = 1 // check unary expressions
                     if ("assign" == operator) {
                         require(level <= 0) { "assign operator within expression" }
-                        exp.typ = ASSIGN_EXP
+                        exp.typ = ExprType.ASSIGN
                         val variable = ctx.parseToken()
                         requireNotNull(variable) { "unexpected end of file" }
                         require(variable.indexOf('=') < 0) { "variable name cannot contain '=': $variable" }
@@ -260,12 +242,12 @@ internal class BExpression {
                         exp.variableIdx = ctx.getVariableIdx(variable, true)
                         require(exp.variableIdx >= ctx.minWriteIdx) { "cannot assign to readonly variable $variable" }
                     } else if ("not" == operator) {
-                        exp.typ = NOT_EXP
+                        exp.typ = ExprType.NOT
                     } else {
                         nops = 0 // check elementary expressions
                         var idx = operator.indexOf('=')
                         if (idx >= 0) {
-                            exp.typ = LOOKUP_EXP
+                            exp.typ = ExprType.LOOKUP
                             val name = operator.take(idx)
                             val values = operator.substring(idx + 1)
 
@@ -284,27 +266,27 @@ internal class BExpression {
                         } else if ((operator.indexOf(':').also { idx = it }) >= 0) {
                             if (operator.startsWith("v:")) {
                                 val name = operator.substring(2)
-                                exp.typ = VARIABLE_GET_EXP
+                                exp.typ = ExprType.VARIABLE_GET
                                 exp.lookupNameIdx = ctx.getLookupNameIdx(name)
                             } else {
                                 val context = operator.take(idx)
                                 val varname = operator.substring(idx + 1)
-                                exp.typ = FOREIGN_VARIABLE_EXP
+                                exp.typ = ExprType.FOREIGN_VARIABLE
                                 exp.variableIdx = ctx.getForeignVariableIdx(context, varname)
                             }
                         } else if ((ctx.getVariableIdx(operator, false).also { idx = it }) >= 0) {
-                            exp.typ = VARIABLE_EXP
+                            exp.typ = ExprType.VARIABLE
                             exp.variableIdx = idx
                         } else if ("true" == operator) {
                             exp.numberValue = 1f
-                            exp.typ = NUMBER_EXP
+                            exp.typ = ExprType.NUMBER
                         } else if ("false" == operator) {
                             exp.numberValue = 0f
-                            exp.typ = NUMBER_EXP
+                            exp.typ = ExprType.NUMBER
                         } else {
                             try {
                                 exp.numberValue = operator.toFloat()
-                                exp.typ = NUMBER_EXP
+                                exp.typ = ExprType.NUMBER
                             } catch (nfe: NumberFormatException) {
                                 throw IllegalArgumentException("unknown expression: $operator")
                             }
@@ -314,7 +296,7 @@ internal class BExpression {
             }
             // parse operands
             if (nops > 0) {
-                exp.op1 = parse(ctx, level + 1, if (exp.typ == ASSIGN_EXP) "=" else null)
+                exp.op1 = parse(ctx, level + 1, if (exp.typ == ExprType.ASSIGN) "=" else null)
             }
             if (nops > 1) {
                 if (ifThenElse) checkExpectedToken(ctx, "then")
@@ -342,10 +324,10 @@ internal class BExpression {
             value: String
         ): BExpression {
             val e = BExpression()
-            e.typ = ASSIGN_EXP
+            e.typ = ExprType.ASSIGN
             e.variableIdx = ctx.getVariableIdx(key, true)
             val op = BExpression()
-            op.typ = NUMBER_EXP
+            op.typ = ExprType.NUMBER
             op.numberValue = value.toFloat()
             op.doNotChange = true
             e.op1 = op
