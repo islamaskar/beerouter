@@ -17,15 +17,12 @@ import org.maplibre.spatialk.geojson.Position
 import kotlin.math.sqrt
 
 public open class OsmNodeNamed : OsmNode {
-    @JvmField
     public var name: String? = null
 
-    @JvmField
     public var radius: Double = 0.0 // radius of nogopoint (in meters)
     public var nogoWeight: Double = 0.0 // weight for nogopoint
     public var isNogo: Boolean = false
 
-    @JvmField
     public var type: MatchedWaypoint.Type = MatchedWaypoint.Type.SHAPING
 
     public constructor()

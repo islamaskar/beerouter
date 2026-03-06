@@ -160,7 +160,6 @@ public class RoutingContext(
 
     public var profileTimestamp: Long = 0
 
-    @JvmField
     public var keyValues: MutableMap<String, String>? = null
 
     public var rawTrackPath: String? = null

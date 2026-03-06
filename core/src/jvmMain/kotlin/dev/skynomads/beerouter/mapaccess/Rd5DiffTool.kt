@@ -89,8 +89,7 @@ public class Rd5DiffTool : ProgressListener {
 
     public companion object {
         @Throws(Exception::class)
-        @JvmStatic
-        public fun main(args: Array<String>) {
+            public fun main(args: Array<String>) {
             if (args.size == 2) {
                 reEncode(File(args[0]), File(args[1]))
                 return

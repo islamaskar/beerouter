@@ -15,7 +15,6 @@ import java.security.NoSuchAlgorithmException
 
 public object Rd5DiffManager {
     @Throws(Exception::class)
-    @JvmStatic
     public fun main(args: Array<String>) {
         calcDiffs(File(args[0]), File(args[1]))
     }

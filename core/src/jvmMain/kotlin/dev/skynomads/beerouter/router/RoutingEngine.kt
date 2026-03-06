@@ -20,8 +20,6 @@ import kotlinx.coroutines.ensureActive
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import java.io.File
-import java.util.SortedSet
-import java.util.TreeSet
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.min
@@ -356,11 +354,12 @@ public class RoutingEngine(private val routingContext: RoutingContext) : Thread(
                 rc.ai!!.numForest = numForest
                 rc.ai!!.numRiver = numRiver
 
-                rc.ai!!.polygon = OsmNogoPolygon(true)
-                rc.ai!!.polygon!!.addVertex(wp.position.longitude.toIntLongitude(), wp.position.latitude.toIntLatitude())
-                rc.ai!!.polygon!!.addVertex(listOne[a].position.longitude.toIntLongitude(), listOne[a].position.latitude.toIntLatitude())
-                if (a == 3) rc.ai!!.polygon!!.addVertex(listOne[0].position.longitude.toIntLongitude(), listOne[0].position.latitude.toIntLatitude())
-                else rc.ai!!.polygon!!.addVertex(listOne[a + 1].position.longitude.toIntLongitude(), listOne[a + 1].position.latitude.toIntLatitude())
+                val polygon = OsmNogoPolygon(true)
+                rc.ai!!.polygon = polygon
+                polygon.addVertex(wp.position.longitude.toIntLongitude(), wp.position.latitude.toIntLatitude())
+                polygon.addVertex(listOne[a].position.longitude.toIntLongitude(), listOne[a].position.latitude.toIntLatitude())
+                if (a == 3) polygon.addVertex(listOne[0].position.longitude.toIntLongitude(), listOne[0].position.latitude.toIntLatitude())
+                else polygon.addVertex(listOne[a + 1].position.longitude.toIntLongitude(), listOne[a + 1].position.latitude.toIntLatitude())
 
                 ais.add(rc.ai!!)
             }
@@ -1192,7 +1191,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) : Thread(
         var lasttime = 0f
         var lastenergy = 0f
         var speedMin = 9999f
-        val directMap: MutableMap<Int?, Int?> = HashMap()
+        val directMap: MutableMap<Int, Int> = HashMap()
         var tmptime: Float
         var speed: Float
         var dist: Int
@@ -1272,7 +1271,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) : Thread(
         t.distance = totaldist
 
         //t.energy = totalenergy;
-        val keys: SortedSet<Int> = TreeSet(directMap.keys)
+        val keys = directMap.keys.sorted()
         for (key in keys) {
             val value: Int = directMap[key]!!
             val addTime = (value / (speedMin / 3.6f))
@@ -1824,8 +1823,9 @@ public class RoutingEngine(private val routingContext: RoutingContext) : Thread(
                     val pe = costCuttingTrack.getLink(sourceNodeId, currentNodeId)
                     if (pe != null) {
                         // remember first match cost for fast termination of partial recalcs
+                        val originElement = path.originElement
                         var parentcost =
-                            if (path.originElement == null) 0 else path.originElement!!.cost
+                            if (originElement == null) 0 else originElement.cost
 
                         // hitting start-element of costCuttingTrack?
                         val c = path.cost - parentcost - pe.cost

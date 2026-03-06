@@ -326,8 +326,7 @@ public class OsmNogoPolygon(public val isClosed: Boolean) : OsmNodeNamed() {
     }
 
     public companion object {
-        @JvmStatic
-        public fun isOnLine(
+            public fun isOnLine(
             px: Long,
             py: Long,
             p0x: Long,

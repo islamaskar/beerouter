@@ -10,7 +10,6 @@ import dev.skynomads.beerouter.util.CheapRuler.distance
 import org.maplibre.spatialk.geojson.Position
 import java.io.DataInput
 import java.io.DataOutput
-import java.io.IOException
 import kotlin.math.max
 import kotlin.math.roundToInt
 
@@ -75,7 +74,6 @@ public class OsmPathElement protected constructor() : OsmPos {
                 this.position.latitude.toIntLatitude() == e.position.latitude.toIntLatitude()
     }
 
-    @Throws(IOException::class)
     public fun writeToStream(dos: DataOutput) {
         dos.writeInt(this.position.latitude.toIntLatitude())
         dos.writeInt(this.position.longitude.toIntLongitude())
@@ -114,7 +112,6 @@ public class OsmPathElement protected constructor() : OsmPos {
             return pe
         }
 
-        @Throws(IOException::class)
         public fun readFromStream(dis: DataInput): OsmPathElement {
             val pe = OsmPathElement()
             val lat = dis.readInt()

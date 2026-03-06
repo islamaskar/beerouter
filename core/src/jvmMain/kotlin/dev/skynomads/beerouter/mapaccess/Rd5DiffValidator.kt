@@ -9,7 +9,6 @@ import java.io.File
 
 public object Rd5DiffValidator {
     @Throws(Exception::class)
-    @JvmStatic
     public fun main(args: Array<String>) {
         validateDiffs(File(args[0]), File(args[1]))
     }

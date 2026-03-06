@@ -24,7 +24,6 @@ public class NodesCache(
 ) {
     private val MAX_DYNAMIC_CATCHES = 20 // used with RoutingEngine MAX_DYNAMIC_RANGE = 60000m
 
-    @JvmField
     public var nodesMap: OsmNodesMap = OsmNodesMap()
     private val lookupVersion: Int
     private val lookupMinorVersion: Int

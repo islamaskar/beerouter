@@ -9,7 +9,6 @@ import dev.skynomads.beerouter.util.CheapAngleMeter.Companion.getDifferenceFromD
 import dev.skynomads.beerouter.util.CheapAngleMeter.Companion.getDirection
 import dev.skynomads.beerouter.util.CheapRuler.getLonLatToMeterScales
 import org.maplibre.spatialk.geojson.Position
-import java.util.Collections
 import kotlin.math.abs
 import kotlin.math.sqrt
 
@@ -276,7 +275,7 @@ public class WaypointMatcherImpl(
     public fun updateWayList(ways: MutableList<MatchedWaypoint>, mw: MatchedWaypoint?) {
         ways.add(mw!!)
         // use only shortest distances by smallest direction difference
-        Collections.sort(ways, comparator)
+        ways.sortWith(comparator!!)
         if (ways.size > MAX_POINTS) ways.removeAt(MAX_POINTS)
     }
 

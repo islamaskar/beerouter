@@ -21,7 +21,6 @@ public class PhysicalFile(f: File, dataBuffers: DataBuffers, lookupVersion: Int,
 
     public var fileName: String? = f.getName()
 
-    @JvmField
     public var divisor: Int = 80
     public var elevationType: Byte = 3
 
@@ -118,8 +117,7 @@ public class PhysicalFile(f: File, dataBuffers: DataBuffers, lookupVersion: Int,
          *
          * @return the error message if file corrupt, else null
          */
-        @JvmStatic
-        @Throws(IOException::class)
+            @Throws(IOException::class)
         public fun checkFileIntegrity(f: File): String? {
             var pf: PhysicalFile? = null
             try {
