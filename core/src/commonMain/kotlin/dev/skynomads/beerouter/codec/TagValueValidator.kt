@@ -8,7 +8,7 @@ public interface TagValueValidator {
      */
     public fun accessType(tagValueSet: ByteArray?): Int
 
-    public fun unify(tagValueSet: ByteArray, offset: Int, len: Int): ByteArray?
+    public fun unify(ab: ByteArray, offset: Int, len: Int): ByteArray?
 
     public fun isLookupIdxUsed(idx: Int): Boolean
 

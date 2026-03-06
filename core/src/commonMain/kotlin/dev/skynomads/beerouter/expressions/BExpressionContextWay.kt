@@ -81,8 +81,8 @@ public class BExpressionContextWay : BExpressionContext, TagValueValidator {
      */
     public constructor(hashSize: Int, meta: BExpressionMetaData) : super("way", hashSize, meta)
 
-    override fun accessType(description: ByteArray?): Int {
-        evaluate(false, description!!)
+    override fun accessType(tagValueSet: ByteArray?): Int {
+        evaluate(false, tagValueSet!!)
         var minCostFactor = this.costfactor
         if (minCostFactor >= 9999f) {
             setInverseVars()
