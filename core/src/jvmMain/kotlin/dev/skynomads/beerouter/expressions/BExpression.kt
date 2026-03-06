@@ -1,7 +1,5 @@
 package dev.skynomads.beerouter.expressions
 
-import java.util.StringTokenizer
-
 internal class BExpression {
     private var typ = 0
     private var op1: BExpression? = null
@@ -40,15 +38,12 @@ internal class BExpression {
             SUB_EXP -> return op1!!.evaluate(ctx) - op2!!.evaluate(ctx)
             MULTIPLY_EXP -> return op1!!.evaluate(ctx) * op2!!.evaluate(ctx)
             DIVIDE_EXP -> return divide(op1!!.evaluate(ctx), op2!!.evaluate(ctx))
-            MAX_EXP -> return max(op1!!.evaluate(ctx), op2!!.evaluate(ctx))
-            MIN_EXP -> return min(op1!!.evaluate(ctx), op2!!.evaluate(ctx))
+            MAX_EXP -> return maxOf(op1!!.evaluate(ctx), op2!!.evaluate(ctx))
+            MIN_EXP -> return minOf(op1!!.evaluate(ctx), op2!!.evaluate(ctx))
             EQUAL_EXP -> return if (op1!!.evaluate(ctx) == op2!!.evaluate(ctx)) 1f else 0f
             GREATER_EXP -> return if (op1!!.evaluate(ctx) > op2!!.evaluate(ctx)) 1f else 0f
             LESSER_EXP -> return if (op1!!.evaluate(ctx) < op2!!.evaluate(ctx)) 1f else 0f
-            SWITCH_EXP -> return if (op1!!.evaluate(ctx) != 0f) op2!!.evaluate(ctx) else op3!!.evaluate(
-                ctx
-            )
-
+            SWITCH_EXP -> return if (op1!!.evaluate(ctx) != 0f) op2!!.evaluate(ctx) else op3!!.evaluate(ctx)
             ASSIGN_EXP -> return ctx!!.assign(variableIdx, op1!!.evaluate(ctx))
             LOOKUP_EXP -> return ctx!!.getLookupMatch(lookupNameIdx, lookupValueIdxArray)
             NUMBER_EXP -> return numberValue
@@ -60,8 +55,7 @@ internal class BExpression {
         }
     }
 
-    // Try to collapse the expression
-    // if logically possible
+    // Try to collapse the expression if logically possible
     private fun tryCollapse(): BExpression? {
         when (typ) {
             OR_EXP -> return if (NUMBER_EXP == op1!!.typ)
@@ -93,8 +87,7 @@ internal class BExpression {
         }
     }
 
-    // Try to evaluate the expression
-    // if all operands are constant
+    // Try to evaluate the expression if all operands are constant
     private fun tryEvaluateConstant(): BExpression {
         if (op1 != null && NUMBER_EXP == op1!!.typ && (op2 == null || NUMBER_EXP == op2!!.typ)
             && (op3 == null || NUMBER_EXP == op3!!.typ)
@@ -105,14 +98,6 @@ internal class BExpression {
             return exp
         }
         return this
-    }
-
-    private fun max(v1: Float, v2: Float): Float {
-        return if (v1 > v2) v1 else v2
-    }
-
-    private fun min(v1: Float, v2: Float): Float {
-        return if (v1 < v2) v1 else v2
     }
 
     private fun divide(v1: Float, v2: Float): Float {
@@ -188,8 +173,7 @@ internal class BExpression {
                 val assignedBefore = ctx.lastAssignedExpression!![e.variableIdx]
                 if (assignedBefore != null && assignedBefore.doNotChange) {
                     e.op1 = assignedBefore // was injected as key-value
-                    e.op1!!.doNotChange =
-                        false // protect just once, can be changed in second assignment
+                    e.op1!!.doNotChange = false // protect just once, can be changed in second assignment
                 }
                 ctx.lastAssignedExpression!![e.variableIdx] = e.op1
             } else if (!ctx.skipConstantExpressionOptimizations) {
@@ -202,19 +186,15 @@ internal class BExpression {
                 } else {
                     val eCollapsed = e.tryCollapse()
                     if (e != eCollapsed) {
-                        e = eCollapsed // allow breakpoint..
+                        e = eCollapsed
                     }
                     val eEvaluated = e!!.tryEvaluateConstant()
                     if (e != eEvaluated) {
-                        e = eEvaluated // allow breakpoint..
+                        e = eEvaluated
                     }
                 }
             }
             if (level == 0) {
-                // mark the used lookups after the
-                // expression is collapsed to not mark
-                // lookups as used that appear in the profile
-                // but are de-activated by constant expressions
                 val nodeCount = e.markLookupIdxUsed(ctx)
                 ctx.expressionNodeCount += nodeCount
             }
@@ -306,24 +286,17 @@ internal class BExpression {
 
                             exp.lookupNameIdx = ctx.getLookupNameIdx(name)
                             require(exp.lookupNameIdx >= 0) { "unknown lookup name: $name" }
-                            val tk = StringTokenizer(values, "|")
-                            val nt = tk.countTokens()
+                            val tokens = values.split("|").filter { it.isNotEmpty() }
+                            val nt = tokens.size
                             val nt2 = if (nt == 0) 1 else nt
                             exp.lookupValueIdxArray = IntArray(nt2)
                             for (ti in 0..<nt2) {
-                                val value = if (ti < nt) tk.nextToken() else ""
+                                val value = if (ti < nt) tokens[ti] else ""
                                 exp.lookupValueIdxArray[ti] =
                                     ctx.getLookupValueIdx(exp.lookupNameIdx, value)
                                 require(exp.lookupValueIdxArray[ti] >= 0) { "unknown lookup value: $value" }
                             }
                         } else if ((operator.indexOf(':').also { idx = it }) >= 0) {
-                            /*
-            use of variable values
-            assign no_height
-               switch and not      maxheight=
-                        lesser v:maxheight  my_height  true
-            false
-             */
                             if (operator.startsWith("v:")) {
                                 val name = operator.substring(2)
                                 exp.typ = VARIABLE_GET_EXP

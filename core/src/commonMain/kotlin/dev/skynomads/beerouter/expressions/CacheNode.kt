@@ -3,8 +3,6 @@ package dev.skynomads.beerouter.expressions
 public class CacheNode {
     public var ab: ByteArray? = null
     public var vars: FloatArray? = null
-
-    @JvmField
     public var hash: Int = 0
 
     override fun hashCode(): Int {
