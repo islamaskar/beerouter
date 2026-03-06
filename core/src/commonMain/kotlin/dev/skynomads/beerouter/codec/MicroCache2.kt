@@ -299,7 +299,7 @@ public class MicroCache2 : MicroCache {
     }
 
     public override fun encodeMicroCache(buffer: ByteArray): Int {
-        val idMap: MutableMap<Long?, Int?> = HashMap()
+        val idMap = mutableMapOf<Long, Int>()
         for (n in 0..<size) { // loop over nodes
             idMap[expandId(faid[n])] = n
         }

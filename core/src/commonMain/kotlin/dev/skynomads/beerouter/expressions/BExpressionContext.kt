@@ -21,9 +21,9 @@ public abstract class BExpressionContext protected constructor(
     public var _modelClass: String? = null
 
     private val lookupNumbers: MutableMap<String?, Int?> = HashMap()
-    private val lookupValues: MutableList<Array<BExpressionLookupValue?>?> = ArrayList()
-    private val lookupNames: MutableList<String?> = ArrayList()
-    private val lookupHistograms: MutableList<IntArray> = ArrayList()
+    private val lookupValues: MutableList<Array<BExpressionLookupValue?>?> = mutableListOf()
+    private val lookupNames: MutableList<String?> = mutableListOf()
+    private val lookupHistograms: MutableList<IntArray> = mutableListOf()
     private lateinit var lookupIdxUsed: BooleanArray
 
     private var lookupDataFrozen = false
@@ -36,7 +36,7 @@ public abstract class BExpressionContext protected constructor(
 
     private val variableNumbers: MutableMap<String?, Int?> = HashMap()
 
-    internal var lastAssignedExpression: MutableList<BExpression?>? = ArrayList()
+    internal var lastAssignedExpression: MutableList<BExpression?>? = mutableListOf()
 
     public var skipConstantExpressionOptimizations: Boolean = false
 
@@ -680,7 +680,7 @@ public abstract class BExpressionContext protected constructor(
         _content = content
         _contentPos = 0
         _readerDone = false
-        val result: MutableList<BExpression?> = ArrayList()
+        val result = mutableListOf<BExpression?>()
 
         if (keyValues != null) {
             for (key in keyValues.keys) {

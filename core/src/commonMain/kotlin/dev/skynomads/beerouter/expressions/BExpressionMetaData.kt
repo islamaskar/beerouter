@@ -7,8 +7,8 @@ public class BExpressionMetaData {
 
     private val listeners: MutableMap<String?, BExpressionContext> = HashMap()
 
-    public fun registerListener(context: String?, ctx: BExpressionContext?) {
-        listeners[context] = ctx!!
+    public fun registerListener(context: String?, ctx: BExpressionContext) {
+        listeners[context] = ctx
     }
 
     public fun readMetaData(content: String) {
