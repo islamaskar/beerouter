@@ -226,16 +226,12 @@ public class StatCoderContext(ab: ByteArray) : BitCoderContext(ab) {
 
         public val bitReport: String
             get() {
-                if (statsPerName.isEmpty()) {
-                    return "<empty bit report>"
-                }
-                val sb = StringBuilder()
-                for (name in statsPerName.keys) {
-                    val stats: LongArray = statsPerName[name]!!
-                    sb.append(name + " count=" + stats[1] + " bits=" + stats[0] + "\n")
-                }
-                statsPerName.clear()
-                return sb.toString()
+                if (statsPerName.isEmpty()) return "<empty bit report>"
+                return buildString {
+                    for ((name, stats) in statsPerName) {
+                        append("$name count=${stats[1]} bits=${stats[0]}\n")
+                    }
+                }.also { statsPerName.clear() }
             }
     }
 }

@@ -477,16 +477,7 @@ public class OsmTrack {
             return if (nogoCheckOk && profileCheckOk) track else null
         }
 
-        private fun formatLongs(al: LongArray): String {
-            val sb = StringBuilder()
-            sb.append('{')
-            for (l in al) {
-                sb.append(l)
-                sb.append(' ')
-            }
-            sb.append('}')
-            return sb.toString()
-        }
+        private fun formatLongs(al: LongArray): String = al.joinToString(" ", "{", "}")
 
         private fun toSElev(altitude: Double?): Short =
             altitude?.times(4.0)?.toInt()?.toShort() ?: Short.MIN_VALUE
