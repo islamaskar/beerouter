@@ -1,15 +1,12 @@
 /**
- * DataInputStream for decoding fast-compact encoded number sequences
+ * Decoder for fast-compact encoded number sequences
  *
  * @author ab
  */
 package dev.skynomads.beerouter.util
 
-import java.io.DataInputStream
-import java.io.IOException
-import java.io.InputStream
-
-public class MixCoderDataInputStream(inputStream: InputStream) : DataInputStream(inputStream) {
+public class MixCoderDataInputStream(private val buf: ByteArray) {
+    private var bufPos = 0
     private var lastValue = 0
     private var repCount = 0
     private var diffshift = 0
@@ -17,7 +14,6 @@ public class MixCoderDataInputStream(inputStream: InputStream) : DataInputStream
     private var bits = 0 // bits left in buffer
     private var b = 0 // buffer word
 
-    @Throws(IOException::class)
     public fun readMixed(): Int {
         if (repCount == 0) {
             val negative = decodeBit()
@@ -30,7 +26,6 @@ public class MixCoderDataInputStream(inputStream: InputStream) : DataInputStream
         return lastValue
     }
 
-    @Throws(IOException::class)
     public fun decodeBit(): Boolean {
         fillBuffer()
         val value = ((b and 1) != 0)
@@ -39,7 +34,6 @@ public class MixCoderDataInputStream(inputStream: InputStream) : DataInputStream
         return value
     }
 
-    @Throws(IOException::class)
     public fun decodeVarBits2(): Int {
         var range = 0
         while (!decodeBit()) {
@@ -48,29 +42,16 @@ public class MixCoderDataInputStream(inputStream: InputStream) : DataInputStream
         return range + decodeBounded(range)
     }
 
-    /**
-     * decode an integer in the range 0..max (inclusive).
-     *
-     * @see .encodeBounded
-     */
-    @Throws(IOException::class)
     public fun decodeBounded(max: Int): Int {
         var value = 0
         var im = 1 // integer mask
         while ((value or im) <= max) {
-            if (decodeBit()) {
-                value = value or im
-            }
+            if (decodeBit()) value = value or im
             im = im shl 1
         }
         return value
     }
 
-
-    /**
-     * @see .encodeVarBits
-     */
-    @Throws(IOException::class)
     public fun decodeVarBits(): Int {
         fillBuffer()
         val b12 = b and 0xfff
@@ -80,7 +61,7 @@ public class MixCoderDataInputStream(inputStream: InputStream) : DataInputStream
             bits -= len
             return vlValues[b12] // full value lookup
         }
-        if (len <= 23) { // // only length lookup
+        if (len <= 23) { // only length lookup
             val len2 = len shr 1
             b = b ushr (len2 + 1)
             var mask = -0x1 ushr (32 - len2)
@@ -107,19 +88,15 @@ public class MixCoderDataInputStream(inputStream: InputStream) : DataInputStream
         return decodeVarBits2() // no chance, use the slow one
     }
 
-    @Throws(IOException::class)
     private fun fillBuffer() {
         while (bits < 24) {
-            val nextByte = read()
-
-            if (nextByte != -1) {
-                b = b or ((nextByte and 0xff) shl bits)
-            }
+            val nextByte = if (bufPos < buf.size) buf[bufPos++].toInt() and 0xff else -1
+            if (nextByte != -1) b = b or ((nextByte and 0xff) shl bits)
             bits += 8
         }
     }
 
-    public companion object {
+    private companion object {
         private val vlValues = BitCoderContext.vlValues
         private val vlLength = BitCoderContext.vlLength
     }
