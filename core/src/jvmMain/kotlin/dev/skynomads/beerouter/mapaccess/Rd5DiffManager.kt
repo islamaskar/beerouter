@@ -6,7 +6,6 @@
 package dev.skynomads.beerouter.mapaccess
 
 import java.io.File
-import java.security.DigestInputStream
 import java.security.MessageDigest
 
 public object Rd5DiffManager {
@@ -65,9 +64,10 @@ public object Rd5DiffManager {
     public fun getMD5(f: File): String {
         val md = MessageDigest.getInstance("MD5")
         f.inputStream().buffered().use { input ->
-            DigestInputStream(input, md).use { digestInput ->
-                val buf = ByteArray(8192)
-                while (digestInput.read(buf) > 0) { /* read all */ }
+            val buf = ByteArray(8192)
+            var read: Int
+            while (input.read(buf).also { read = it } > 0) {
+                md.update(buf, 0, read)
             }
         }
         val bytes = md.digest()

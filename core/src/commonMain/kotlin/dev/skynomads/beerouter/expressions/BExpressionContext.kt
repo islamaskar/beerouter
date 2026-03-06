@@ -167,19 +167,13 @@ public abstract class BExpressionContext protected constructor(
     }
 
     public fun getKeyValueDescription(inverseDirection: Boolean, ab: ByteArray): String {
-        val sb = StringBuilder(200)
         decode(lookupData, inverseDirection, ab)
-        for (inum in lookupValues.indices) {
+        return lookupValues.indices.mapNotNull { inum ->
             val va = lookupValues[inum]!!
             val `val` = lookupData[inum]
-            val value: String? =
-                if (`val` >= 1000) ((`val` - 1000) / 100f).toString() else va[`val`].toString()
-            if (value != null && value.isNotEmpty()) {
-                if (sb.isNotEmpty()) sb.append(' ')
-                sb.append(lookupNames[inum] + "=" + value)
-            }
-        }
-        return sb.toString()
+            val value = if (`val` >= 1000) ((`val` - 1000) / 100f).toString() else va[`val`].toString()
+            if (value.isNotEmpty()) "${lookupNames[inum]}=$value" else null
+        }.joinToString(" ")
     }
 
     public fun getMap(inverseDirection: Boolean, ab: ByteArray): Map<String, String> {
@@ -775,18 +769,9 @@ public abstract class BExpressionContext protected constructor(
         }
     }
 
-    public fun usedTagList(): String {
-        val sb = StringBuilder()
-        for (inum in lookupValues.indices) {
-            if (lookupIdxUsed[inum]) {
-                if (sb.isNotEmpty()) {
-                    sb.append(',')
-                }
-                sb.append(lookupNames[inum])
-            }
-        }
-        return sb.toString()
-    }
+    public fun usedTagList(): String = lookupValues.indices
+        .filter { lookupIdxUsed[it] }
+        .joinToString(",") { lookupNames[it] ?: "" }
 
     public fun getLookupValueIdx(nameIdx: Int, value: String?): Int {
         val values = lookupValues[nameIdx]!!

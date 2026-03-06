@@ -57,18 +57,12 @@ public class AreaInfo(public val direction: Int) {
             return (riverWays * 100.0 / ways).toInt()
         }
 
-    override fun toString(): String {
-        val sb = StringBuilder()
-        sb.append("Area ").append(direction).append(" ").append(elevStart).append("m ways ")
-            .append(ways)
+    override fun toString(): String = buildString {
+        append("Area $direction $elevStart m ways $ways")
         if (ways > 0) {
-            sb.append("\nArea ways <50m  ").append(elev50).append(" ").append(this.elev50Weight)
-                .append("%")
-            sb.append("\nArea ways green ").append(greenWays).append(" ").append(this.green)
-                .append("%")
-            sb.append("\nArea ways river ").append(riverWays).append(" ").append(this.river)
-                .append("%")
+            append("\nArea ways <50m  $elev50 $elev50Weight%")
+            append("\nArea ways green $greenWays $green%")
+            append("\nArea ways river $riverWays $river%")
         }
-        return sb.toString()
     }
 }
