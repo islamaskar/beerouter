@@ -57,6 +57,10 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
 
     private val directWeaving = true //!Boolean.getBoolean("disableDirectWeaving")
 
+    // Pre-allocated buffers for the routing hot loop — avoids per-node ArrayList + Pair allocation
+    private val candidateLinks = ArrayList<OsmLink>(16)
+    private val candidateNodes = ArrayList<OsmNode>(16)
+
     private fun log(message: String) {
         // Hot path: keep routing output silent by default.
     }
@@ -1905,7 +1909,8 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
 
             routingContext.firstPrePath = null
 
-            val candidateEdges = ArrayList<Pair<OsmLink, OsmNode>>(8)
+            candidateLinks.clear()
+            candidateNodes.clear()
             var link = currentNode.firstlink
             while (link != null) {
                 val nextNode = link.getTarget(currentNode)
@@ -1928,11 +1933,14 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
                     prePath.next = routingContext.firstPrePath
                     routingContext.firstPrePath = prePath
                 }
-                candidateEdges.add(link to nextNode)
+                candidateLinks.add(link)
+                candidateNodes.add(nextNode)
                 link = link.getNext(currentNode)
             }
 
-            for ((candidateLink, nextNode) in candidateEdges) {
+            for (ci in candidateLinks.indices) {
+                val candidateLink = candidateLinks[ci]
+                val nextNode = candidateNodes[ci]
 
                 if (guideTrack != null) {
                     val gidx = path.treedepth + 1
