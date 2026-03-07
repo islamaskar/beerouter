@@ -7,6 +7,7 @@ import dev.skynomads.beerouter.mapaccess.NodesCache
 import dev.skynomads.beerouter.mapaccess.OsmLink
 import dev.skynomads.beerouter.mapaccess.OsmNode
 import dev.skynomads.beerouter.mapaccess.OsmNodePairSet
+import dev.skynomads.beerouter.mapaccess.OsmNodesMap
 import dev.skynomads.beerouter.mapaccess.OsmPos
 import dev.skynomads.beerouter.osm.toSElev
 import dev.skynomads.beerouter.router.OsmTrack.OsmPathElementHolder
@@ -132,7 +133,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
         matchWaypointsToNodes(listOne)
 
         resetCache(true)
-        nodesCache!!.nodesMap.cleanupMode = 0
+        nodesCache!!.nodesMap.cleanupMode = OsmNodesMap.CleanupMode.COUNT_ONLY
 
         val start1 = nodesCache!!.getGraphNode(listOne[0].node1!!)
         nodesCache!!.obtainNonHollowNode(start1)
@@ -1634,7 +1635,13 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
             val detailed = guideTrack != null
             resetCache(detailed)
             nodesCache!!.nodesMap.cleanupMode =
-                if (detailed) 0 else (if (routingContext.global.considerTurnRestrictions) 2 else 1)
+                if (detailed) {
+                    OsmNodesMap.CleanupMode.COUNT_ONLY
+                } else if (routingContext.global.considerTurnRestrictions) {
+                    OsmNodesMap.CleanupMode.TREE
+                } else {
+                    OsmNodesMap.CleanupMode.PENINSULAS
+                }
             return _findTrack(
                 startWp!!,
                 endWp,

@@ -10,6 +10,12 @@ import dev.skynomads.beerouter.geo.Position
 import dev.skynomads.beerouter.util.ByteArrayUnifier
 
 public class OsmNodesMap {
+    public enum class CleanupMode {
+        COUNT_ONLY,
+        PENINSULAS,
+        TREE
+    }
+
     private val hmap: MutableLongObjectMap<OsmNode> = MutableLongObjectMap(4096)
 
     public val byteArrayUnifier: ByteArrayUnifier = ByteArrayUnifier(16384, false)
@@ -30,10 +36,10 @@ public class OsmNodesMap {
 
     public var endNode2: OsmNode? = null
 
-    public var cleanupMode: Int = 0
+    public var cleanupMode: CleanupMode = CleanupMode.COUNT_ONLY
 
     public fun cleanupAndCount(nodes: List<OsmNode>) {
-        if (cleanupMode == 0) {
+        if (cleanupMode == CleanupMode.COUNT_ONLY) {
             justCount(nodes)
         } else {
             cleanupPeninsulas(nodes)
@@ -94,7 +100,7 @@ public class OsmNodesMap {
             } else if (minIdSub < baseID) {
                 l = nextLink
                 continue
-            } else if (cleanupMode == 2) {
+            } else if (cleanupMode == CleanupMode.TREE) {
                 minIdSub = baseID // in tree-mode, hitting anything is like a gateway
             }
             if (minIdSub < minId) minId = minIdSub
