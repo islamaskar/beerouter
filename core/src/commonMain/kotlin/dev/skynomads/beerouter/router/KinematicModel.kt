@@ -39,8 +39,8 @@ internal class KinematicModel : OsmPathModel() {
 
     private var nodeIdxMaxspeed = 0
 
-    protected var ctxWay: BExpressionContextWay? = null
-    protected var ctxNode: BExpressionContextNode? = null
+    protected lateinit var ctxWay: BExpressionContextWay
+    protected lateinit var ctxNode: BExpressionContextNode
     protected var params: MutableMap<String, String> = mutableMapOf()
 
     private var initDone = false
@@ -54,12 +54,12 @@ internal class KinematicModel : OsmPathModel() {
         keyValues: MutableMap<String, String>
     ) {
         if (!initDone) {
-            ctxWay = expctxWay
-            ctxNode = expctxNode
-            wayIdxMaxspeed = ctxWay!!.getOutputVariableIndex("maxspeed", false)
-            wayIdxMaxspeedExplicit = ctxWay!!.getOutputVariableIndex("maxspeed_explicit", false)
-            wayIdxMinspeed = ctxWay!!.getOutputVariableIndex("minspeed", false)
-            nodeIdxMaxspeed = ctxNode!!.getOutputVariableIndex("maxspeed", false)
+            ctxWay = requireNotNull(expctxWay)
+            ctxNode = requireNotNull(expctxNode)
+            wayIdxMaxspeed = ctxWay.getOutputVariableIndex("maxspeed", false)
+            wayIdxMaxspeedExplicit = ctxWay.getOutputVariableIndex("maxspeed_explicit", false)
+            wayIdxMinspeed = ctxWay.getOutputVariableIndex("minspeed", false)
+            nodeIdxMaxspeed = ctxNode.getOutputVariableIndex("maxspeed", false)
             initDone = true
         }
 
@@ -86,22 +86,22 @@ internal class KinematicModel : OsmPathModel() {
         if (sval != null) {
             return sval.toFloat()
         }
-        val v = ctxWay!!.getVariableValue(name, defaultValue)
+        val v = ctxWay.getVariableValue(name, defaultValue)
         params[name] = v.toString()
         return v
     }
 
     val wayMaxspeed: Float
-        get() = ctxWay!!.getBuildInVariable(wayIdxMaxspeed) / 3.6f
+        get() = ctxWay.getBuildInVariable(wayIdxMaxspeed) / 3.6f
 
     val wayMaxspeedExplicit: Float
-        get() = ctxWay!!.getBuildInVariable(wayIdxMaxspeedExplicit) / 3.6f
+        get() = ctxWay.getBuildInVariable(wayIdxMaxspeedExplicit) / 3.6f
 
     val wayMinspeed: Float
-        get() = ctxWay!!.getBuildInVariable(wayIdxMinspeed) / 3.6f
+        get() = ctxWay.getBuildInVariable(wayIdxMinspeed) / 3.6f
 
     val nodeMaxspeed: Float
-        get() = ctxNode!!.getBuildInVariable(nodeIdxMaxspeed) / 3.6f
+        get() = ctxNode.getBuildInVariable(nodeIdxMaxspeed) / 3.6f
 
     val effectiveSpeedLimit: Double
         /**

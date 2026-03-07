@@ -17,8 +17,6 @@ import dev.skynomads.beerouter.mapaccess.OsmLink
 import dev.skynomads.beerouter.mapaccess.OsmNode
 import dev.skynomads.beerouter.osm.latitudeE6
 import dev.skynomads.beerouter.osm.longitudeE6
-import dev.skynomads.beerouter.osm.toIntLatitude
-import dev.skynomads.beerouter.osm.toIntLongitude
 import dev.skynomads.beerouter.util.CheapAngleMeter
 import dev.skynomads.beerouter.util.CheapRuler.getLonLatToMeterScales
 import dev.skynomads.beerouter.util.readUtf8
@@ -291,13 +289,13 @@ public class RoutingContext(
                 if (wp.calcDistance(nogo) < nogo.radius.toInt()
                     && (nogo !is OsmNogoPolygon || (if (nogo.isClosed)
                         nogo.isWithin(
-                            wp.position.longitude.toIntLongitude().toLong(),
-                            wp.position.latitude.toIntLatitude().toLong()
+                            wp.position.longitudeE6.toLong(),
+                            wp.position.latitudeE6.toLong()
                         )
                     else
                         nogo.isOnPolyline(
-                            wp.position.longitude.toIntLongitude().toLong(),
-                            wp.position.latitude.toIntLatitude().toLong()
+                            wp.position.longitudeE6.toLong(),
+                            wp.position.latitudeE6.toLong()
                         )))
                 ) {
                     goodGuy = false
@@ -474,8 +472,8 @@ public class RoutingContext(
 
         if (nogopoints.isNotEmpty() && d > 0.0) {
             for (nogo in nogopoints) {
-                val nogoLon = nogo.position.longitude.toIntLongitude()
-                val nogoLat = nogo.position.latitude.toIntLatitude()
+                val nogoLon = nogo.position.longitudeE6
+                val nogoLat = nogo.position.latitudeE6
                 val x1: Double = (lon1 - nogoLon) * dlon2m
                 val y1 = (lat1 - nogoLat) * dlat2m
                 val x2: Double = (lon2 - nogoLon) * dlon2m
