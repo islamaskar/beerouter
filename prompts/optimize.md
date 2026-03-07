@@ -7,11 +7,11 @@ Kotlin code only.
 For each improvement, create a commit and attach the benchmark result in the commit's description.
 
 Use any tool at your disposal to find optimizations, e.g. profilers. Install missing tools if
-necessary.
+necessary. You are running in a Ubuntu container with full root access.
 
 Scan for places where parallelization could be worthwhile. We target mobile phones, typically with
 2-4 performance cores.
 
 Run routingEqualsBrouterMini before committing to ensure you did not break functionality.
 
-Keep going until you run out of code to optimize, do not stop inbetween.
+Keep going until you run out of code to optimize, do not stop.

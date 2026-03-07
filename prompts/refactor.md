@@ -10,9 +10,10 @@ purpose. Prefer val over var.
 
 Prefer data classes when possible.
 
-Java dependencies should be removed since we aim to support Kotlin Native. One exception, do not
-remove the brouter dependency for testing. androidx.collection is a multiplatform library, do not
-remove it.
+Java dependencies should be removed since we aim to support Kotlin Native. The currently targeted
+platforms are JVM and Linux Native. Do not remove the brouter dependency for testing.
+androidx.collection is a multiplatform library, do not remove it. Do not replace java.net.URI with
+io.ktor.client.engine.cio.CIO, it does not support TLS.
 
 File system access should be removed in favor of input streams or the MapAccessFileSystem interface.
 

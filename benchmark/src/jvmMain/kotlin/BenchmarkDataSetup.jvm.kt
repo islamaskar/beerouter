@@ -1,22 +1,24 @@
 package dev.skynomads.beerouter.benchmark
 
-import io.ktor.client.HttpClient
-import io.ktor.client.call.body
-import io.ktor.client.engine.cio.CIO
-import io.ktor.client.request.get
-import kotlinx.coroutines.runBlocking
 import kotlinx.io.buffered
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
+import java.net.URI
 
 internal actual fun ensureSegmentFile(segmentFile: Path) {
     if (SystemFileSystem.exists(segmentFile)) {
         return
     }
 
-    val url = "https://brouter.de/brouter/segments4/E5_N45.rd5"
-    runBlocking {
-        val bytes = HttpClient(CIO).use { it.get(url).body<ByteArray>() }
-        SystemFileSystem.sink(segmentFile).buffered().use { it.write(bytes) }
+    val url = URI("https://brouter.de/brouter/segments4/E5_N45.rd5").toURL()
+    url.openStream().use { source ->
+        SystemFileSystem.sink(segmentFile).buffered().use { sink ->
+            val buffer = ByteArray(DEFAULT_BUFFER_SIZE)
+            while (true) {
+                val read = source.read(buffer)
+                if (read < 0) break
+                sink.write(buffer, 0, read)
+            }
+        }
     }
 }
