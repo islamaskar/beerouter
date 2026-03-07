@@ -27,12 +27,12 @@ open class BeerouterRoutingBenchmark {
     } else {
         Path("/tmp")
     }
-    private val segmentFile = resolve(segmentDir, SEGMENT_FILE_NAME)
+    private val segmentFile = Path(segmentDir, SEGMENT_FILE_NAME)
     private val profile = findRequiredPath(
         "misc/profiles2/trekking.brf",
         "../misc/profiles2/trekking.brf"
     )
-    private val lookup = resolve(parent(profile), "lookups.dat")
+    private val lookup = Path(requireNotNull(profile.parent), "lookups.dat")
 
     private val waypoints = listOf(
         createWaypoint("Tuebingen", 48.5203263, 9.053596),
@@ -84,15 +84,7 @@ open class BeerouterRoutingBenchmark {
         error("none of the candidate files exist: ${candidates.joinToString()}")
     }
 
-    private fun resolve(base: Path, child: String): Path = Path("$base/$child")
-
-    private fun fileName(path: Path): String =
-        path.toString().substringAfterLast('/').substringAfterLast('\\')
-
-    private fun parent(path: Path): Path {
-        val normalized = path.toString().replace('\\', '/')
-        return Path(normalized.substringBeforeLast('/', missingDelimiterValue = "."))
-    }
+    private fun fileName(path: Path): String = path.name
 
     private companion object {
         private const val SEGMENT_FILE_NAME = "E5_N45.rd5"

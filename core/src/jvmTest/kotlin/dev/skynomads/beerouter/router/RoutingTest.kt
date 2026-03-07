@@ -1,8 +1,8 @@
 package dev.skynomads.beerouter.router
 
 import kotlinx.coroutines.runBlocking
+import kotlinx.io.files.SystemFileSystem
 import org.maplibre.spatialk.geojson.Position
-import java.io.File
 import java.net.URI
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
@@ -16,12 +16,6 @@ import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.seconds
 
 class RoutingTest {
-    val root = File(System.getProperty("user.dir"))
-
-    val segmentFile = File(
-        File(System.getProperty("java.io.tmpdir")), "E5_N45.rd5"
-    )
-
     private data class RouteScenario(
         val name: String,
         val profile: String,
@@ -37,10 +31,10 @@ class RoutingTest {
 
     @BeforeTest
     fun before() {
-        if (!segmentFile.exists()) {
+        if (!SystemFileSystem.exists(testSegmentFile)) {
             val url = URI("https://brouter.de/brouter/segments4/E5_N45.rd5").toURL()
             url.openStream()
-                .use { Files.copy(it, segmentFile.toPath(), StandardCopyOption.REPLACE_EXISTING) }
+                .use { Files.copy(it, testSegmentFile.toJavaFile().toPath(), StandardCopyOption.REPLACE_EXISTING) }
         }
     }
 
@@ -253,18 +247,18 @@ class RoutingTest {
     }
 
     fun routeBrouter(waypoints: List<OsmNodeNamed>, profileName: String): btools.router.OsmTrack {
-        val profile = File(root, "../misc/profiles2/$profileName")
-        assertTrue(profile.exists(), "profile exists ${profile.path}")
+        val profile = profilePath(profileName)
+        assertTrue(SystemFileSystem.exists(profile), "profile exists $profile")
 
         val rc = btools.router.RoutingContext().apply {
             turnInstructionMode = 2
-            localFunction = profile.path
+            localFunction = profile.toString()
         }
 
         val cr = btools.router.RoutingEngine(
             null,
             null,
-            segmentFile.parentFile,
+            requireNotNull(testSegmentFile.parent).toJavaFile(),
             waypoints.map {
                 btools.router.OsmNodeNamed().apply {
                     name = it.name
@@ -283,11 +277,11 @@ class RoutingTest {
     }
 
     suspend fun routeBeerouter(waypoints: List<OsmNodeNamed>, profileName: String): OsmTrack? {
-        val profile = File(root, "../misc/profiles2/$profileName")
-        assertTrue(profile.exists(), "profile exists ${profile.path}")
+        val profile = profilePath(profileName)
+        assertTrue(SystemFileSystem.exists(profile), "profile exists $profile")
 
 
-        val ctx = routingContextFromFiles(profile, segmentFile.parentFile).apply {
+        val ctx = routingContextFromFiles(profile, requireNotNull(testSegmentFile.parent)).apply {
             global.turnInstructionMode = TurnInstructionMode.LOCUS
         }
 

@@ -4,17 +4,11 @@ import dev.skynomads.beerouter.osm.toIntLatitude
 import dev.skynomads.beerouter.osm.toIntLongitude
 import kotlinx.coroutines.runBlocking
 import org.maplibre.spatialk.geojson.Position
-import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 
 class VoiceHintParityTest {
-    private val root = File(System.getProperty("user.dir"))
-    private val segmentFile = File(
-        File(System.getProperty("java.io.tmpdir")), "E5_N45.rd5"
-    )
-
     private fun waypoint(name: String, lat: Double, lon: Double): OsmNodeNamed {
         val n = OsmNodeNamed()
         n.name = name
@@ -23,15 +17,15 @@ class VoiceHintParityTest {
     }
 
     private fun routeBrouter(profileName: String, waypoints: List<OsmNodeNamed>): btools.router.OsmTrack {
-        val profile = File(root, "../misc/profiles2/$profileName")
+        val profile = profilePath(profileName)
         val rc = btools.router.RoutingContext().apply {
             turnInstructionMode = 2
-            localFunction = profile.path
+            localFunction = profile.toString()
         }
         val cr = btools.router.RoutingEngine(
             null,
             null,
-            segmentFile.parentFile,
+            requireNotNull(testSegmentFile.parent).toJavaFile(),
             waypoints.map {
                 btools.router.OsmNodeNamed().apply {
                     name = it.name
@@ -46,8 +40,8 @@ class VoiceHintParityTest {
     }
 
     private suspend fun routeBeerouter(profileName: String, waypoints: List<OsmNodeNamed>): OsmTrack? {
-        val profile = File(root, "../misc/profiles2/$profileName")
-        val ctx = routingContextFromFiles(profile, segmentFile.parentFile).apply {
+        val profile = profilePath(profileName)
+        val ctx = routingContextFromFiles(profile, requireNotNull(testSegmentFile.parent)).apply {
             global.turnInstructionMode = TurnInstructionMode.LOCUS
         }
         return RoutingEngine(ctx).doRouting(waypoints)

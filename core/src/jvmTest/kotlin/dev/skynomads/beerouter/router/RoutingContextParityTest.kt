@@ -2,16 +2,10 @@ package dev.skynomads.beerouter.router
 
 import dev.skynomads.beerouter.osm.toIntLatitude
 import dev.skynomads.beerouter.osm.toIntLongitude
-import java.io.File
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class RoutingContextParityTest {
-    private val root = File(System.getProperty("user.dir"))
-    private val segmentFile = File(
-        File(System.getProperty("java.io.tmpdir")), "E5_N45.rd5"
-    )
-
     private fun waypoint(name: String, lat: Double, lon: Double): btools.router.OsmNodeNamed {
         return btools.router.OsmNodeNamed().apply {
             this.name = name
@@ -22,16 +16,16 @@ class RoutingContextParityTest {
 
     @Test
     fun shortestProfileGlobalFlagsMatchBrouter() {
-        val profile = File(root, "../misc/profiles2/shortest.brf")
+        val profile = profilePath("shortest.brf")
 
         val brouterContext = btools.router.RoutingContext().apply {
             turnInstructionMode = 2
-            localFunction = profile.path
+            localFunction = profile.toString()
         }
         val engine = btools.router.RoutingEngine(
             null,
             null,
-            segmentFile.parentFile,
+            requireNotNull(testSegmentFile.parent).toJavaFile(),
             listOf(
                 waypoint("Reutlingen", 48.4914, 9.2043),
                 waypoint("Tübingen", 48.5203263, 9.053596)
@@ -40,7 +34,7 @@ class RoutingContextParityTest {
         )
         engine.doRouting(60_000)
 
-        val beerouterContext = routingContextFromFiles(profile, segmentFile.parentFile).apply {
+        val beerouterContext = routingContextFromFiles(profile, requireNotNull(testSegmentFile.parent)).apply {
             global.turnInstructionMode = TurnInstructionMode.LOCUS
         }
 
@@ -53,7 +47,7 @@ class RoutingContextParityTest {
             "turnInstructionRoundabouts"
         )
         assertEquals(
-            brouterContext.turnInstructionCatchingRange.toDouble(),
+            brouterContext.turnInstructionCatchingRange,
             beerouterContext.global.turnInstructionCatchingRange,
             "turnInstructionCatchingRange"
         )

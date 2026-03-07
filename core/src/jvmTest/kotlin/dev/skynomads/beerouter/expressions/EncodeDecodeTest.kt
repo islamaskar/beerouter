@@ -1,20 +1,26 @@
 package dev.skynomads.beerouter.expressions
 
-import java.io.File
+import dev.skynomads.beerouter.util.readUtf8
+import kotlinx.io.buffered
+import kotlinx.io.files.Path
+import kotlinx.io.files.SystemFileSystem
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
 class EncodeDecodeTest {
     @Test
     fun encodeDecodeTest() {
-        val root = File(System.getProperty("user.dir"))
-        val profileDir = File(root, "../misc/profiles2")
+        val profileDir = Path(System.getProperty("user.dir"), "..", "misc", "profiles2")
         val lookupContent = javaClass.getResource("/lookups_test.dat")!!.readText()
 
         val meta = BExpressionMetaData()
         val expctxWay = BExpressionContextWay(meta)
         meta.readMetaData(lookupContent)
-        expctxWay.parseProfile(File(profileDir, "trekking.brf").readText(), "trekking.brf", "global")
+        expctxWay.parseProfile(
+            SystemFileSystem.source(Path(profileDir, "trekking.brf")).buffered().use(::readUtf8),
+            "trekking.brf",
+            "global"
+        )
 
         val tags = arrayOf(
             "highway=residential",

@@ -14,15 +14,16 @@ import kotlinx.benchmark.Setup
 import kotlinx.benchmark.State
 import kotlinx.benchmark.Warmup
 import kotlinx.io.files.Path
+import kotlinx.io.files.SystemFileSystem
 import kotlinx.io.files.SystemTemporaryDirectory
-import kotlin.test.assertEquals
 
 @State(Scope.Benchmark)
 @Warmup(iterations = 1)
 @Measurement(iterations = 3)
 open class BrouterRoutingBenchmark {
-    private val segmentDir = File(SystemTemporaryDirectory.toString())
-    private val segmentFile = Path("${segmentDir.path}/E5_N45.rd5")
+    private val segmentDir = SystemTemporaryDirectory
+    private val segmentFile = Path(segmentDir, "E5_N45.rd5")
+    private val profile = findProfileFile()
 
     private val waypoints = listOf(
         createWaypoint("Tuebingen", 48.5203263, 9.053596),
@@ -32,22 +33,20 @@ open class BrouterRoutingBenchmark {
     @Setup
     fun prepare() {
         ensureSegmentFile(segmentFile)
-        require(File("../misc/profiles2/trekking.brf").exists() || File("misc/profiles2/trekking.brf").exists())
+        require(SystemFileSystem.exists(profile)) { "missing trekking profile file at $profile" }
     }
 
     @Benchmark
     fun brouter() {
-        val profile = findProfileFile()
-
         val rc = RoutingContext().apply {
             turnInstructionMode = 2
-            localFunction = profile.path
+            localFunction = profile.toString()
         }
 
         val engine = RoutingEngine(
             null,
             null,
-            segmentDir,
+            File(segmentDir.toString()),
             waypoints,
             rc
         )
@@ -55,7 +54,7 @@ open class BrouterRoutingBenchmark {
         engine.doRouting(60.seconds.inWholeMilliseconds)
 
         require(engine.foundTrack != null)
-        assertEquals(engine.errorMessage, null)
+        require(engine.errorMessage == null) { "unexpected benchmark routing error: ${engine.errorMessage}" }
     }
 
     private fun createWaypoint(name: String, lat: Double, lon: Double): OsmNodeNamed {
@@ -66,11 +65,11 @@ open class BrouterRoutingBenchmark {
         }
     }
 
-    private fun findProfileFile(): File {
-        val first = File("misc/profiles2/trekking.brf")
-        if (first.exists()) return first
-        val second = File("../misc/profiles2/trekking.brf")
-        if (second.exists()) return second
+    private fun findProfileFile(): Path {
+        val first = Path("misc", "profiles2", "trekking.brf")
+        if (SystemFileSystem.exists(first)) return first
+        val second = Path("..", "misc", "profiles2", "trekking.brf")
+        if (SystemFileSystem.exists(second)) return second
         error("missing trekking profile file")
     }
 }

@@ -1,6 +1,6 @@
 package dev.skynomads.beerouter.benchmark
 
-import java.net.URL
+import java.net.URI
 import java.nio.file.Files
 import java.nio.file.StandardCopyOption
 import kotlinx.io.files.Path
@@ -11,7 +11,7 @@ internal actual fun ensureSegmentFile(segmentFile: Path) {
         return
     }
 
-    val url = URL("https://brouter.de/brouter/segments4/E5_N45.rd5")
+    val url = URI("https://brouter.de/brouter/segments4/E5_N45.rd5").toURL()
     url.openStream().use { source ->
         Files.copy(source, java.nio.file.Path.of(segmentFile.toString()), StandardCopyOption.REPLACE_EXISTING)
     }
