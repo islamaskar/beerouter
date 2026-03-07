@@ -460,7 +460,7 @@ public class RoutingContext(
         var lon2 = lon2
         var lat2 = lat2
         val lonlat2m = getLonLatToMeterScales((lat1 + lat2) shr 1)
-        val dlon2m = lonlat2m!![0]
+        val dlon2m = lonlat2m[0]
         val dlat2m = lonlat2m[1]
         var dx = (lon2 - lon1) * dlon2m
         var dy = (lat2 - lat1) * dlat2m

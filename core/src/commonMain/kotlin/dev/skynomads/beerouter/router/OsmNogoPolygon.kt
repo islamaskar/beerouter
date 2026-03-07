@@ -78,7 +78,7 @@ public class OsmNogoPolygon(public val isClosed: Boolean) : OsmNodeNamed() {
         var cy = (cymax + cymin) / 2
 
         var lonlat2m = getLonLatToMeterScales(cy) // conversion-factors at the center of circle
-        var dlon2m = lonlat2m!![0]
+        var dlon2m = lonlat2m[0]
         var dlat2m = lonlat2m[1]
 
         var rad = 0.0 // radius
@@ -117,7 +117,7 @@ public class OsmNogoPolygon(public val isClosed: Boolean) : OsmNodeNamed() {
 
             // get new factors at shifted centerpoint
             lonlat2m = getLonLatToMeterScales(cy)
-            dlon2m = lonlat2m!![0]
+            dlon2m = lonlat2m[0]
             dlat2m = lonlat2m[1]
 
             val x1 = (cx - p.x) * dlon2m

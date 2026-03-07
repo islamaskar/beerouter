@@ -324,7 +324,7 @@ public abstract class OsmPath : OsmLinkHolder {
                 if (rc.startDirectionValid) {
                     val dir = rc.startDirection!! * CheapRuler.DEG_TO_RAD
                     val lonlat2m = getLonLatToMeterScales((lon0 + lat1) shr 1)
-                    lon0 = lon1 - (1000.0 * sin(dir) / lonlat2m!![0]).toInt()
+                    lon0 = lon1 - (1000.0 * sin(dir) / lonlat2m[0]).toInt()
                     lat0 = lat1 - (1000.0 * cos(dir) / lonlat2m[1]).toInt()
                 } else {
                     lon0 = lon1 - (lon2 - lon1)

@@ -23,7 +23,7 @@ class OsmNogoPolygonTest {
         val polygonLon = polygon!!.position.longitude.toIntLongitude()
         val polygonLat = polygon!!.position.latitude.toIntLatitude()
         val lonlat2m = getLonLatToMeterScales(polygonLat)
-        val dlon2m = lonlat2m!![0]
+        val dlon2m = lonlat2m[0]
         val dlat2m = lonlat2m[1]
 
         var r: Double = polygon!!.radius

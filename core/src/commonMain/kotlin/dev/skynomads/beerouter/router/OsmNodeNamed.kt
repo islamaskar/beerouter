@@ -49,7 +49,7 @@ public open class OsmNodeNamed : OsmNode {
         var currentLat1 = lat1
         var currentLon2 = lon2
         var currentLat2 = lat2
-        val lonlat2m = getLonLatToMeterScales((currentLat1 + currentLat2) shr 1) ?: return 0.0
+        val lonlat2m = getLonLatToMeterScales((currentLat1 + currentLat2) shr 1)
 
         var isFirstPointWithinCircle = distance(currentLon1, currentLat1, lonInt, latInt) < radius
         var isLastPointWithinCircle = distance(currentLon2, currentLat2, lonInt, latInt) < radius

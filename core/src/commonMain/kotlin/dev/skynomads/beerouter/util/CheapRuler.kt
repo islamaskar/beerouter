@@ -29,7 +29,7 @@ public object CheapRuler {
     private const val SCALE_CACHE_INCREMENT = 100000
 
     // SCALE_CACHE_LENGTH cached values between 0 and COS_CACHE_MAX_DEGREES degrees.
-    private val SCALE_CACHE: Array<DoubleArray?> = Array(SCALE_CACHE_LENGTH) { i ->
+    private val SCALE_CACHE: Array<DoubleArray> = Array(SCALE_CACHE_LENGTH) { i ->
         calcKxKyFromILat(i * SCALE_CACHE_INCREMENT + SCALE_CACHE_INCREMENT / 2)
     }
 
@@ -55,9 +55,8 @@ public object CheapRuler {
      *
      * @return [lon->meter,lat->meter]
      */
-    public fun getLonLatToMeterScales(ilat: Int): DoubleArray? {
-        return SCALE_CACHE[ilat / SCALE_CACHE_INCREMENT]
-    }
+    public fun getLonLatToMeterScales(ilat: Int): DoubleArray =
+        SCALE_CACHE[(ilat / SCALE_CACHE_INCREMENT).coerceIn(0, SCALE_CACHE.lastIndex)]
 
     /**
      * Compute the distance (in meters) between two Position objects.
@@ -75,14 +74,14 @@ public object CheapRuler {
      * (integer) latitude and longitude.
      */
     public fun distance(ilon1: Int, ilat1: Int, ilon2: Int, ilat2: Int): Double {
-        val kxky = getLonLatToMeterScales((ilat1 + ilat2) shr 1)!!
+        val kxky = getLonLatToMeterScales((ilat1 + ilat2) shr 1)
         val dlon = (ilon1 - ilon2) * kxky[0]
         val dlat = (ilat1 - ilat2) * kxky[1]
         return sqrt(dlat * dlat + dlon * dlon) // in m
     }
 
     public fun destination(lon1: Int, lat1: Int, distance: Double, angle: Double): IntArray {
-        val lonlat2m = getLonLatToMeterScales(lat1)!!
+        val lonlat2m = getLonLatToMeterScales(lat1)
         val lon2m = lonlat2m[0]
         val lat2m = lonlat2m[1]
         val adjustedAngle = 90.0 - angle

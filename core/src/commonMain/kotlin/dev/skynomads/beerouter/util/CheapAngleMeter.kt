@@ -17,7 +17,7 @@ public class CheapAngleMeter {
         private set
 
     public fun calcAngle(lon0: Int, lat0: Int, lon1: Int, lat1: Int, lon2: Int, lat2: Int): Double {
-        val lonlat2m = CheapRuler.getLonLatToMeterScales(lat1)!!
+        val lonlat2m = CheapRuler.getLonLatToMeterScales(lat1)
         val lon2m = lonlat2m[0]
         val lat2m = lonlat2m[1]
         val dx10 = (lon1 - lon0) * lon2m

@@ -76,7 +76,7 @@ class CheapAngleMeterTest {
         val lat1 = 49500000
 
         val lonlat2m = CheapRuler.getLonLatToMeterScales(lat1)
-        val lon2m = lonlat2m!![0]
+        val lon2m = lonlat2m[0]
         val lat2m = lonlat2m[1]
 
         var afrom = -175.0

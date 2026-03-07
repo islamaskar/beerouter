@@ -79,7 +79,7 @@ public class WaypointMatcherImpl(
     private fun checkSegment(lon1: Int, lat1: Int, lon2: Int, lat2: Int) {
         // todo: bounding-box pre-filter
 
-        val lonlat2m = getLonLatToMeterScales((lat1 + lat2) shr 1)!!
+        val lonlat2m = getLonLatToMeterScales((lat1 + lat2) shr 1)
         val dlon2m = lonlat2m[0]
         val dlat2m = lonlat2m[1]
 
