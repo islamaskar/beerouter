@@ -210,7 +210,8 @@ public class NodesCache(
     public fun obtainNonHollowNode(node: OsmNode): Boolean {
         if (!node.isHollow) return true
 
-        val segment = getSegmentFor(node.position.longitude.toIntLongitude(), node.position.latitude.toIntLatitude())
+        val nodeId = node.idFromPos
+        val segment = getSegmentFor((nodeId shr 32).toInt(), (nodeId and 0xffffffffL).toInt())
         if (segment == null) {
             return false
         }
