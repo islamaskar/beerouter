@@ -12,6 +12,7 @@ import dev.skynomads.beerouter.mapaccess.TurnRestriction.Companion.isTurnForbidd
 import dev.skynomads.beerouter.osm.osmIdOf
 import dev.skynomads.beerouter.osm.latitudeE6
 import dev.skynomads.beerouter.osm.longitudeE6
+import dev.skynomads.beerouter.osm.positionOf
 import dev.skynomads.beerouter.osm.toSElev
 import dev.skynomads.beerouter.util.CheapRuler
 import dev.skynomads.beerouter.util.CheapRuler.getLonLatToMeterScales
@@ -290,12 +291,11 @@ public abstract class OsmPath : OsmLinkHolder {
                     isStartpoint = true
 
                     if (recordTransferNodes) {
+                        val shortestPosition = requireNotNull(rc.shortestPosition)
                         if (rc.wayfraction > 0.0) {
                             ele1 = interpolateEle(ele1, ele2, 1.0 - rc.wayfraction)
                             originElement = OsmPathElement.create(
-                                rc.ilonshortest,
-                                rc.ilatshortest,
-                                ele1,
+                                positionOf(shortestPosition.longitudeE6, shortestPosition.latitudeE6, ele1.toDouble() / 4.0),
                                 null
                             )
                         } else {
@@ -304,7 +304,7 @@ public abstract class OsmPath : OsmLinkHolder {
                     }
 
                     if (rc.checkPendingEndpoint()) {
-                        dist = rc.calcDistance(rc.ilonshortest, rc.ilatshortest, lon2, lat2)
+                        dist = rc.calcDistance(requireNotNull(rc.shortestPosition), positionOf(lon2, lat2))
                         if (rc.shortestmatch) {
                             stopAtEndpoint = true
                             ele2 = interpolateEle(ele1, ele2, rc.wayfraction)
@@ -383,10 +383,9 @@ public abstract class OsmPath : OsmLinkHolder {
 
             if (stopAtEndpoint) {
                 if (recordTransferNodes) {
+                    val shortestPosition = requireNotNull(rc.shortestPosition)
                     originElement = OsmPathElement.create(
-                        rc.ilonshortest,
-                        rc.ilatshortest,
-                        originEle2,
+                        positionOf(shortestPosition.longitudeE6, shortestPosition.latitudeE6, originEle2.toDouble() / 4.0),
                         originElement
                     )
                     originElement!!.cost = cost

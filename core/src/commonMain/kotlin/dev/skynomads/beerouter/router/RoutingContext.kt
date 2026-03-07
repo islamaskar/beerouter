@@ -17,6 +17,7 @@ import dev.skynomads.beerouter.mapaccess.OsmLink
 import dev.skynomads.beerouter.mapaccess.OsmNode
 import dev.skynomads.beerouter.osm.latitudeE6
 import dev.skynomads.beerouter.osm.longitudeE6
+import dev.skynomads.beerouter.osm.positionOf
 import dev.skynomads.beerouter.util.CheapAngleMeter
 import dev.skynomads.beerouter.util.CheapRuler.getLonLatToMeterScales
 import dev.skynomads.beerouter.util.readUtf8
@@ -24,6 +25,7 @@ import kotlinx.io.Sink
 import kotlinx.io.Source
 import kotlinx.io.buffered
 import kotlinx.io.files.Path
+import org.maplibre.spatialk.geojson.Position
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.roundToInt
@@ -258,8 +260,7 @@ public class RoutingContext(
 
     public var shortestmatch: Boolean = false
     public var wayfraction: Double = 0.0
-    public var ilatshortest: Int = 0
-    public var ilonshortest: Int = 0
+    public var shortestPosition: Position? = null
 
     public var inverseDirection: Boolean = false
 
@@ -469,6 +470,7 @@ public class RoutingContext(
         var d = sqrt(dy * dy + dx * dx)
 
         shortestmatch = false
+        shortestPosition = null
 
         if (nogopoints.isNotEmpty() && d > 0.0) {
             for (nogo in nogopoints) {
@@ -539,16 +541,16 @@ public class RoutingContext(
                             wayfraction = -s2 / (d * d)
                             val xm = x2 - wayfraction * dx
                             val ym = y2 - wayfraction * dy
-                            ilonshortest = (xm / dlon2m + nogoLon).toInt()
-                            ilatshortest = (ym / dlat2m + nogoLat).toInt()
+                            shortestPosition = positionOf(
+                                (xm / dlon2m + nogoLon).toInt(),
+                                (ym / dlat2m + nogoLat).toInt()
+                            )
                         } else if (s1 > s2) {
                             wayfraction = 0.0
-                            ilonshortest = lon2
-                            ilatshortest = lat2
+                            shortestPosition = positionOf(lon2, lat2)
                         } else {
                             wayfraction = 1.0
-                            ilonshortest = lon1
-                            ilatshortest = lat1
+                            shortestPosition = positionOf(lon1, lat1)
                         }
 
                         // here it gets nasty: there can be nogo-points in the list
@@ -557,12 +559,12 @@ public class RoutingContext(
                         // to cut our escape-way if we placed a nogo just in front of where we are
                         if (isEndpoint) {
                             wayfraction = 1.0 - wayfraction
-                            lon2 = ilonshortest
-                            lat2 = ilatshortest
+                            lon2 = requireNotNull(shortestPosition).longitudeE6
+                            lat2 = requireNotNull(shortestPosition).latitudeE6
                         } else {
                             nogoCost = 0.0
-                            lon1 = ilonshortest
-                            lat1 = ilatshortest
+                            lon1 = requireNotNull(shortestPosition).longitudeE6
+                            lat1 = requireNotNull(shortestPosition).latitudeE6
                         }
                         dx = (lon2 - lon1) * dlon2m
                         dy = (lat2 - lat1) * dlat2m
@@ -573,6 +575,9 @@ public class RoutingContext(
         }
         return max(1.0, d.roundToInt().toDouble()).toInt()
     }
+
+    public fun calcDistance(start: Position, end: Position): Int =
+        calcDistance(start.longitudeE6, start.latitudeE6, end.longitudeE6, end.latitudeE6)
 
 
     public fun createPrePath(origin: OsmPath, link: OsmLink): OsmPrePath? {

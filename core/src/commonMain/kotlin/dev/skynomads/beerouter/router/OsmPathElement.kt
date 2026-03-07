@@ -19,7 +19,7 @@ import kotlin.math.roundToInt
  * @author ab
  */
 public class OsmPathElement protected constructor() : OsmPos {
-    public override var position: Position = Position(0.0, 0.0, 0.0)
+    public override var position: Position = positionOf(0, 0, 0.0)
 
     @Deprecated("Use position.altitude instead")
     public val sElev: Short
@@ -72,18 +72,20 @@ public class OsmPathElement protected constructor() : OsmPos {
     }
 
     public companion object {
+        public fun create(position: Position, origin: OsmPathElement?): OsmPathElement {
+            val pe = OsmPathElement()
+            pe.position = position
+            pe._idFromPos = position.longitudeE6.toLong() shl 32 or position.latitudeE6.toLong()
+            pe.origin = origin
+            return pe
+        }
+
         public fun create(
             ilon: Int,
             ilat: Int,
             selev: Short,
             origin: OsmPathElement?
-        ): OsmPathElement {
-            val pe = OsmPathElement()
-            pe.position = osmPositionOf(ilon, ilat, selev)
-            pe._idFromPos = (ilon.toLong() shl 32) or ilat.toLong()
-            pe.origin = origin
-            return pe
-        }
+        ): OsmPathElement = create(osmPositionOf(ilon, ilat, selev), origin)
 
         public fun readFromStream(source: Source): OsmPathElement {
             val pe = OsmPathElement()
