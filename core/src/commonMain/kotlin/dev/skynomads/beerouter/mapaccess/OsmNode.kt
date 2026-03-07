@@ -51,6 +51,9 @@ public open class OsmNode : OsmLink, OsmPos {
      */
     public var firstlink: OsmLink? = null
 
+    // Cached id computed from lon/lat — stable because lon/lat never change after construction
+    private var _idFromPos: Long = position.toOsmId()
+
     public constructor()
 
     public constructor(ilon: Int, ilat: Int) {
@@ -59,6 +62,7 @@ public open class OsmNode : OsmLink, OsmPos {
             ilat.toDoubleLatitude(),
             UNSET_ALTITUDE
         )
+        _idFromPos = (ilon.toLong() shl 32) or ilat.toLong()
     }
 
     public constructor(id: Long) {
@@ -69,10 +73,12 @@ public open class OsmNode : OsmLink, OsmPos {
             lat.toDoubleLatitude(),
             UNSET_ALTITUDE
         )
+        _idFromPos = id
     }
 
     public constructor(position: Position) {
         this.position = position
+        _idFromPos = position.toOsmId()
     }
 
 
@@ -211,7 +217,7 @@ public open class OsmNode : OsmLink, OsmPos {
     }
 
     override val idFromPos: Long
-        get() = position.toOsmId()
+        get() = _idFromPos
 
     public fun vanish() {
         if (!this.isHollow) {
@@ -264,12 +270,11 @@ public open class OsmNode : OsmLink, OsmPos {
     override fun equals(other: Any?): Boolean {
         if (this === other) return true
         if (other !is OsmNode) return false
-        return other.position.longitude.toIntLongitude() == position.longitude.toIntLongitude() &&
-               other.position.latitude.toIntLatitude() == position.latitude.toIntLatitude()
+        return other.idFromPos == idFromPos
     }
 
     override fun hashCode(): Int {
-        return position.toOsmId().hashCode()
+        return _idFromPos.hashCode()
     }
 
     private companion object {
