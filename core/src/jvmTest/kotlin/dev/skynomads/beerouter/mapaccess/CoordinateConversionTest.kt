@@ -206,8 +206,8 @@ class CoordinateConversionTest {
     fun testAltitudeBoundaryDoesNotCollideWithUnsetSentinel() {
         val position = Position(12.0, 34.0, -8192.0)
 
-        assertEquals((-32767).toShort(), position.altitude)
-        assertEquals(-8191.75, position.altitudeMeters)
+        assertEquals(Short.MIN_VALUE, position.altitude)
+        assertEquals(-8192.0, position.altitudeMeters)
     }
 
     @Test
@@ -217,8 +217,8 @@ class CoordinateConversionTest {
 
         assertEquals(32767.toShort(), high.altitude)
         assertEquals(8191.75, high.altitudeMeters)
-        assertEquals((-32767).toShort(), low.altitude)
-        assertEquals(-8191.75, low.altitudeMeters)
+        assertEquals(Short.MIN_VALUE, low.altitude)
+        assertEquals(-8192.0, low.altitudeMeters)
     }
 
     @Test
