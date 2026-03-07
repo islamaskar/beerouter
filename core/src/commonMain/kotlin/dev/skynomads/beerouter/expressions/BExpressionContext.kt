@@ -219,10 +219,9 @@ public abstract class BExpressionContext protected constructor(
 
     public fun parseMetaLine(line: String) {
         parsedLines++
-        val tokens = line.split(WHITESPACE_REGEX).filter { it.isNotEmpty() }
-        if (tokens.size < 2) return
-        var name = tokens[0]
-        val value = tokens[1]
+        val tokens = parseMetaTokens(line) ?: return
+        var name = tokens.name
+        val value = tokens.value
         val idx = name.indexOf(';')
         if (idx >= 0) name = name.take(idx)
 
@@ -237,8 +236,8 @@ public abstract class BExpressionContext protected constructor(
         val newValue = addLookupValue(name, value, null)
 
         // add aliases
-        for (i in 2..<tokens.size) {
-            newValue?.addAlias(tokens[i])
+        tokens.aliases?.forEach { alias ->
+            newValue?.addAlias(alias)
         }
     }
 
@@ -907,7 +906,48 @@ public abstract class BExpressionContext protected constructor(
     public companion object {
         private const val CONTEXT_TAG = "---context:"
         private const val MODEL_TAG = "---model:"
-        private val WHITESPACE_REGEX = "\\s+".toRegex()
+
+        private data class MetaTokens(
+            val name: String,
+            val value: String,
+            val aliases: List<String>?
+        )
+
+        private fun parseMetaTokens(line: String): MetaTokens? {
+            val length = line.length
+            var index = 0
+            var name: String? = null
+            var value: String? = null
+            var aliases: MutableList<String>? = null
+
+            while (index < length) {
+                while (index < length && line[index].isWhitespace()) {
+                    index++
+                }
+                if (index >= length) break
+
+                val start = index
+                while (index < length && !line[index].isWhitespace()) {
+                    index++
+                }
+                val token = line.substring(start, index)
+
+                when {
+                    name == null -> name = token
+                    value == null -> value = token
+                    else -> {
+                        if (aliases == null) {
+                            aliases = mutableListOf()
+                        }
+                        aliases.add(token)
+                    }
+                }
+            }
+
+            val parsedName = name ?: return null
+            val parsedValue = value ?: return null
+            return MetaTokens(parsedName, parsedValue, aliases)
+        }
 
         /**
          * Format a float with exactly one decimal place using '.' as separator.
