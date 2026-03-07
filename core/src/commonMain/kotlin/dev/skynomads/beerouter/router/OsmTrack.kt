@@ -29,7 +29,7 @@ public class OsmTrack {
 
     public var pois: MutableList<OsmNodeNamed> = mutableListOf()
 
-    public class OsmPathElementHolder(
+    public data class OsmPathElementHolder(
         public var node: OsmPathElement? = null,
         public var nextHolder: OsmPathElementHolder? = null
     )
@@ -116,9 +116,7 @@ public class OsmTrack {
         buildMap()
     }
 
-    public fun containsNode(node: OsmPos): Boolean {
-        return nodesMap.contains(node.idFromPos)
-    }
+    public fun containsNode(node: OsmPos): Boolean = nodesMap.contains(node.idFromPos)
 
     public fun getLink(n1: Long, n2: Long): OsmPathElement? {
         var h = nodesMap[n2]
@@ -134,8 +132,6 @@ public class OsmTrack {
     }
 
     public fun appendTrack(t: OsmTrack) {
-        var i: Int
-
         val ourSize = nodes.size
         if (ourSize > 0 && t.nodes.size > 1) {
             val olde = nodes[ourSize - 1]
@@ -144,24 +140,21 @@ public class OsmTrack {
         val t0 = if (ourSize > 0) nodes[ourSize - 1].time else 0f
         val e0 = if (ourSize > 0) nodes[ourSize - 1].energy else 0f
         val c0 = if (ourSize > 0) nodes[ourSize - 1].cost else 0
-        i = 0
-        while (i < t.nodes.size) {
-            val e = t.nodes[i]
-            if (i == 0 && ourSize > 0 && toSElev(nodes[ourSize - 1].position.altitude) == Short.MIN_VALUE) {
-                nodes[ourSize - 1].position = nodes[ourSize - 1].position.withAltitude(e.position.altitude)
+        for ((index, element) in t.nodes.withIndex()) {
+            if (index == 0 && ourSize > 0 && toSElev(nodes[ourSize - 1].position.altitude) == Short.MIN_VALUE) {
+                nodes[ourSize - 1].position = nodes[ourSize - 1].position.withAltitude(element.position.altitude)
             }
-            if (i > 0 || ourSize == 0) {
-                e.time += t0
-                e.energy += e0
-                e.cost += c0
-                e.message?.let { message ->
-                    if (message.position.id != e.position.id) {
-                        message.position = e.position
+            if (index > 0 || ourSize == 0) {
+                element.time += t0
+                element.energy += e0
+                element.cost += c0
+                element.message?.let { message ->
+                    if (message.position.id != element.position.id) {
+                        message.position = element.position
                     }
                 }
-                nodes.add(e)
+                nodes.add(element)
             }
-            i++
         }
 
         if (t.voiceHints.isNotEmpty()) {
@@ -192,13 +185,10 @@ public class OsmTrack {
     public var energy: Int = 0
     public var itinerary: MutableList<String?> = mutableListOf()
 
-    public fun getVoiceHint(i: Int): VoiceHint? {
-        return voiceHints.firstOrNull { it.indexInTrack == i }
-    }
+    public fun getVoiceHint(i: Int): VoiceHint? = voiceHints.firstOrNull { it.indexInTrack == i }
 
-    public fun getMatchedWaypoint(idx: Int): MatchedWaypoint? {
-        return matchedWaypoints.firstOrNull { idx == it.indexInTrack }
-    }
+    public fun getMatchedWaypoint(idx: Int): MatchedWaypoint? =
+        matchedWaypoints.firstOrNull { idx == it.indexInTrack }
 
     private fun getVNode(i: Int): Int {
         val m1 = if (i + 1 < nodes.size) nodes[i + 1].message else null
@@ -209,11 +199,7 @@ public class OsmTrack {
     }
 
     public val totalSeconds: Int
-        get() {
-            val s =
-                if (nodes.size < 2) 0f else nodes[nodes.size - 1].time - nodes[0].time
-            return (s + 0.5).toInt()
-        }
+        get() = ((if (nodes.size < 2) 0f else nodes[nodes.size - 1].time - nodes[0].time) + 0.5f).toInt()
 
     public fun equalsTrack(t: OsmTrack): Boolean {
         if (nodes.size != t.nodes.size) return false
@@ -226,9 +212,7 @@ public class OsmTrack {
         return true
     }
 
-    public fun getFromDetourMap(id: Long): OsmPathElementHolder? {
-        return detourMap[id]
-    }
+    public fun getFromDetourMap(id: Long): OsmPathElementHolder? = detourMap[id]
 
     public fun prepareSpeedProfile(rc: RoutingContext?) {
         // sendSpeedProfile = rc.keyValues != null && rc.keyValues.containsKey( "vmax" );
@@ -328,15 +312,12 @@ public class OsmTrack {
             }
         }
 
-    public fun getVoiceHintTime(i: Int): Float {
-        if (voiceHints.list.isNotEmpty() && i < voiceHints.list.size) {
-            return voiceHints.list[i].time
+    public fun getVoiceHintTime(i: Int): Float =
+        when {
+            voiceHints.list.isNotEmpty() && i < voiceHints.list.size -> voiceHints.list[i].time
+            nodes.isEmpty() -> 0f
+            else -> nodes[nodes.size - 1].time
         }
-        if (nodes.isEmpty()) {
-            return 0f
-        }
-        return nodes[nodes.size - 1].time
-    }
 
     public fun removeVoiceHint(i: Int): Boolean {
         val removeIndex = voiceHints.indexOfFirst { it.indexInTrack == i }
