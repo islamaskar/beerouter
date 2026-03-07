@@ -102,7 +102,7 @@ public class OsmTrack {
     }
 
     public fun writeBinary(sink: Sink) {
-        endPoint!!.writeToStream(sink)
+        requireNotNull(endPoint).writeToStream(sink)
         sink.writeInt(nodes.size)
         for (node in nodes) {
             node.writeToStream(sink)
@@ -126,9 +126,10 @@ public class OsmTrack {
     public fun getLink(n1: Long, n2: Long): OsmPathElement? {
         var h = nodesMap[n2]
         while (h != null) {
-            val e1 = h.node!!.origin
+            val node = requireNotNull(h.node)
+            val e1 = node.origin
             if (e1 != null && e1.idFromPos == n1) {
-                return h.node
+                return node
             }
             h = h.nextHolder
         }
@@ -160,12 +161,12 @@ public class OsmTrack {
                 e.time += t0
                 e.energy += e0
                 e.cost += c0
-                if (e.message != null) {
+                e.message?.let { message ->
                     val lon = e.position.longitudeE6
                     val lat = e.position.latitudeE6
-                    if (!(e.message!!.lon == lon && e.message!!.lat == lat)) {
-                        e.message!!.lon = lon
-                        e.message!!.lat = lat
+                    if (message.lon != lon || message.lat != lat) {
+                        message.lon = lon
+                        message.lat = lat
                     }
                 }
                 nodes.add(e)
@@ -289,8 +290,13 @@ public class OsmTrack {
                     val mwpt = getMatchedWaypoint(nodeNr)
                     if (mwpt != null && mwpt.type == MatchedWaypoint.Type.DIRECT) {
                         input.command = VoiceHint.Command.BL
+                        val turnMessage = if (nodeNr == 0) {
+                            requireNotNull(origin.message)
+                        } else {
+                            requireNotNull(node.message)
+                        }
                         input.angle =
-                            (if (nodeNr == 0) origin.message!!.turnangle else node.message!!.turnangle)
+                            turnMessage.turnangle
                         input.distanceToNext = node.calcDistance(origin).toDouble()
                     }
                 }
@@ -361,10 +367,11 @@ public class OsmTrack {
         var cnt = 0
         val rootId = root.idFromPos
         while (e != null && e.origin != null) {
-            if (e.origin!!.idFromPos == rootId) {
+            val origin = requireNotNull(e.origin)
+            if (origin.idFromPos == rootId) {
                 return e.message
             }
-            e = e.origin
+            e = origin
             require(cnt++ != 1000000) { "ups: $root->$element" }
         }
         return null
@@ -382,8 +389,9 @@ public class OsmTrack {
             debugInfo: StringBuilder?
         ): OsmTrack? {
             val ep = readFromStream(source)
-            val dlon: Int = ep.waypoint!!.position.longitudeE6 - newEp.position.longitudeE6
-            val dlat = ep.waypoint!!.position.latitudeE6 - newEp.position.latitudeE6
+            val waypoint = requireNotNull(ep.waypoint)
+            val dlon: Int = waypoint.position.longitudeE6 - newEp.position.longitudeE6
+            val dlat = waypoint.position.latitudeE6 - newEp.position.latitudeE6
             val targetMatch = dlon < 20 && dlon > -20 && dlat < 20 && dlat > -20
             debugInfo?.append("target-delta = $dlon/$dlat targetMatch=$targetMatch")
             if (!targetMatch) return null
@@ -398,7 +406,7 @@ public class OsmTrack {
                 lastPe = pe
                 track.nodes.add(pe)
             }
-            track.cost = lastPe!!.cost
+            track.cost = requireNotNull(lastPe).cost
             track.buildMap()
 
             val al = LongArray(3)
