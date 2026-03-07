@@ -470,12 +470,11 @@ public class RoutingContext(
 
         if (nogopoints.isNotEmpty() && d > 0.0) {
             for (nogo in nogopoints) {
-                val nogoLon = nogo.position.longitude
-                val nogoLat = nogo.position.latitude
-                val x1: Double = (lon1 - nogoLon) * dlon2m
-                val y1 = (lat1 - nogoLat) * dlat2m
-                val x2: Double = (lon2 - nogoLon) * dlon2m
-                val y2 = (lat2 - nogoLat) * dlat2m
+                val nogoPosition = nogo.position
+                val x1: Double = (lon1 - nogoPosition.longitude) * dlon2m
+                val y1 = (lat1 - nogoPosition.latitude) * dlat2m
+                val x2: Double = (lon2 - nogoPosition.longitude) * dlon2m
+                val y2 = (lat2 - nogoPosition.latitude) * dlat2m
                 val r12 = x1 * x1 + y1 * y1
                 val r22 = x2 * x2 + y2 * y2
                 var radius = abs(if (r12 < r22) y1 * dx - x1 * dy else y2 * dx - x2 * dy) / d
@@ -538,8 +537,8 @@ public class RoutingContext(
                             val xm = x2 - wayfraction * dx
                             val ym = y2 - wayfraction * dy
                             shortestPosition = positionOf(
-                                (xm / dlon2m + nogoLon).toInt(),
-                                (ym / dlat2m + nogoLat).toInt()
+                                (xm / dlon2m + nogoPosition.longitude).toInt(),
+                                (ym / dlat2m + nogoPosition.latitude).toInt()
                             )
                         } else if (s1 > s2) {
                             wayfraction = 0.0

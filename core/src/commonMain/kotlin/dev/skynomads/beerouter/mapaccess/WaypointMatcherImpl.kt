@@ -25,10 +25,10 @@ public class WaypointMatcherImpl(
     private val waypoints: MutableList<MatchedWaypoint>
     private val islandPairs: OsmNodePairSet
 
-    private var startPosition: Position = Position(0, 0)
-    private var targetPosition: Position = Position(0, 0)
+    private var startPosition: Position = Position.ZERO
+    private var targetPosition: Position = Position.ZERO
     private var anyUpdate = false
-    private var lastPosition: Position = Position(0, 0)
+    private var lastPosition: Position = Position.ZERO
     public var useAsStartWay: Boolean = true
     private var maxDistance: Double
     public var useDynamicRange: Boolean = false

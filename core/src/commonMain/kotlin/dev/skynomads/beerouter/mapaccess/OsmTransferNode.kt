@@ -6,9 +6,8 @@
 package dev.skynomads.beerouter.mapaccess
 
 import dev.skynomads.beerouter.geo.Position
-import dev.skynomads.beerouter.osm.positionOf
 
 public data class OsmTransferNode(
     public var next: OsmTransferNode? = null,
-    public var position: Position = positionOf(0, 0)
+    public var position: Position = Position.ZERO
 )

@@ -56,6 +56,8 @@ public data class Position(
     public fun withAltitude(altitude: Double?): Position = Position(longitude, latitude, altitude)
 
     public companion object {
+        public val ZERO: Position = Position(longitude = 0, latitude = 0)
+
         public fun from(longitude: Double, latitude: Double, altitude: Double): Position =
             Position(
                 longitude = longitude,

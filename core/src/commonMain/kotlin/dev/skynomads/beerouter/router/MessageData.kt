@@ -6,7 +6,6 @@
 package dev.skynomads.beerouter.router
 
 import dev.skynomads.beerouter.geo.Position
-import dev.skynomads.beerouter.osm.positionOf
 
 public data class MessageData(
     public var linkdist: Int = 0,
@@ -20,7 +19,7 @@ public data class MessageData(
     public var turnangle: Float = 0f,
     public var wayTags: Map<String, String>? = null,
     public var nodeTags: Map<String, String>? = null,
-    public var position: Position = positionOf(0, 0),
+    public var position: Position = Position.ZERO,
     public var time: Float = 0f,
     public var energy: Float = 0f,
     public var vmaxExplicit: Int = -1,

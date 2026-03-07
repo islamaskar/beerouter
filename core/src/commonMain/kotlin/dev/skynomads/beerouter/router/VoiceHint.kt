@@ -7,7 +7,6 @@
 package dev.skynomads.beerouter.router
 
 import dev.skynomads.beerouter.geo.Position
-import dev.skynomads.beerouter.osm.positionOf
 import kotlin.math.abs
 
 public class VoiceHint {
@@ -34,7 +33,7 @@ public class VoiceHint {
         END,  // end point
     }
 
-    public var position: Position = positionOf(0, 0)
+    public var position: Position = Position.ZERO
 
     public var command: Command = Command.UNSET
     public var oldWay: MessageData? = null

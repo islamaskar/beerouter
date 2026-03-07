@@ -3,7 +3,6 @@ package dev.skynomads.beerouter.router
 import dev.skynomads.beerouter.geo.Position
 import dev.skynomads.beerouter.mapaccess.OsmPos
 import dev.skynomads.beerouter.osm.osmPositionOf
-import dev.skynomads.beerouter.osm.positionOf
 import dev.skynomads.beerouter.util.CheapRuler.distance
 import kotlinx.io.Sink
 import kotlinx.io.Source
@@ -16,7 +15,7 @@ import kotlin.math.roundToInt
  * @author ab
  */
 public class OsmPathElement protected constructor() : OsmPos {
-    public override var position: Position = positionOf(0, 0)
+    public override var position: Position = Position.ZERO
 
     public var message: MessageData? = null // description
 

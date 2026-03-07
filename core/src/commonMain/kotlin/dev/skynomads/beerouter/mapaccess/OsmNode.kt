@@ -5,7 +5,6 @@ import dev.skynomads.beerouter.codec.MicroCache2
 import dev.skynomads.beerouter.geo.Position
 import dev.skynomads.beerouter.osm.osmIdOf
 import dev.skynomads.beerouter.osm.osmPositionOf
-import dev.skynomads.beerouter.osm.positionOf
 import dev.skynomads.beerouter.util.CheapRuler.distance
 import dev.skynomads.beerouter.util.IByteArrayUnifier
 import kotlin.math.max
@@ -20,8 +19,7 @@ public open class OsmNode : OsmLink, OsmPos {
     /**
      * The position
      */
-    override var position: Position =
-        positionOf(0, 0)
+    override var position: Position = Position.ZERO
 
     /**
      * The node-tags, if any
@@ -48,12 +46,12 @@ public open class OsmNode : OsmLink, OsmPos {
     public constructor()
 
     public constructor(ilon: Int, ilat: Int) {
-        position = positionOf(ilon, ilat)
+        position = Position(ilon, ilat)
         _idFromPos = position.id
     }
 
     public constructor(id: Long) {
-        this.position = positionOf(id.longitudeFromId(), id.latitudeFromId())
+        this.position = Position(id.longitudeFromId(), id.latitudeFromId())
         _idFromPos = id
     }
 

@@ -37,16 +37,15 @@ public open class OsmNodeNamed : OsmNode {
         lat2: Int,
         totalSegmentLength: Double
     ): Double {
-        val centerLon = position.longitude
-        val centerLat = position.latitude
+        val center = position
         var currentLon1 = lon1
         var currentLat1 = lat1
         var currentLon2 = lon2
         var currentLat2 = lat2
         val lonlat2m = getLonLatToMeterScales((currentLat1 + currentLat2) shr 1)
 
-        var isFirstPointWithinCircle = distance(currentLon1, currentLat1, centerLon, centerLat) < radius
-        var isLastPointWithinCircle = distance(currentLon2, currentLat2, centerLon, centerLat) < radius
+        var isFirstPointWithinCircle = distance(currentLon1, currentLat1, center.longitude, center.latitude) < radius
+        var isLastPointWithinCircle = distance(currentLon2, currentLat2, center.longitude, center.latitude) < radius
         // First point is within the circle
         if (isFirstPointWithinCircle) {
             // Last point is within the circle
@@ -72,11 +71,11 @@ public open class OsmNodeNamed : OsmNode {
         // Distance between the initial point and projection of center of
         // the circle on the current segment.
         val initialToProject: Double =
-            (((currentLon2 - currentLon1) * (centerLon - currentLon1) * lonlat2m[0] * lonlat2m[0]
-                    + (currentLat2 - currentLat1) * (centerLat - currentLat1) * lonlat2m[1] * lonlat2m[1]
+            (((currentLon2 - currentLon1) * (center.longitude - currentLon1) * lonlat2m[0] * lonlat2m[0]
+                    + (currentLat2 - currentLat1) * (center.latitude - currentLat1) * lonlat2m[1] * lonlat2m[1]
                     ) / totalSegmentLength)
         // Distance between the initial point and the center of the circle.
-        val initialToCenter = distance(centerLon, centerLat, currentLon1, currentLat1)
+        val initialToCenter = distance(center.longitude, center.latitude, currentLon1, currentLat1)
         // Half length of the segment within the circle
         val halfDistanceWithin = sqrt(
             radius * radius - (initialToCenter * initialToCenter -
