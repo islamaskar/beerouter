@@ -1,8 +1,6 @@
 package dev.skynomads.beerouter.router
 
 import dev.skynomads.beerouter.mapaccess.OsmPos
-import dev.skynomads.beerouter.osm.toIntLatitude
-import dev.skynomads.beerouter.osm.toIntLongitude
 import dev.skynomads.beerouter.osm.toDoubleLatitude
 import dev.skynomads.beerouter.osm.toDoubleLongitude
 import dev.skynomads.beerouter.osm.toSElev
@@ -58,15 +56,15 @@ public class OsmPathElement protected constructor() : OsmPos {
     public var origin: OsmPathElement? = null
 
     override fun toString(): String =
-        "${position.longitude.toIntLongitude()}_${position.latitude.toIntLatitude()}"
+        "${(_idFromPos shr 32).toInt()}_${(_idFromPos and 0xffffffffL).toInt()}"
 
     public fun positionEquals(e: OsmPathElement): Boolean {
         return _idFromPos == e._idFromPos
     }
 
     public fun writeToStream(sink: Sink) {
-        sink.writeInt(this.position.latitude.toIntLatitude())
-        sink.writeInt(this.position.longitude.toIntLongitude())
+        sink.writeInt((_idFromPos and 0xffffffffL).toInt())
+        sink.writeInt((_idFromPos shr 32).toInt())
         sink.writeShort(toSElev(position.altitude))
         sink.writeInt(cost)
     }
