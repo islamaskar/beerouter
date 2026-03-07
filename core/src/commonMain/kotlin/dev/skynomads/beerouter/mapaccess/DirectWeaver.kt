@@ -104,8 +104,7 @@ public class DirectWeaver(
             }
 
             selev += nodeEleDiff.decodeSignedValue()
-            node.position =
-                Position(node.position.longitude, node.position.latitude, selev.toDouble() / 4.0)
+            node.position = node.position.withAltitude(selev.toDouble() / 4.0)
             val nodeTags = nodeTagCoder.decodeTagValueSet()
             node.nodeDescription = nodeTags?.data // TODO: unified?
 

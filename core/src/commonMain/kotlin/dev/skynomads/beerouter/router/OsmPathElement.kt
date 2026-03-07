@@ -74,7 +74,7 @@ public class OsmPathElement protected constructor() : OsmPos {
         public fun create(position: Position, origin: OsmPathElement?): OsmPathElement {
             val pe = OsmPathElement()
             pe.position = position
-            pe._idFromPos = position.longitudeE6.toLong() shl 32 or position.latitudeE6.toLong()
+            pe._idFromPos = position.id
             pe.origin = origin
             return pe
         }
@@ -92,7 +92,7 @@ public class OsmPathElement protected constructor() : OsmPos {
             val lon = source.readInt()
             val selev = source.readShort()
             pe.position = osmPositionOf(lon, lat, selev)
-            pe._idFromPos = (lon.toLong() shl 32) or lat.toLong()
+            pe._idFromPos = pe.position.id
             pe.cost = source.readInt()
             return pe
         }

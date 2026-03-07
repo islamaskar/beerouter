@@ -59,8 +59,8 @@ public open class OsmNode : OsmLink, OsmPos {
     public constructor()
 
     public constructor(ilon: Int, ilat: Int) {
-        this.position = positionOf(ilon, ilat)
-        _idFromPos = (ilon.toLong() shl 32) or (ilat.toLong() and 0xFFFFFFFFL)
+        position = positionOf(ilon, ilat)
+        _idFromPos = position.id
     }
 
     public constructor(id: Long) {
@@ -70,7 +70,7 @@ public open class OsmNode : OsmLink, OsmPos {
 
     public constructor(position: Position) {
         this.position = position
-        _idFromPos = position.toOsmId()
+        _idFromPos = position.id
     }
 
 
@@ -214,7 +214,7 @@ public open class OsmNode : OsmLink, OsmPos {
         get() = position.altitude == HOLLOW_SELEV
 
     public fun setHollow() {
-        position = Position(position.longitude, position.latitude, HOLLOW_SELEV)
+        position = position.withAltitude(HOLLOW_SELEV)
     }
 
     override val idFromPos: Long

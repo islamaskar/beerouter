@@ -171,7 +171,7 @@ class EnergyParityTest {
                         "vmin=${getDeclaredInt(bm, "vmin")}, vmaxExplicit=${getDeclaredInt(bm, "vmaxExplicit")}, extraTime=${getDeclaredInt(bm, "extraTime")}, " +
                         "ele=${getDeclaredShort(bm, "ele")}, linkdist=${getDeclaredInt(bm, "linkdist")}) " +
                         "a(costfactor=${am.costfactor}, turn=${am.turnangle}, prio=${am.priorityclassifier}, vmax=${am.vmax}, " +
-                        "vmin=${am.vmin}, vmaxExplicit=${am.vmaxExplicit}, extraTime=${am.extraTime}, ele=${am.ele}, linkdist=${am.linkdist})"
+                        "vmin=${am.vmin}, vmaxExplicit=${am.vmaxExplicit}, extraTime=${am.extraTime}, ele=${toSElev(am.position.altitude)}, linkdist=${am.linkdist})"
             }
         }
         return "none"
@@ -207,4 +207,6 @@ class EnergyParityTest {
         val expected = f.getDouble(target)
         assertEquals(expected, actual, 1e-9, field)
     }
+
+    private fun toSElev(altitude: Short?): Short = altitude ?: Short.MIN_VALUE
 }

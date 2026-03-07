@@ -6,7 +6,6 @@
 package dev.skynomads.beerouter.router
 
 import androidx.collection.MutableLongObjectMap
-import dev.skynomads.beerouter.geo.Position
 import dev.skynomads.beerouter.mapaccess.MatchedWaypoint
 import dev.skynomads.beerouter.mapaccess.MatchedWaypoint.Companion.readFromStream
 import dev.skynomads.beerouter.mapaccess.OsmPos
@@ -151,20 +150,14 @@ public class OsmTrack {
         while (i < t.nodes.size) {
             val e = t.nodes[i]
             if (i == 0 && ourSize > 0 && toSElev(nodes[ourSize - 1].position.altitude) == Short.MIN_VALUE) {
-                nodes[ourSize - 1].position = Position(
-                    nodes[ourSize - 1].position.longitude,
-                    nodes[ourSize - 1].position.latitude,
-                    toSElev(e.position.altitude).toDouble() / 4.0
-                )
+                nodes[ourSize - 1].position = nodes[ourSize - 1].position.withAltitude(e.position.altitude)
             }
             if (i > 0 || ourSize == 0) {
                 e.time += t0
                 e.energy += e0
                 e.cost += c0
                 e.message?.let { message ->
-                    val lon = e.position.longitudeE6
-                    val lat = e.position.latitudeE6
-                    if (message.position.longitudeE6 != lon || message.position.latitudeE6 != lat) {
+                    if (message.position.id != e.position.id) {
                         message.position = e.position
                     }
                 }

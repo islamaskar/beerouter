@@ -1,5 +1,6 @@
 package dev.skynomads.beerouter.mapaccess
 
+import kotlinx.io.files.FileSystem
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
 
@@ -15,10 +16,13 @@ public interface MapAccessFileSystem {
     public fun open(fileName: String): RandomAccessReader
 }
 
-public class DefaultMapAccessFileSystem(private val segmentDir: Path) : MapAccessFileSystem {
+public class DefaultMapAccessFileSystem(
+    private val segmentDir: Path,
+    private val fileSystem: FileSystem = SystemFileSystem,
+) : MapAccessFileSystem {
     private fun resolve(fileName: String): Path = Path(segmentDir, fileName)
 
-    override fun exists(fileName: String): Boolean = SystemFileSystem.exists(resolve(fileName))
+    override fun exists(fileName: String): Boolean = fileSystem.exists(resolve(fileName))
 
     override fun open(fileName: String): RandomAccessReader = openRandomAccess(resolve(fileName))
 }

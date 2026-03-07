@@ -49,9 +49,7 @@ public fun Long.toPosition(altitude: Short? = null): Position =
 public fun Long.toPosition(altitude: Double?): Position =
     positionOf(longitudeE6, latitudeE6, altitude)
 
-public fun Position.toOsmId(): Long {
-    return osmIdOf(longitudeE6, latitudeE6)
-}
+public fun Position.toOsmId(): Long = osmIdOf(longitudeE6, latitudeE6)
 
 public fun toSElev(altitude: Short?): Short = altitude ?: Short.MIN_VALUE
 

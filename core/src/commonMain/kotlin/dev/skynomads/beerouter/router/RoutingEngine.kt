@@ -202,10 +202,9 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
 
         val n = OsmNodeNamed(listOne[0].crosspoint!!).apply {
             name = wpt1.name
-            position = Position(
-                position.longitude,
-                position.latitude,
-                (if (minIdx != -1) (minSElev + diff.toInt()).toShort() else Short.MIN_VALUE).toDouble() / 4.0
+            position = position.withAltitude(
+                (if (minIdx != -1) (minSElev + diff.toInt()).toShort() else Short.MIN_VALUE)
+                    .takeUnless { it == Short.MIN_VALUE }
             )
             nodeDescription = start1.firstlink?.descriptionBitmap
         }
@@ -500,11 +499,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
                     distRest -= tmpdist
                     if (hasInclineTags) incline = tmpincline
                     selev = (selev + (tmpdist / 100.0 * incline))
-                    tmp.position = Position(
-                        tmp.position.longitude,
-                        tmp.position.latitude,
-                        selev.toInt().toDouble() / 4.0
-                    )
+                    tmp.position = tmp.position.withAltitude(selev.toInt().toDouble() / 4.0)
                     tmp.message!!.position = tmp.message!!.position.withAltitude(selev.toInt().toShort().toDouble() / 4.0)
                     tmpPt = tmp
                 }
@@ -512,21 +507,13 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
             } else if (toSElev(n.position.altitude) != Short.MIN_VALUE && lastElev == Short.MIN_VALUE && startIdx == 0) {
                 // fill at start
                 track.nodes.subList(0, idx).forEach {
-                    it.position = Position(
-                        it.position.longitude,
-                        it.position.latitude,
-                        toSElev(n.position.altitude).toDouble() / 4.0
-                    )
+                    it.position = it.position.withAltitude(toSElev(n.position.altitude).toDouble() / 4.0)
                 }
             } else if (toSElev(n.position.altitude) == Short.MIN_VALUE && idx == track.nodes.size - 1) {
                 // fill at end
                 startIdx = idx
                 track.nodes.subList(startIdx, track.nodes.size).forEach {
-                    it.position = Position(
-                        it.position.longitude,
-                        it.position.latitude,
-                        lastElev.toDouble() / 4.0
-                    )
+                    it.position = it.position.withAltitude(lastElev.toDouble() / 4.0)
                 }
             } else if (toSElev(n.position.altitude) == Short.MIN_VALUE) {
                 if (lastPt != null) dist += n.calcDistance(lastPt)
