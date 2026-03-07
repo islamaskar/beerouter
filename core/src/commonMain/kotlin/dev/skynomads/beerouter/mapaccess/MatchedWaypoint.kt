@@ -39,18 +39,10 @@ public data class MatchedWaypoint(
     public val wayNearest: MutableList<MatchedWaypoint> = mutableListOf()
 
     public fun writeToStream(sink: Sink) {
-        val n1 = requireNotNull(node1)
-        val n2 = requireNotNull(node2)
-        val cp = requireNotNull(crosspoint)
-        val wp = requireNotNull(waypoint)
-        sink.writeInt(n1.position.latitudeE6)
-        sink.writeInt(n1.position.longitudeE6)
-        sink.writeInt(n2.position.latitudeE6)
-        sink.writeInt(n2.position.longitudeE6)
-        sink.writeInt(cp.position.latitudeE6)
-        sink.writeInt(cp.position.longitudeE6)
-        sink.writeInt(wp.position.latitudeE6)
-        sink.writeInt(wp.position.longitudeE6)
+        sink.writeNode(requireNotNull(node1))
+        sink.writeNode(requireNotNull(node2))
+        sink.writeNode(requireNotNull(crosspoint))
+        sink.writeNode(requireNotNull(waypoint))
         sink.writeLong(radius.toBits())
     }
 
@@ -58,23 +50,25 @@ public data class MatchedWaypoint(
         private fun nodeFromCoordinates(lon: Int, lat: Int): OsmNode =
             OsmNode(positionOf(lon, lat, 0.0))
 
-        public fun readFromStream(source: Source): MatchedWaypoint {
-            val node1Lat = source.readInt()
-            val node1Lon = source.readInt()
-            val node2Lat = source.readInt()
-            val node2Lon = source.readInt()
-            val crosspointLat = source.readInt()
-            val crosspointLon = source.readInt()
-            val waypointLat = source.readInt()
-            val waypointLon = source.readInt()
+        private fun Source.readNode(): OsmNode {
+            val lat = readInt()
+            val lon = readInt()
+            return nodeFromCoordinates(lon, lat)
+        }
 
+        public fun readFromStream(source: Source): MatchedWaypoint {
             return MatchedWaypoint().apply {
-                node1 = nodeFromCoordinates(node1Lon, node1Lat)
-                node2 = nodeFromCoordinates(node2Lon, node2Lat)
-                crosspoint = nodeFromCoordinates(crosspointLon, crosspointLat)
-                waypoint = nodeFromCoordinates(waypointLon, waypointLat)
+                node1 = source.readNode()
+                node2 = source.readNode()
+                crosspoint = source.readNode()
+                waypoint = source.readNode()
                 radius = Double.fromBits(source.readLong())
             }
         }
     }
+}
+
+private fun Sink.writeNode(node: OsmNode) {
+    writeInt(node.position.latitudeE6)
+    writeInt(node.position.longitudeE6)
 }

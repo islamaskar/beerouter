@@ -2005,8 +2005,8 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
                 }
                 if (bestPath != null) {
                     bestPath.airdistance = if (isFinalLink) 0 else {
-                        val tLon = (targetNodeId shr 32).toInt()
-                        val tLat = (targetNodeId and 0xffffffffL).toInt()
+                        val tLon = targetNodeId.longitudeE6
+                        val tLat = targetNodeId.latitudeE6
                         max(1, distance(tLon, tLat, endIlon, endIlat).roundToInt())
                     }
 
@@ -2049,10 +2049,9 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
 
     private fun OsmPath.toPathElement(): OsmPathElement {
         val n = requireNotNull(targetNode)
-        val nId = n.idFromPos
         return OsmPathElement.create(
-            (nId shr 32).toInt(),
-            (nId and 0xffffffffL).toInt(),
+            n.position.longitudeE6,
+            n.position.latitudeE6,
             toSElev(n.position.altitude),
             originElement
         ).also {

@@ -12,6 +12,7 @@ import dev.skynomads.beerouter.mapaccess.OsmNodesMap
 import dev.skynomads.beerouter.mapaccess.PhysicalFile
 import dev.skynomads.beerouter.osm.latitudeE6
 import dev.skynomads.beerouter.osm.longitudeE6
+import dev.skynomads.beerouter.osm.osmIdOf
 import kotlinx.io.Sink
 import kotlinx.io.Source
 import kotlin.math.abs
@@ -116,7 +117,7 @@ public class AreaReader {
                     continue
                 }
 
-                tiles[(tmplon.toLong()) shl 32 or tmplat.toLong()] = filenameBase
+                tiles[osmIdOf(tmplon, tmplat)] = filenameBase
                 count++
             }
         }

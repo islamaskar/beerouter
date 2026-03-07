@@ -5,6 +5,7 @@
  */
 package dev.skynomads.beerouter.router
 
+import dev.skynomads.beerouter.geo.Position
 import dev.skynomads.beerouter.mapaccess.OsmNode
 import dev.skynomads.beerouter.osm.latitudeE6
 import dev.skynomads.beerouter.osm.longitudeE6
@@ -24,15 +25,20 @@ internal class SearchBoundary(n: OsmNode, private val radius: Int, val direction
         }
     }
 
-    private val minlon0: Int
-    private val minlat0: Int
-    private val maxlon0: Int
-    private val maxlat0: Int
+    private data class Bounds(
+        val minLon: Int,
+        val minLat: Int,
+        val maxLon: Int,
+        val maxLat: Int,
+    ) {
+        fun contains(position: Position): Boolean =
+            position.longitudeE6 in (minLon + 1)..<maxLon &&
+                position.latitudeE6 > minLat &&
+                position.latitudeE6 < maxLat
+    }
 
-    private val minlon: Int
-    private val minlat: Int
-    private val maxlon: Int
-    private val maxlat: Int
+    private val wideBounds: Bounds
+    private val narrowBounds: Bounds
     private val p: OsmNode = OsmNode(n.position)
     private val searchDirection: Direction = Direction.fromId(direction)
 
@@ -40,54 +46,49 @@ internal class SearchBoundary(n: OsmNode, private val radius: Int, val direction
      * @param radius Search radius in meters.
      */
     init {
-        val (lon, lat) = tileOrigin(n)
+        val origin = tileOrigin(n.position)
 
-        minlon0 = lon - 5000000
-        minlat0 = lat - 5000000
-        maxlon0 = lon + 10000000
-        maxlat0 = lat + 10000000
-
-        minlon = lon - 1000000
-        minlat = lat - 1000000
-        maxlon = lon + 6000000
-        maxlat = lat + 6000000
+        wideBounds = Bounds(
+            minLon = origin.longitude - 5_000_000,
+            minLat = origin.latitude - 5_000_000,
+            maxLon = origin.longitude + 10_000_000,
+            maxLat = origin.latitude + 10_000_000,
+        )
+        narrowBounds = Bounds(
+            minLon = origin.longitude - 1_000_000,
+            minLat = origin.latitude - 1_000_000,
+            maxLon = origin.longitude + 6_000_000,
+            maxLat = origin.latitude + 6_000_000,
+        )
     }
 
     fun isInBoundary(n: OsmNode, cost: Int): Boolean {
         if (radius > 0) {
             return n.calcDistance(p) < radius
         }
-        val nLon = n.position.longitudeE6
-        val nLat = n.position.latitudeE6
-        if (cost == 0) {
-            return nLon in (minlon0 + 1)..<maxlon0 && nLat > minlat0 && nLat < maxlat0
-        }
-        return nLon in (minlon + 1)..<maxlon && nLat > minlat && nLat < maxlat
+        return if (cost == 0) wideBounds.contains(n.position) else narrowBounds.contains(n.position)
     }
 
     fun getBoundaryDistance(n: OsmNode): Int {
-        val nLon = n.position.longitudeE6
-        val nLat = n.position.latitudeE6
         return when (searchDirection) {
-            Direction.NORTH -> n.calcDistance(OsmNode(nLon, minlat))
-            Direction.WEST -> n.calcDistance(OsmNode(minlon, nLat))
-            Direction.SOUTH -> n.calcDistance(OsmNode(nLon, maxlat))
-            Direction.EAST -> n.calcDistance(OsmNode(maxlon, nLat))
+            Direction.NORTH -> n.calcDistance(OsmNode(n.position.longitudeE6, narrowBounds.minLat))
+            Direction.WEST -> n.calcDistance(OsmNode(narrowBounds.minLon, n.position.latitudeE6))
+            Direction.SOUTH -> n.calcDistance(OsmNode(n.position.longitudeE6, narrowBounds.maxLat))
+            Direction.EAST -> n.calcDistance(OsmNode(narrowBounds.maxLon, n.position.latitudeE6))
         }
     }
 
     companion object {
-        private fun tileOrigin(n: OsmNode): Pair<Int, Int> {
-            val lon = (n.position.longitudeE6 / 5000000) * 5000000
-            val lat = (n.position.latitudeE6 / 5000000) * 5000000
-            return lon to lat
-        }
+        private fun tileOrigin(position: Position): Position =
+            Position(
+                longitude = (position.longitudeE6 / 5_000_000) * 5_000_000,
+                latitude = (position.latitudeE6 / 5_000_000) * 5_000_000,
+            )
 
         fun getFileName(n: OsmNode): String {
-            val (lon, lat) = tileOrigin(n)
-
-            val dlon = lon / 1000000 - 180
-            val dlat = lat / 1000000 - 90
+            val origin = tileOrigin(n.position)
+            val dlon = origin.longitudeE6 / 1_000_000 - 180
+            val dlat = origin.latitudeE6 / 1_000_000 - 90
 
             val slon = if (dlon < 0) "W${-dlon}" else "E$dlon"
             val slat = if (dlat < 0) "S${-dlat}" else "N$dlat"

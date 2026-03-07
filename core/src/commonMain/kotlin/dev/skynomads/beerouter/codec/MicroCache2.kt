@@ -1,5 +1,8 @@
 package dev.skynomads.beerouter.codec
 
+import dev.skynomads.beerouter.osm.latitudeE6
+import dev.skynomads.beerouter.osm.longitudeE6
+import dev.skynomads.beerouter.osm.osmIdOf
 import dev.skynomads.beerouter.osm.positionOf
 import dev.skynomads.beerouter.util.ByteDataReader
 import dev.skynomads.beerouter.util.IByteArrayUnifier
@@ -272,12 +275,12 @@ public class MicroCache2 : MicroCache {
         val lon32 = lonBase + dlon
         val lat32 = latBase + dlat
 
-        return (lon32.toLong()) shl 32 or lat32.toLong()
+        return osmIdOf(lon32, lat32)
     }
 
     public override fun shrinkId(id64: Long): Int {
-        val lon32 = (id64 shr 32).toInt()
-        val lat32 = (id64 and 0xffffffffL).toInt()
+        val lon32 = id64.longitudeE6
+        val lat32 = id64.latitudeE6
         val dlon = lon32 - lonBase
         val dlat = lat32 - latBase
         var id32 = 0
@@ -355,8 +358,8 @@ public class MicroCache2 : MicroCache {
                 if (dodebug) println("*** encoding node $n from $aboffset to $aboffsetEnd")
 
                 val id64 = expandId(faid[n])
-                val ilon = (id64 shr 32).toInt()
-                val ilat = (id64 and 0xffffffffL).toInt()
+                val ilon = id64.longitudeE6
+                val ilat = id64.latitudeE6
 
                 if (aboffset == aboffsetEnd) {
                     bc.encodeVarBits(13) // empty node escape (delta files only)
@@ -417,7 +420,7 @@ public class MicroCache2 : MicroCache {
                         readFully(description)
                     }
 
-                    val link64 = (ilonlink.toLong()) shl 32 or ilatlink.toLong()
+                    val link64 = osmIdOf(ilonlink, ilatlink)
                     val idx = idMap[link64]
                     val isInternal = idx != null
 

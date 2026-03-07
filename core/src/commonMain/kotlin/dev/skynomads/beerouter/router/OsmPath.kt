@@ -14,6 +14,7 @@ import dev.skynomads.beerouter.osm.latitudeE6
 import dev.skynomads.beerouter.osm.longitudeE6
 import dev.skynomads.beerouter.osm.osmIdOf
 import dev.skynomads.beerouter.osm.positionOf
+import dev.skynomads.beerouter.osm.toPosition
 import dev.skynomads.beerouter.osm.toSElev
 import dev.skynomads.beerouter.util.CheapRuler
 import dev.skynomads.beerouter.util.CheapRuler.getLonLatToMeterScales
@@ -51,20 +52,18 @@ public abstract class OsmPath : OsmLinkHolder {
 
     protected var priorityclassifier: Int = 0
 
-    protected var bitfield: Int = PATH_START_BIT
+    protected var bitfield: Int = PathFlag.PATH_START.bit
 
-    private fun getBit(mask: Int): Boolean {
-        return (bitfield and mask) != 0
-    }
+    private fun getBit(flag: PathFlag): Boolean = (bitfield and flag.bit) != 0
 
-    private fun setBit(mask: Int, bit: Boolean) {
-        if (getBit(mask) != bit) {
-            bitfield = bitfield xor mask
+    private fun setBit(flag: PathFlag, bit: Boolean) {
+        if (getBit(flag) != bit) {
+            bitfield = bitfield xor flag.bit
         }
     }
 
     public fun didEnterDestinationArea(): Boolean {
-        return !getBit(HAD_DESTINATION_START_BIT) && getBit(IS_ON_DESTINATION_BIT)
+        return !getBit(PathFlag.HAD_DESTINATION_START) && getBit(PathFlag.IS_ON_DESTINATION)
     }
 
     public var message: MessageData? = null
@@ -86,10 +85,9 @@ public abstract class OsmPath : OsmLinkHolder {
     ) {
         if (origin.myElement == null) {
             val n = origin.targetNode!!
-            val nId = n.idFromPos
             origin.myElement = OsmPathElement.create(
-                (nId shr 32).toInt(),
-                (nId and 0xffffffffL).toInt(),
+                n.position.longitudeE6,
+                n.position.latitudeE6,
                 toSElev(n.position.altitude),
                 origin.originElement
             ).also {
@@ -129,9 +127,7 @@ public abstract class OsmPath : OsmLinkHolder {
                 it.energy = 0f
                 it.priorityclassifier = 0
                 it.classifiermask = 0
-                val tgtId = targetNode!!.idFromPos
-                it.position =
-                    positionOf((tgtId shr 32).toInt(), (tgtId and 0xffffffffL).toInt())
+                it.position = targetNode!!.idFromPos.toPosition()
                 it.linkdist = sourceNode!!.calcDistance(targetNode!!)
                 it.wayTags = mapOf("direct_segment" to "$seg")
                 seg++
@@ -146,9 +142,8 @@ public abstract class OsmPath : OsmLinkHolder {
         // extract the 3 positions of the first section
         var previousPosition = origin.originPosition
 
-        val srcId = sourceNode!!.idFromPos
-        var lon1 = (srcId shr 32).toInt()
-        var lat1 = (srcId and 0xffffffffL).toInt()
+        var lon1 = sourceNode!!.position.longitudeE6
+        var lat1 = sourceNode!!.position.latitudeE6
         var ele1 = origin.selev
 
         var linkdisttotal = 0
@@ -194,22 +189,22 @@ public abstract class OsmPath : OsmLinkHolder {
         // *** destination logic: no destination access in between
         val classifiermask = rc.way.classifierMask.toInt()
         val newDestination = (classifiermask and 64) != 0
-        val oldDestination = getBit(IS_ON_DESTINATION_BIT)
-        if (getBit(PATH_START_BIT)) {
-            setBit(PATH_START_BIT, false)
-            setBit(CAN_LEAVE_DESTINATION_BIT, newDestination)
-            setBit(HAD_DESTINATION_START_BIT, newDestination)
+        val oldDestination = getBit(PathFlag.IS_ON_DESTINATION)
+        if (getBit(PathFlag.PATH_START)) {
+            setBit(PathFlag.PATH_START, false)
+            setBit(PathFlag.CAN_LEAVE_DESTINATION, newDestination)
+            setBit(PathFlag.HAD_DESTINATION_START, newDestination)
         } else {
             if (oldDestination && !newDestination) {
-                if (getBit(CAN_LEAVE_DESTINATION_BIT)) {
-                    setBit(CAN_LEAVE_DESTINATION_BIT, false)
+                if (getBit(PathFlag.CAN_LEAVE_DESTINATION)) {
+                    setBit(PathFlag.CAN_LEAVE_DESTINATION, false)
                 } else {
                     cost = -1
                     return
                 }
             }
         }
-        setBit(IS_ON_DESTINATION_BIT, newDestination)
+        setBit(PathFlag.IS_ON_DESTINATION, newDestination)
 
 
         var transferNode = if (link.geometry == null)
@@ -227,9 +222,8 @@ public abstract class OsmPath : OsmLinkHolder {
             val originEle2: Short
 
             if (transferNode == null) {
-                val tgtId = targetNode!!.idFromPos
-                lon2 = (tgtId shr 32).toInt()
-                lat2 = (tgtId and 0xffffffffL).toInt()
+                lon2 = targetNode!!.position.longitudeE6
+                lat2 = targetNode!!.position.latitudeE6
                 originEle2 = toSElev(targetNode!!.position.altitude)
             } else {
                 lon2 = transferNode.position.longitudeE6
@@ -494,10 +488,13 @@ public abstract class OsmPath : OsmLinkHolder {
         get() = 0.0
 
     public companion object {
-        private const val PATH_START_BIT = 1
-        private const val CAN_LEAVE_DESTINATION_BIT = 2
-        private const val IS_ON_DESTINATION_BIT = 4
-        private const val HAD_DESTINATION_START_BIT = 8
         public var seg: Int = 1
+    }
+
+    private enum class PathFlag(public val bit: Int) {
+        PATH_START(1),
+        CAN_LEAVE_DESTINATION(2),
+        IS_ON_DESTINATION(4),
+        HAD_DESTINATION_START(8),
     }
 }

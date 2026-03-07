@@ -6,7 +6,6 @@ import dev.skynomads.beerouter.codec.StatCoderContext
 import dev.skynomads.beerouter.codec.TagValueCoder
 import dev.skynomads.beerouter.codec.TagValueValidator
 import dev.skynomads.beerouter.codec.WaypointMatcher
-import dev.skynomads.beerouter.geo.Position
 import dev.skynomads.beerouter.osm.latitudeE6
 import dev.skynomads.beerouter.osm.longitudeE6
 import dev.skynomads.beerouter.osm.osmIdOf
@@ -31,7 +30,7 @@ public class DirectWeaver(
 
     init {
         val cellsize = 1000000 / divisor
-        id64Base = ((lonIdx * cellsize).toLong()) shl 32 or (latIdx * cellsize).toLong()
+        id64Base = osmIdOf(lonIdx * cellsize, latIdx * cellsize)
 
         val wayTagCoder = TagValueCoder(bc, dataBuffers, wayValidator)
         val nodeTagCoder = TagValueCoder(bc, dataBuffers, null)
@@ -229,7 +228,7 @@ public class DirectWeaver(
                 id32 = id32 shr 2
                 bm = bm shl 1
             }
-            return (dlon.toLong()) shl 32 or dlat.toLong()
+            return osmIdOf(dlon, dlat)
         }
     }
 }

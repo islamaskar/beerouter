@@ -9,8 +9,6 @@
 package dev.skynomads.beerouter.router
 
 import dev.skynomads.beerouter.geo.Position
-import dev.skynomads.beerouter.osm.toDoubleLatitude
-import dev.skynomads.beerouter.osm.toDoubleLongitude
 import dev.skynomads.beerouter.util.CheapRuler.distance
 import dev.skynomads.beerouter.util.CheapRuler.getLonLatToMeterScales
 import kotlin.math.min
@@ -125,11 +123,7 @@ public class OsmNogoPolygon(public val isClosed: Boolean) : OsmNodeNamed() {
             iMax = -1
         } while (true)
 
-        // Convert the integer coordinates to Position coordinates
-        val centerLon = cx.toDoubleLongitude()
-        val centerLat = cy.toDoubleLatitude()
-
-        position = Position(centerLon, centerLat, 0.0)
+        position = Position(cx, cy, 0.0)
         radius =
             rad * 1.001 + 1.0 // ensure the outside-of-enclosing-circle test in RoutingContext.calcDistance() is not passed by segments ending very close to the radius due to limited numerical precision
     }
