@@ -20,7 +20,7 @@ import org.maplibre.spatialk.geojson.Position
 
 @State(Scope.Benchmark)
 @Warmup(iterations = 1)
-@Measurement(iterations = 1)
+@Measurement(iterations = 3)
 open class BeerouterRoutingBenchmark {
     private val segmentDir = if (SystemFileSystem.exists(SystemTemporaryDirectory)) {
         SystemTemporaryDirectory
@@ -84,7 +84,7 @@ open class BeerouterRoutingBenchmark {
         error("none of the candidate files exist: ${candidates.joinToString()}")
     }
 
-    private fun resolve(base: Path, child: String): Path = Path("${base.toString()}/$child")
+    private fun resolve(base: Path, child: String): Path = Path("$base/$child")
 
     private fun fileName(path: Path): String =
         path.toString().substringAfterLast('/').substringAfterLast('\\')

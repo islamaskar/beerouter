@@ -3,7 +3,6 @@ package dev.skynomads.beerouter.router
 import dev.skynomads.beerouter.mapaccess.OsmPos
 import dev.skynomads.beerouter.osm.toIntLatitude
 import dev.skynomads.beerouter.osm.toIntLongitude
-import dev.skynomads.beerouter.osm.toOsmId
 import dev.skynomads.beerouter.osm.toDoubleLatitude
 import dev.skynomads.beerouter.osm.toDoubleLongitude
 import dev.skynomads.beerouter.osm.toSElev
@@ -46,8 +45,11 @@ public class OsmPathElement protected constructor() : OsmPos {
         message?.turnangle = e
     }
 
+    // Cached id — stable because lon/lat never change after creation
+    private var _idFromPos: Long = 0L
+
     public override val idFromPos: Long
-        get() = position.toOsmId()
+        get() = _idFromPos
 
     public override fun calcDistance(p: OsmPos): Int {
         return max(1, distance(this.position, p.position).roundToInt())
@@ -59,8 +61,7 @@ public class OsmPathElement protected constructor() : OsmPos {
         "${position.longitude.toIntLongitude()}_${position.latitude.toIntLatitude()}"
 
     public fun positionEquals(e: OsmPathElement): Boolean {
-        return this.position.longitude.toIntLongitude() == e.position.longitude.toIntLongitude() &&
-                this.position.latitude.toIntLatitude() == e.position.latitude.toIntLatitude()
+        return _idFromPos == e._idFromPos
     }
 
     public fun writeToStream(sink: Sink) {
@@ -83,6 +84,7 @@ public class OsmPathElement protected constructor() : OsmPos {
                 ilat.toDoubleLatitude(),
                 selev.toDouble() / 4.0
             )
+            pe._idFromPos = (ilon.toLong() shl 32) or ilat.toLong()
             pe.origin = origin
             return pe
         }
@@ -97,6 +99,7 @@ public class OsmPathElement protected constructor() : OsmPos {
                 lat.toDoubleLatitude(),
                 selev.toDouble() / 4.0
             )
+            pe._idFromPos = (lon.toLong() shl 32) or lat.toLong()
             pe.cost = source.readInt()
             return pe
         }

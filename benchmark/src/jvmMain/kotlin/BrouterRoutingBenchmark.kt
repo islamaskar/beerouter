@@ -19,7 +19,7 @@ import kotlin.test.assertEquals
 
 @State(Scope.Benchmark)
 @Warmup(iterations = 1)
-@Measurement(iterations = 1)
+@Measurement(iterations = 3)
 open class BrouterRoutingBenchmark {
     private val segmentDir = File(SystemTemporaryDirectory.toString())
     private val segmentFile = Path("${segmentDir.path}/E5_N45.rd5")

@@ -2054,9 +2054,10 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
 
     private fun OsmPath.toPathElement(): OsmPathElement {
         val n = targetNode!!
+        val nId = n.idFromPos
         return OsmPathElement.create(
-            n.position.longitude.toIntLongitude(),
-            n.position.latitude.toIntLatitude(),
+            (nId shr 32).toInt(),
+            (nId and 0xffffffffL).toInt(),
             toSElev(n.position.altitude),
             originElement
         ).also {
