@@ -1,10 +1,8 @@
 package dev.skynomads.beerouter.router
 
+import dev.skynomads.beerouter.geo.Position
 import kotlinx.coroutines.runBlocking
 import kotlinx.io.files.SystemFileSystem
-import org.maplibre.spatialk.geojson.Position
-import dev.skynomads.beerouter.osm.toIntLatitude
-import dev.skynomads.beerouter.osm.toIntLongitude
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -193,12 +191,12 @@ class RoutingTest {
         btrack.nodes.forEachIndexed { idx, node ->
             assertEquals(
                 node.iLon,
-                beetrack.nodes[idx].position.longitude.toIntLongitude(),
+                beetrack.nodes[idx].position.longitude,
                 "$scenario: node[$idx].lon"
             )
             assertEquals(
                 node.iLat,
-                beetrack.nodes[idx].position.latitude.toIntLatitude(),
+                beetrack.nodes[idx].position.latitude,
                 "$scenario: node[$idx].lat"
             )
             assertEquals(
@@ -255,13 +253,13 @@ class RoutingTest {
             waypoints.map {
                 btools.router.OsmNodeNamed().apply {
                     name = it.name
-                    ilon = it.position.longitude.toIntLongitude()
-                    ilat = it.position.latitude.toIntLatitude()
+                    ilon = it.position.longitude
+                    ilat = it.position.latitude
                 }
             },
             rc
         )
-        
+
         cr.quite = true
 
         cr.doRouting(60.seconds.inWholeMilliseconds)
@@ -285,4 +283,6 @@ class RoutingTest {
 
     private fun toSElev(altitude: Double?): Short =
         altitude?.times(4.0)?.toInt()?.toShort() ?: Short.MIN_VALUE
+
+    private fun toSElev(altitude: Short?): Short = altitude ?: Short.MIN_VALUE
 }

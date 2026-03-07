@@ -9,10 +9,10 @@ import dev.skynomads.beerouter.expressions.BExpressionContext
 import dev.skynomads.beerouter.expressions.BExpressionContextNode
 import dev.skynomads.beerouter.expressions.BExpressionContextWay
 import dev.skynomads.beerouter.expressions.BExpressionMetaData
+import dev.skynomads.beerouter.geo.Position
 import dev.skynomads.beerouter.mapaccess.GeometryDecoder
 import dev.skynomads.beerouter.mapaccess.MapAccessFileSystem
 import dev.skynomads.beerouter.mapaccess.MatchedWaypoint
-import dev.skynomads.beerouter.mapaccess.DefaultMapAccessFileSystem
 import dev.skynomads.beerouter.mapaccess.OsmLink
 import dev.skynomads.beerouter.mapaccess.OsmNode
 import dev.skynomads.beerouter.osm.latitudeE6
@@ -24,8 +24,6 @@ import dev.skynomads.beerouter.util.readUtf8
 import kotlinx.io.Sink
 import kotlinx.io.Source
 import kotlinx.io.buffered
-import kotlinx.io.files.Path
-import org.maplibre.spatialk.geojson.Position
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.roundToInt

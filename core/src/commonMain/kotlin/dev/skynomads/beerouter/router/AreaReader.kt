@@ -14,7 +14,6 @@ import dev.skynomads.beerouter.osm.latitudeE6
 import dev.skynomads.beerouter.osm.longitudeE6
 import kotlinx.io.Sink
 import kotlinx.io.Source
-import kotlinx.io.buffered
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
@@ -78,39 +77,39 @@ public class AreaReader {
                 dataRect.addVertex(tmplon2, tmplat2)
 
                 var intersects = checkBorder && dataRect.intersects(
-                    searchRect.points[0].x,
-                    searchRect.points[0].y,
-                    searchRect.points[2].x,
-                    searchRect.points[2].y
+                    searchRect.points[0].longitude,
+                    searchRect.points[0].latitude,
+                    searchRect.points[2].longitude,
+                    searchRect.points[2].latitude
                 )
                 if (!intersects && checkBorder) intersects = dataRect.intersects(
-                    searchRect.points[1].x,
-                    searchRect.points[1].y,
-                    searchRect.points[2].x,
-                    searchRect.points[3].y
+                    searchRect.points[1].longitude,
+                    searchRect.points[1].latitude,
+                    searchRect.points[2].longitude,
+                    searchRect.points[3].latitude
                 )
                 if (intersects) {
                     continue
                 }
 
                 intersects = searchRect.intersects(
-                    dataRect.points[0].x,
-                    dataRect.points[0].y,
-                    dataRect.points[2].x,
-                    dataRect.points[2].y
+                    dataRect.points[0].longitude,
+                    dataRect.points[0].latitude,
+                    dataRect.points[2].longitude,
+                    dataRect.points[2].latitude
                 )
                 if (!intersects) intersects = searchRect.intersects(
-                    dataRect.points[1].x,
-                    dataRect.points[1].y,
-                    dataRect.points[3].x,
-                    dataRect.points[3].y
+                    dataRect.points[1].longitude,
+                    dataRect.points[1].latitude,
+                    dataRect.points[3].longitude,
+                    dataRect.points[3].latitude
                 )
                 if (!intersects) intersects = containsRect(
                     searchRect,
-                    dataRect.points[0].x,
-                    dataRect.points[0].y,
-                    dataRect.points[2].x,
-                    dataRect.points[2].y
+                    dataRect.points[0].longitude,
+                    dataRect.points[0].latitude,
+                    dataRect.points[2].longitude,
+                    dataRect.points[2].latitude
                 )
 
                 if (!intersects) {
@@ -233,7 +232,7 @@ public class AreaReader {
                                     ) {
                                         ai.checkAreaInfo(
                                             expctxWay,
-                                            node.position.altitude ?: 0.0,
+                                            node.position.altitudeMeters ?: 0.0,
                                             nextNode.firstlink!!.descriptionBitmap!!
                                         )
                                         break
@@ -255,14 +254,20 @@ public class AreaReader {
     public fun ignoreCenter(maxscale: Int, idxLon: Int, idxLat: Int): Boolean {
         val centerScale = (maxscale * .2).roundToInt() - 1
         return centerScale >= 0 &&
-            idxLon >= -centerScale && idxLon <= centerScale &&
-            idxLat >= -centerScale && idxLat <= centerScale
+                idxLon >= -centerScale && idxLon <= centerScale &&
+                idxLat >= -centerScale && idxLat <= centerScale
     }
 
     /*
     in this case the polygon is 'only' a rectangle
   */
-    public fun containsRect(searchRect: OsmNogoPolygon, p1x: Int, p1y: Int, p2x: Int, p2y: Int): Boolean {
+    public fun containsRect(
+        searchRect: OsmNogoPolygon,
+        p1x: Int,
+        p1y: Int,
+        p2x: Int,
+        p2y: Int
+    ): Boolean {
         return searchRect.isWithin(p1x.toLong(), p1y.toLong()) &&
                 searchRect.isWithin(p2x.toLong(), p2y.toLong())
     }

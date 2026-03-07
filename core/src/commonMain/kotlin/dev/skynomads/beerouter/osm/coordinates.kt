@@ -1,6 +1,6 @@
 package dev.skynomads.beerouter.osm
 
-import org.maplibre.spatialk.geojson.Position
+import dev.skynomads.beerouter.geo.Position
 import kotlin.math.roundToInt
 
 private const val COORDINATE_SCALE = 1e-6
@@ -17,19 +17,25 @@ public fun Int.toDoubleLongitude(): Double = (this * COORDINATE_SCALE) - LONGITU
 public fun Int.toDoubleLatitude(): Double = (this * COORDINATE_SCALE) - LATITUDE_OFFSET
 
 public val Position.longitudeE6: Int
-    get() = longitude.toIntLongitude()
+    get() = longitude
 
 public val Position.latitudeE6: Int
-    get() = latitude.toIntLatitude()
+    get() = latitude
 
-public fun positionOf(longitudeE6: Int, latitudeE6: Int, altitude: Double? = null): Position =
-    Position(longitudeE6.toDoubleLongitude(), latitudeE6.toDoubleLatitude(), altitude)
+public fun positionOf(longitudeE6: Int, latitudeE6: Int, altitude: Short? = null): Position =
+    Position(longitudeE6, latitudeE6, altitude)
+
+public fun positionOf(longitudeE6: Int, latitudeE6: Int, altitude: Double?): Position =
+    Position(longitudeE6, latitudeE6, altitude)
 
 public fun osmIdOf(longitudeE6: Int, latitudeE6: Int): Long =
     (longitudeE6.toLong() shl 32) or latitudeE6.toLong()
 
 public fun osmPositionOf(longitudeE6: Int, latitudeE6: Int, sElev: Short): Position =
-    positionOf(longitudeE6, latitudeE6, sElev.toAltitude())
+    positionOf(longitudeE6, latitudeE6, sElev.takeUnless { it == Short.MIN_VALUE })
+
+public fun osmPositionOf(longitudeE6: Int, latitudeE6: Int, sElev: Short?): Position =
+    positionOf(longitudeE6, latitudeE6, sElev)
 
 public val Long.longitudeE6: Int
     get() = (this shr 32).toInt()
@@ -37,12 +43,17 @@ public val Long.longitudeE6: Int
 public val Long.latitudeE6: Int
     get() = (this and 0xffffffffL).toInt()
 
-public fun Long.toPosition(altitude: Double? = null): Position =
+public fun Long.toPosition(altitude: Short? = null): Position =
+    positionOf(longitudeE6, latitudeE6, altitude)
+
+public fun Long.toPosition(altitude: Double?): Position =
     positionOf(longitudeE6, latitudeE6, altitude)
 
 public fun Position.toOsmId(): Long {
     return osmIdOf(longitudeE6, latitudeE6)
 }
+
+public fun toSElev(altitude: Short?): Short = altitude ?: Short.MIN_VALUE
 
 public fun toSElev(altitude: Double?): Short =
     altitude?.times(ELEVATION_SCALE)?.toInt()?.toShort() ?: Short.MIN_VALUE

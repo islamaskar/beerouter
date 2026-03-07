@@ -1,10 +1,10 @@
 package dev.skynomads.beerouter.router
 
-import java.io.File
-import java.net.URI
 import kotlinx.io.buffered
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
+import java.io.File
+import java.net.URI
 
 internal val testSegmentFile: Path = Path(System.getProperty("java.io.tmpdir"), "E5_N45.rd5")
 

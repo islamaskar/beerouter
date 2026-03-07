@@ -1,6 +1,6 @@
 package dev.skynomads.beerouter.codec
 
-import org.maplibre.spatialk.geojson.Position
+import dev.skynomads.beerouter.geo.Position
 
 /**
  * a waypoint matcher gets way geometries

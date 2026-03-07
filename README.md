@@ -24,6 +24,7 @@ The example below follows the same setup used in
 
 ```kotlin
 import dev.skynomads.beerouter.mapaccess.DefaultMapAccessFileSystem
+import dev.skynomads.beerouter.geo.Position
 import dev.skynomads.beerouter.router.OsmNodeNamed
 import dev.skynomads.beerouter.router.OsmTrack
 import dev.skynomads.beerouter.router.RoutingContext
@@ -33,7 +34,6 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.io.buffered
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
-import org.maplibre.spatialk.geojson.Position
 
 private fun waypoint(name: String, lat: Double, lon: Double): OsmNodeNamed =
     OsmNodeNamed().apply {

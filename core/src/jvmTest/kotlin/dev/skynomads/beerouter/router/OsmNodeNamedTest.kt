@@ -1,10 +1,10 @@
 package dev.skynomads.beerouter.router
 
+import dev.skynomads.beerouter.geo.Position
 import dev.skynomads.beerouter.osm.toIntLatitude
 import dev.skynomads.beerouter.osm.toIntLongitude
 import dev.skynomads.beerouter.util.CheapRuler.destination
 import dev.skynomads.beerouter.util.CheapRuler.distance
-import org.maplibre.spatialk.geojson.Position
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue
@@ -122,8 +122,8 @@ class OsmNodeNamedTest {
 
         var i = 0
         while (i <= 360) {
-            val nodeLon = node.position.longitude.toIntLongitude()
-            val nodeLat = node.position.latitude.toIntLatitude()
+            val nodeLon = node.position.longitude
+            val nodeLat = node.position.latitude
             val pos = destination(nodeLon, nodeLat, startDist, i.toDouble())
             val dist = distance(nodeLon, nodeLat, pos[0], pos[1])
             assertTrue(

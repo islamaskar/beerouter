@@ -4,8 +4,6 @@
 package dev.skynomads.beerouter.router
 
 import dev.skynomads.beerouter.router.OsmNogoPolygon.Companion.isOnLine
-import dev.skynomads.beerouter.osm.toIntLatitude
-import dev.skynomads.beerouter.osm.toIntLongitude
 import dev.skynomads.beerouter.util.CheapRuler.distance
 import dev.skynomads.beerouter.util.CheapRuler.getLonLatToMeterScales
 import kotlin.math.sqrt
@@ -20,8 +18,8 @@ class OsmNogoPolygonTest {
     fun testCalcBoundingCircle() {
         polygon!!.calcBoundingCircle()
 
-        val polygonLon = polygon!!.position.longitude.toIntLongitude()
-        val polygonLat = polygon!!.position.latitude.toIntLatitude()
+        val polygonLon = polygon!!.position.longitude
+        val polygonLat = polygon!!.position.latitude
         val lonlat2m = getLonLatToMeterScales(polygonLat)
         val dlon2m = lonlat2m[0]
         val dlat2m = lonlat2m[1]
@@ -37,8 +35,8 @@ class OsmNogoPolygonTest {
             assertTrue(diff >= 0, "i: $i r($r) >= r1($r1)")
         }
         polyline!!.calcBoundingCircle()
-        val polylineLon = polyline!!.position.longitude.toIntLongitude()
-        val polylineLat = polyline!!.position.latitude.toIntLatitude()
+        val polylineLon = polyline!!.position.longitude
+        val polylineLat = polyline!!.position.latitude
         r = polyline!!.radius
         for (i in lons.indices) {
             val testLon = toOsmLon(lons[i], OFFSET_X)

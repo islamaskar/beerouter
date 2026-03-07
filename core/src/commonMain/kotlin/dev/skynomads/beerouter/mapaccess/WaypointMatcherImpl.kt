@@ -1,6 +1,7 @@
 package dev.skynomads.beerouter.mapaccess
 
 import dev.skynomads.beerouter.codec.WaypointMatcher
+import dev.skynomads.beerouter.geo.Position
 import dev.skynomads.beerouter.osm.latitudeE6
 import dev.skynomads.beerouter.osm.longitudeE6
 import dev.skynomads.beerouter.osm.osmIdOf
@@ -8,7 +9,6 @@ import dev.skynomads.beerouter.osm.positionOf
 import dev.skynomads.beerouter.util.CheapAngleMeter.Companion.getDifferenceFromDirection
 import dev.skynomads.beerouter.util.CheapAngleMeter.Companion.getDirection
 import dev.skynomads.beerouter.util.CheapRuler.getLonLatToMeterScales
-import org.maplibre.spatialk.geojson.Position
 import kotlin.math.abs
 import kotlin.math.sqrt
 
@@ -28,13 +28,10 @@ public class WaypointMatcherImpl(
     private val waypoints: MutableList<MatchedWaypoint>
     private val islandPairs: OsmNodePairSet
 
-    private var lonStart = 0
-    private var latStart = 0
-    private var lonTarget = 0
-    private var latTarget = 0
+    private var startPosition: Position = Position(0, 0)
+    private var targetPosition: Position = Position(0, 0)
     private var anyUpdate = false
-    private var lonLast = 0
-    private var latLast = 0
+    private var lastPosition: Position = Position(0, 0)
     public var useAsStartWay: Boolean = true
     private val maxWptIdx: Int
     private var maxDistance: Double
@@ -166,31 +163,40 @@ public class WaypointMatcherImpl(
                 return false
             }
         }
-        lonStart = ilonStart
-        lonLast = lonStart
-        latStart = ilatStart
-        latLast = latStart
-        lonTarget = ilonTarget
-        latTarget = ilatTarget
+        startPosition = start
+        lastPosition = start
+        targetPosition = target
         anyUpdate = false
         this.useAsStartWay = useAsStartWay
         return true
     }
 
     override public fun transferNode(position: Position) {
-        val lon = position.longitudeE6
-        val lat = position.latitudeE6
-        checkSegment(lonLast, latLast, lon, lat)
-        lonLast = lon
-        latLast = lat
+        checkSegment(
+            lastPosition.longitudeE6,
+            lastPosition.latitudeE6,
+            position.longitudeE6,
+            position.latitudeE6
+        )
+        lastPosition = position
     }
 
     override public fun end() {
-        checkSegment(lonLast, latLast, lonTarget, latTarget)
+        checkSegment(
+            lastPosition.longitudeE6,
+            lastPosition.latitudeE6,
+            targetPosition.longitudeE6,
+            targetPosition.latitudeE6
+        )
         if (anyUpdate) {
             for (mwp in waypoints) {
                 if (mwp.hasUpdate) {
-                    var angle = getDirection(lonStart, latStart, lonTarget, latTarget)
+                    var angle = getDirection(
+                        startPosition.longitudeE6,
+                        startPosition.latitudeE6,
+                        targetPosition.longitudeE6,
+                        targetPosition.latitudeE6
+                    )
                     var diff = getDifferenceFromDirection(mwp.directionToNext, angle)
 
                     mwp.hasUpdate = false
@@ -201,8 +207,8 @@ public class WaypointMatcherImpl(
                     var mw = MatchedWaypoint()
                     mw.waypoint = OsmNode().also { it.position = waypointPos }
                     mw.crosspoint = OsmNode().also { it.position = crosspointPos }
-                    mw.node1 = OsmNode(lonStart, latStart)
-                    mw.node2 = OsmNode(lonTarget, latTarget)
+                    mw.node1 = OsmNode(startPosition)
+                    mw.node2 = OsmNode(targetPosition)
                     mw.name = mwp.name + "_w_" + mwp.crosspoint.hashCode()
                     mw.radius = mwp.radius
                     mw.directionDiff = diff
@@ -211,13 +217,18 @@ public class WaypointMatcherImpl(
                     updateWayList(mwp.wayNearest, mw)
 
                     // revers
-                    angle = getDirection(lonTarget, latTarget, lonStart, latStart)
+                    angle = getDirection(
+                        targetPosition.longitudeE6,
+                        targetPosition.latitudeE6,
+                        startPosition.longitudeE6,
+                        startPosition.latitudeE6
+                    )
                     diff = getDifferenceFromDirection(mwp.directionToNext, angle)
                     mw = MatchedWaypoint()
                     mw.waypoint = OsmNode().also { it.position = waypointPos }
                     mw.crosspoint = OsmNode().also { it.position = crosspointPos }
-                    mw.node1 = OsmNode(lonTarget, latTarget)
-                    mw.node2 = OsmNode(lonStart, latStart)
+                    mw.node1 = OsmNode(targetPosition)
+                    mw.node2 = OsmNode(startPosition)
                     mw.name = mwp.name + "_w2_" + mwp.crosspoint.hashCode()
                     mw.radius = mwp.radius
                     mw.directionDiff = diff

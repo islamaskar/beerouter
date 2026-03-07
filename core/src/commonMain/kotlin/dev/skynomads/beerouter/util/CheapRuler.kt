@@ -1,8 +1,8 @@
 package dev.skynomads.beerouter.util
 
+import dev.skynomads.beerouter.geo.Position
 import dev.skynomads.beerouter.osm.latitudeE6
 import dev.skynomads.beerouter.osm.longitudeE6
-import org.maplibre.spatialk.geojson.Position
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.sqrt

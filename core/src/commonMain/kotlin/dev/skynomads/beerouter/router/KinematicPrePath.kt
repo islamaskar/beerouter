@@ -28,8 +28,7 @@ internal class KinematicPrePath : OsmPrePath() {
         }
 
         // extract the 3 positions of the first section
-        val lon0 = origin.originLon
-        val lat0 = origin.originLat
+        val previousPosition = requireNotNull(origin.originPosition)
 
         val p1 = requireNotNull(sourceNode)
         val lon1 = p1.position.longitudeE6
@@ -55,7 +54,14 @@ internal class KinematicPrePath : OsmPrePath() {
             lat2 = transferNode.position.latitudeE6
         }
 
-        angle = rc.anglemeter.calcAngle(lon0, lat0, lon1, lat1, lon2, lat2)
+        angle = rc.anglemeter.calcAngle(
+            previousPosition.longitudeE6,
+            previousPosition.latitudeE6,
+            lon1,
+            lat1,
+            lon2,
+            lat2
+        )
         priorityclassifier = rc.way.priorityClassifier.toInt()
         classifiermask = rc.way.classifierMask.toInt()
     }

@@ -1,9 +1,7 @@
 package dev.skynomads.beerouter.router
 
-import dev.skynomads.beerouter.osm.toIntLatitude
-import dev.skynomads.beerouter.osm.toIntLongitude
+import dev.skynomads.beerouter.geo.Position
 import kotlinx.coroutines.runBlocking
-import org.maplibre.spatialk.geojson.Position
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -35,8 +33,8 @@ class VoiceHintParityTest {
             waypoints.map {
                 btools.router.OsmNodeNamed().apply {
                     name = it.name
-                    ilon = it.position.longitude.toIntLongitude()
-                    ilat = it.position.latitude.toIntLatitude()
+                    ilon = it.position.longitude
+                    ilat = it.position.latitude
                 }
             },
             rc
@@ -353,7 +351,7 @@ class VoiceHintParityTest {
                 val bnode = btrack.nodes[i]
                 val anode = track.nodes[i]
                 return "idx=$i b=$b/$bmask a=$a/$amask " +
-                        "bnode=${bnode.iLon},${bnode.iLat} anode=${anode.position.longitude.toIntLongitude()},${anode.position.latitude.toIntLatitude()} " +
+                        "bnode=${bnode.iLon},${bnode.iLat} anode=${anode.position.longitude},${anode.position.latitude} " +
                         "bway=$bway away=$away"
             }
         }

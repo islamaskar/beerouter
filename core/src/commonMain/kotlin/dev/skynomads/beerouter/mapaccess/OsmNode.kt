@@ -2,15 +2,16 @@ package dev.skynomads.beerouter.mapaccess
 
 import dev.skynomads.beerouter.codec.MicroCache
 import dev.skynomads.beerouter.codec.MicroCache2
+import dev.skynomads.beerouter.geo.Position
 import dev.skynomads.beerouter.osm.latitudeE6
 import dev.skynomads.beerouter.osm.longitudeE6
 import dev.skynomads.beerouter.osm.osmIdOf
+import dev.skynomads.beerouter.osm.osmPositionOf
 import dev.skynomads.beerouter.osm.positionOf
 import dev.skynomads.beerouter.osm.toOsmId
 import dev.skynomads.beerouter.osm.toPosition
 import dev.skynomads.beerouter.util.CheapRuler.distance
 import dev.skynomads.beerouter.util.IByteArrayUnifier
-import org.maplibre.spatialk.geojson.Position
 import kotlin.math.max
 import kotlin.math.roundToInt
 
@@ -24,14 +25,14 @@ public open class OsmNode : OsmLink, OsmPos {
      * The position
      */
     override var position: Position =
-        positionOf(0, 0, UNSET_ALTITUDE)
+        positionOf(0, 0)
 
     /**
      * The elevation
      */
     @Deprecated("Use position.altitude instead")
     public val sElev: Short
-        get() = position.altitude?.times(4.0)?.toInt()?.toShort() ?: Short.MIN_VALUE
+        get() = position.altitude ?: Short.MIN_VALUE
 
     /**
      * The node-tags, if any
@@ -58,12 +59,12 @@ public open class OsmNode : OsmLink, OsmPos {
     public constructor()
 
     public constructor(ilon: Int, ilat: Int) {
-        this.position = positionOf(ilon, ilat, UNSET_ALTITUDE)
-        _idFromPos = (ilon.toLong() shl 32) or ilat.toLong()
+        this.position = positionOf(ilon, ilat)
+        _idFromPos = (ilon.toLong() shl 32) or (ilat.toLong() and 0xFFFFFFFFL)
     }
 
     public constructor(id: Long) {
-        this.position = id.toPosition(UNSET_ALTITUDE)
+        this.position = id.toPosition()
         _idFromPos = id
     }
 
@@ -128,7 +129,7 @@ public open class OsmNode : OsmLink, OsmPos {
         }
 
         val readSElev = mc.readShort()
-        position = Position(position.longitude, position.latitude, readSElev.toDouble() / 4.0)
+        position = osmPositionOf(position.longitude, position.latitude, readSElev)
         val nodeDescSize = mc.readVarLengthUnsigned()
         nodeDescription = if (nodeDescSize == 0) null else mc.readUnified(nodeDescSize, abUnifier)
 
@@ -210,10 +211,10 @@ public open class OsmNode : OsmLink, OsmPos {
 
 
     public val isHollow: Boolean
-        get() = position.altitude == HOLLOW_ALTITUDE
+        get() = position.altitude == HOLLOW_SELEV
 
     public fun setHollow() {
-        position = Position(position.longitude, position.latitude, HOLLOW_ALTITUDE)
+        position = Position(position.longitude, position.latitude, HOLLOW_SELEV)
     }
 
     override val idFromPos: Long
@@ -279,9 +280,6 @@ public open class OsmNode : OsmLink, OsmPos {
 
     private companion object {
         private const val HOLLOW_SELEV: Short = -12345
-        private const val ALTITUDE_SCALE: Double = 4.0
-        private val UNSET_ALTITUDE: Double = Short.MIN_VALUE.toDouble() / ALTITUDE_SCALE
-        private val HOLLOW_ALTITUDE: Double = HOLLOW_SELEV.toDouble() / ALTITUDE_SCALE
     }
 
 }

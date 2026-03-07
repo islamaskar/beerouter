@@ -1,6 +1,7 @@
 package dev.skynomads.beerouter.router
 
 import androidx.collection.MutableLongObjectMap
+import dev.skynomads.beerouter.geo.Position
 import dev.skynomads.beerouter.mapaccess.MatchedWaypoint
 import dev.skynomads.beerouter.mapaccess.NodesCache
 import dev.skynomads.beerouter.mapaccess.OsmLink
@@ -11,7 +12,6 @@ import dev.skynomads.beerouter.osm.latitudeE6
 import dev.skynomads.beerouter.osm.longitudeE6
 import dev.skynomads.beerouter.osm.toSElev
 import dev.skynomads.beerouter.router.OsmTrack.OsmPathElementHolder
-import org.maplibre.spatialk.geojson.Position
 import dev.skynomads.beerouter.util.CheapAngleMeter.Companion.getDifferenceFromDirection
 import dev.skynomads.beerouter.util.CheapAngleMeter.Companion.getDirection
 import dev.skynomads.beerouter.util.CheapRuler.destination
@@ -341,7 +341,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
 
             val start1 = re.nodesCache!!.getStartNode(listStart[0].node1!!.idFromPos)
 
-            val elev = start1?.position?.altitude ?: 0.0 // listOne.get(0).crosspoint.getElev();
+            val elev = start1?.position?.altitudeMeters ?: 0.0 // listOne.get(0).crosspoint.getElev();
 
             var maxlon = Int.MIN_VALUE
             var minlon = Int.MAX_VALUE
@@ -389,7 +389,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
                 ais.add(rc.ai!!)
             }
 
-            var maxscale = abs(searchRect.points[2].x - searchRect.points[0].x)
+            var maxscale = abs(searchRect.points[2].longitude - searchRect.points[0].longitude)
             maxscale = max(1, (maxscale / 31250f / 2).roundToInt() + 1)
 
             areareader.getDirectAllData(
@@ -505,7 +505,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
                         tmp.position.latitude,
                         selev.toInt().toDouble() / 4.0
                     )
-                    tmp.message!!.ele = selev.toInt().toShort()
+                    tmp.message!!.position = tmp.message!!.position.withAltitude(selev.toInt().toShort().toDouble() / 4.0)
                     tmpPt = tmp
                 }
                 dist = 0
@@ -1306,8 +1306,8 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
             if (key > 0) {
                 val GRAVITY = 9.81 // in meters per second^(-2)
                 val incline =
-                    (if (toSElev(t.nodes[key - 1].position.altitude) == Short.MIN_VALUE || toSElev(t.nodes[key].position.altitude) == Short.MIN_VALUE) 0.0 else ((t.nodes[key - 1].position.altitude
-                        ?: 0.0) - (t.nodes[key].position.altitude ?: 0.0)) / value)
+                    (if (toSElev(t.nodes[key - 1].position.altitude) == Short.MIN_VALUE || toSElev(t.nodes[key].position.altitude) == Short.MIN_VALUE) 0.0 else ((t.nodes[key - 1].position.altitudeMeters
+                        ?: 0.0) - (t.nodes[key].position.altitudeMeters ?: 0.0)) / value)
                 val f_roll =
                     routingContext.global.totalMass * GRAVITY * (routingContext.global.defaultC_r + incline)
                 val spd = speedMin / 3.6

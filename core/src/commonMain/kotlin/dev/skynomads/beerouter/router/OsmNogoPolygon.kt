@@ -8,18 +8,16 @@
  */
 package dev.skynomads.beerouter.router
 
+import dev.skynomads.beerouter.geo.Position
 import dev.skynomads.beerouter.osm.toDoubleLatitude
 import dev.skynomads.beerouter.osm.toDoubleLongitude
 import dev.skynomads.beerouter.util.CheapRuler.distance
 import dev.skynomads.beerouter.util.CheapRuler.getLonLatToMeterScales
-import org.maplibre.spatialk.geojson.Position
 import kotlin.math.min
 import kotlin.math.sqrt
 
 public class OsmNogoPolygon(public val isClosed: Boolean) : OsmNodeNamed() {
-    public class Point internal constructor(public val x: Int, public val y: Int)
-
-    public val points: MutableList<Point> = mutableListOf()
+    public val points: MutableList<Position> = mutableListOf()
 
     init {
         this.isNogo = true
@@ -27,7 +25,7 @@ public class OsmNogoPolygon(public val isClosed: Boolean) : OsmNodeNamed() {
     }
 
     public fun addVertex(lon: Int, lat: Int) {
-        points.add(Point(lon, lat))
+        points.add(Position(lon, lat))
     }
 
     /**
@@ -60,17 +58,17 @@ public class OsmNogoPolygon(public val isClosed: Boolean) : OsmNodeNamed() {
         // first calculate a starting center point as center of boundingbox
         for (i in points.indices) {
             val p = points[i]
-            if (p.x < cxmin) {
-                cxmin = p.x
+            if (p.longitude < cxmin) {
+                cxmin = p.longitude
             }
-            if (p.x > cxmax) {
-                cxmax = p.x
+            if (p.longitude > cxmax) {
+                cxmax = p.longitude
             }
-            if (p.y < cymin) {
-                cymin = p.y
+            if (p.latitude < cymin) {
+                cymin = p.latitude
             }
-            if (p.y > cymax) {
-                cymax = p.y
+            if (p.latitude > cymax) {
+                cymax = p.latitude
             }
         }
 
@@ -93,8 +91,8 @@ public class OsmNogoPolygon(public val isClosed: Boolean) : OsmNodeNamed() {
 
                 // to get precisely the same results as in RoutingContext.calcDistance()
                 // it's crucial to use the factors of the center!
-                val x1 = (cx - p.x) * dlon2m
-                val y1 = (cy - p.y) * dlat2m
+                val x1 = (cx - p.longitude) * dlon2m
+                val y1 = (cy - p.latitude) * dlat2m
                 val dist = sqrt(x1 * x1 + y1 * y1)
 
                 if (dist <= rad) {
@@ -112,16 +110,16 @@ public class OsmNogoPolygon(public val isClosed: Boolean) : OsmNodeNamed() {
             val dd = 0.5 * (1 - rad / dmax)
 
             val p = points[iMax] // calculate new radius to just include this point
-            cx += (dd * (p.x - cx) + 0.5).toInt() // shift center toward point
-            cy += (dd * (p.y - cy) + 0.5).toInt()
+            cx += (dd * (p.longitude - cx) + 0.5).toInt() // shift center toward point
+            cy += (dd * (p.latitude - cy) + 0.5).toInt()
 
             // get new factors at shifted centerpoint
             lonlat2m = getLonLatToMeterScales(cy)
             dlon2m = lonlat2m[0]
             dlat2m = lonlat2m[1]
 
-            val x1 = (cx - p.x) * dlon2m
-            val y1 = (cy - p.y) * dlat2m
+            val x1 = (cx - p.longitude) * dlon2m
+            val y1 = (cy - p.latitude) * dlat2m
             rad = sqrt(x1 * x1 + y1 * y1)
             dmax = rad
             iMax = -1
@@ -150,8 +148,8 @@ public class OsmNogoPolygon(public val isClosed: Boolean) : OsmNodeNamed() {
      * @return true if segment or any of it's points are 'inside' of polygon
      */
     public fun intersects(lon0: Int, lat0: Int, lon1: Int, lat1: Int): Boolean {
-        val p0 = Point(lon0, lat0)
-        val p1 = Point(lon1, lat1)
+        val p0 = Position(lon0, lat0)
+        val p1 = Position(lon1, lat1)
         val iLast = points.size - 1
         var p2 = points[if (isClosed) iLast else 0]
         for (i in (if (isClosed) 0 else 1)..iLast) {
@@ -170,7 +168,7 @@ public class OsmNogoPolygon(public val isClosed: Boolean) : OsmNodeNamed() {
         var p1 = points[0]
         for (i in 1..iLast) {
             val p2 = points[i]
-            if (isOnLine(px, py, p1.x.toLong(), p1.y.toLong(), p2.x.toLong(), p2.y.toLong())) {
+            if (isOnLine(px, py, p1.longitude.toLong(), p1.latitude.toLong(), p2.longitude.toLong(), p2.latitude.toLong())) {
                 return true
             }
             p1 = p2
@@ -197,14 +195,14 @@ public class OsmNogoPolygon(public val isClosed: Boolean) : OsmNodeNamed() {
         // loop through all edges of the polygon
         val iLast = points.size - 1
         val p0 = points[if (isClosed) iLast else 0]
-        var p0x = p0.x.toLong() // need to use long to avoid overflow in products
-        var p0y = p0.y.toLong()
+        var p0x = p0.longitude.toLong() // need to use long to avoid overflow in products
+        var p0y = p0.latitude.toLong()
 
         for (i in (if (isClosed) 0 else 1)..iLast) { // edge from v[i] to v[i+1]
             val p1 = points[i]
 
-            val p1x = p1.x.toLong()
-            val p1y = p1.y.toLong()
+            val p1x = p1.longitude.toLong()
+            val p1y = p1.latitude.toLong()
 
             if (isOnLine(px, py, p0x, p0y, p1x, p1y)) {
                 return true
@@ -244,10 +242,10 @@ public class OsmNogoPolygon(public val isClosed: Boolean) : OsmNodeNamed() {
         var distance = 0.0
 
         // Extremities of the segments
-        val p1 = Point(lon1, lat1)
-        val p2 = Point(lon2, lat2)
+        val p1 = Position(lon1, lat1)
+        val p2 = Position(lon2, lat2)
 
-        var previousIntersectionOnSegment: Point? = null
+        var previousIntersectionOnSegment: Position? = null
         if (isWithin(lon1.toLong(), lat1.toLong())) {
             // Start point of the segment is within the polygon, this is the first
             // "intersection".
@@ -268,29 +266,29 @@ public class OsmNogoPolygon(public val isClosed: Boolean) : OsmNodeNamed() {
                 // Distance is zero when crossing a polyline.
                 // Let's find this intersection point
                 val xdiffSegment = lon1 - lon2
-                val xdiffEdge = edgePoint1.x - edgePoint2.x
+                val xdiffEdge = edgePoint1.longitude - edgePoint2.longitude
                 val ydiffSegment = lat1 - lat2
-                val ydiffEdge = edgePoint1.y - edgePoint2.y
+                val ydiffEdge = edgePoint1.latitude - edgePoint2.latitude
                 val div = xdiffSegment * ydiffEdge - xdiffEdge * ydiffSegment
                 val dSegment = lon1.toLong() * lat2.toLong() - lon2.toLong() * lat1.toLong()
                 val dEdge =
-                    edgePoint1.x.toLong() * edgePoint2.y.toLong() - edgePoint2.x.toLong() * edgePoint1.y.toLong()
+                    edgePoint1.longitude.toLong() * edgePoint2.latitude.toLong() - edgePoint2.longitude.toLong() * edgePoint1.latitude.toLong()
                 // Coordinates of the intersection
-                val intersection = Point(
+                val intersection = Position(
                     ((dSegment * xdiffEdge - dEdge * xdiffSegment) / div).toInt(),
                     ((dSegment * ydiffEdge - dEdge * ydiffSegment) / div).toInt()
                 )
                 if (previousIntersectionOnSegment != null
                     && isWithin(
-                        ((intersection.x + previousIntersectionOnSegment.x) shr 1).toLong(),
-                        ((intersection.y + previousIntersectionOnSegment.y) shr 1).toLong()
+                        ((intersection.longitude + previousIntersectionOnSegment.longitude) shr 1).toLong(),
+                        ((intersection.latitude + previousIntersectionOnSegment.latitude) shr 1).toLong()
                     )
                 ) {
                     // There was a previous match within the polygon and this part of the
                     // segment is within the polygon.
                     distance += distance(
-                        previousIntersectionOnSegment.x, previousIntersectionOnSegment.y,
-                        intersection.x, intersection.y
+                        previousIntersectionOnSegment.longitude, previousIntersectionOnSegment.latitude,
+                        intersection.longitude, intersection.latitude
                     )
                 }
                 previousIntersectionOnSegment = intersection
@@ -298,12 +296,12 @@ public class OsmNogoPolygon(public val isClosed: Boolean) : OsmNodeNamed() {
                 // Segment and edge overlaps
                 // FIXME: Could probably be done in a smarter way
                 distance += min(
-                    distance(p1.x, p1.y, p2.x, p2.y),
+                    distance(p1.longitude, p1.latitude, p2.longitude, p2.latitude),
                     min(
-                        distance(edgePoint1.x, edgePoint1.y, edgePoint2.x, edgePoint2.y),
+                        distance(edgePoint1.longitude, edgePoint1.latitude, edgePoint2.longitude, edgePoint2.latitude),
                         min(
-                            distance(p1.x, p1.y, edgePoint2.x, edgePoint2.y),
-                            distance(edgePoint1.x, edgePoint1.y, p2.x, p2.y)
+                            distance(p1.longitude, p1.latitude, edgePoint2.longitude, edgePoint2.latitude),
+                            distance(edgePoint1.longitude, edgePoint1.latitude, p2.longitude, p2.latitude)
                         )
                     )
                 )
@@ -318,7 +316,7 @@ public class OsmNogoPolygon(public val isClosed: Boolean) : OsmNodeNamed() {
         ) {
             // Last point is within the polygon, add the remaining missing distance.
             distance += distance(
-                previousIntersectionOnSegment.x, previousIntersectionOnSegment.y,
+                previousIntersectionOnSegment.longitude, previousIntersectionOnSegment.latitude,
                 lon2, lat2
             )
         }
@@ -326,7 +324,7 @@ public class OsmNogoPolygon(public val isClosed: Boolean) : OsmNodeNamed() {
     }
 
     public companion object {
-            public fun isOnLine(
+        public fun isOnLine(
             px: Long,
             py: Long,
             p0x: Long,
@@ -377,12 +375,12 @@ public class OsmNogoPolygon(public val isClosed: Boolean) : OsmNodeNamed() {
          * @return 1 = P is inside S
          * 0 = P is not inside S
          */
-        private fun inSegment(p: Point, seg_p0: Point, seg_p1: Point): Boolean {
-            val sp0x = seg_p0.x
-            val sp1x = seg_p1.x
+        private fun inSegment(p: Position, seg_p0: Position, seg_p1: Position): Boolean {
+            val sp0x = seg_p0.longitude
+            val sp1x = seg_p1.longitude
 
             if (sp0x != sp1x) { // S is not vertical
-                val px = p.x
+                val px = p.longitude
                 if (px in sp0x..sp1x) {
                     return true
                 }
@@ -391,9 +389,9 @@ public class OsmNogoPolygon(public val isClosed: Boolean) : OsmNodeNamed() {
                 }
             } else  // S is vertical, so test y coordinate
             {
-                val sp0y = seg_p0.y
-                val sp1y = seg_p1.y
-                val py = p.y
+                val sp0y = seg_p0.latitude
+                val sp1y = seg_p1.latitude
+                val py = p.latitude
 
                 if (py in sp0y..sp1y) {
                     return true
@@ -422,14 +420,14 @@ public class OsmNogoPolygon(public val isClosed: Boolean) : OsmNodeNamed() {
          * 1=intersect in unique point I0
          * 2=overlap in segment from I0 to I1
          */
-        private fun intersect2D_2Segments(s1p0: Point, s1p1: Point, s2p0: Point, s2p1: Point): Int {
-            val ux = (s1p1.x - s1p0.x).toLong() // vector u = S1P1-S1P0 (segment 1)
-            val uy = (s1p1.y - s1p0.y).toLong()
-            val vx = (s2p1.x - s2p0.x).toLong() // vector v = S2P1-S2P0 (segment 2)
-            val vy = (s2p1.y - s2p0.y).toLong()
+        private fun intersect2D_2Segments(s1p0: Position, s1p1: Position, s2p0: Position, s2p1: Position): Int {
+            val ux = (s1p1.longitude - s1p0.longitude).toLong() // vector u = S1P1-S1P0 (segment 1)
+            val uy = (s1p1.latitude - s1p0.latitude).toLong()
+            val vx = (s2p1.longitude - s2p0.longitude).toLong() // vector v = S2P1-S2P0 (segment 2)
+            val vy = (s2p1.latitude - s2p0.latitude).toLong()
             val wx =
-                (s1p0.x - s2p0.x).toLong() // vector w = S1P0-S2P0 (from start of segment 2 to start of segment 1
-            val wy = (s1p0.y - s2p0.y).toLong()
+                (s1p0.longitude - s2p0.longitude).toLong() // vector w = S1P0-S2P0 (from start of segment 2 to start of segment 1
+            val wy = (s1p0.latitude - s2p0.latitude).toLong()
 
             val d = (ux * vy - uy * vx).toDouble()
 
@@ -460,8 +458,8 @@ public class OsmNogoPolygon(public val isClosed: Boolean) : OsmNodeNamed() {
                 var t0: Double
                 var t1: Double // endpoints of S1 in eqn for S2
                 val w2x =
-                    s1p1.x - s2p0.x // vector w2 = S1P1-S2P0 (from start of segment 2 to end of segment 1)
-                val w2y = s1p1.y - s2p0.y
+                    s1p1.longitude - s2p0.longitude // vector w2 = S1P1-S2P0 (from start of segment 2 to end of segment 1)
+                val w2y = s1p1.latitude - s2p0.latitude
                 if (vx != 0L) {
                     t0 = (wx / vx).toDouble()
                     t1 = (w2x / vx).toDouble()

@@ -6,12 +6,12 @@ import dev.skynomads.beerouter.codec.StatCoderContext
 import dev.skynomads.beerouter.codec.TagValueCoder
 import dev.skynomads.beerouter.codec.TagValueValidator
 import dev.skynomads.beerouter.codec.WaypointMatcher
+import dev.skynomads.beerouter.geo.Position
 import dev.skynomads.beerouter.osm.latitudeE6
 import dev.skynomads.beerouter.osm.longitudeE6
 import dev.skynomads.beerouter.osm.osmIdOf
 import dev.skynomads.beerouter.osm.positionOf
 import dev.skynomads.beerouter.util.ByteDataWriter
-import org.maplibre.spatialk.geojson.Position
 
 /**
  * DirectWeaver does the same decoding as MicroCache2, but decodes directly

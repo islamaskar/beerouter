@@ -6,12 +6,11 @@
  */
 package dev.skynomads.beerouter.router
 
+import dev.skynomads.beerouter.geo.Position
 import dev.skynomads.beerouter.osm.latitudeE6
 import dev.skynomads.beerouter.osm.longitudeE6
-import dev.skynomads.beerouter.osm.positionOf
 import dev.skynomads.beerouter.osm.osmPositionOf
-import dev.skynomads.beerouter.osm.toSElev
-import org.maplibre.spatialk.geojson.Position
+import dev.skynomads.beerouter.osm.positionOf
 import kotlin.math.abs
 
 public class VoiceHint {
@@ -41,7 +40,7 @@ public class VoiceHint {
     public var position: Position = positionOf(0, 0)
 
     private val sElevation: Short
-        get() = toSElev(position.altitude)
+        get() = position.altitude ?: Short.MIN_VALUE
 
     @Deprecated("Use position instead")
     public var ilon: Int
@@ -59,7 +58,7 @@ public class VoiceHint {
 
     @Deprecated("Use position instead")
     public var selev: Short
-        get() = toSElev(position.altitude)
+        get() = position.altitude ?: Short.MIN_VALUE
         set(value) {
             position = osmPositionOf(position.longitudeE6, position.latitudeE6, value)
         }

@@ -1,10 +1,10 @@
 package dev.skynomads.beerouter.router
 
 import dev.skynomads.beerouter.mapaccess.DefaultMapAccessFileSystem
-import java.io.File
 import kotlinx.io.buffered
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
+import java.io.File
 
 internal fun routingContextFromFiles(profile: File, segmentDir: File): RoutingContext {
     return routingContextFromFiles(Path(profile.path), Path(segmentDir.path))

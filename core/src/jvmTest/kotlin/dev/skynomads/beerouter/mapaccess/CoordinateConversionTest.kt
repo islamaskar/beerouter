@@ -1,13 +1,12 @@
 package dev.skynomads.beerouter.mapaccess
 
+import dev.skynomads.beerouter.geo.Position
 import dev.skynomads.beerouter.osm.toDoubleLatitude
 import dev.skynomads.beerouter.osm.toDoubleLongitude
 import dev.skynomads.beerouter.osm.toIntLatitude
 import dev.skynomads.beerouter.osm.toIntLongitude
-import org.maplibre.spatialk.geojson.Position
 import kotlin.test.Test
 import kotlin.test.assertEquals
-import kotlin.test.assertTrue
 
 class CoordinateConversionTest {
 
@@ -68,8 +67,8 @@ class CoordinateConversionTest {
             val node = OsmNode(position)
 
             // Check that the derived iLat/iLon properties match the original values (with tolerance for precision)
-            assertEquals(lon, node.position.longitude.toIntLongitude(), message = "iLon should match original")
-            assertEquals(lat, node.position.latitude.toIntLatitude(), message = "iLat should match original")
+            assertEquals(lon, node.position.longitude, message = "iLon should match original")
+            assertEquals(lat, node.position.latitude, message = "iLat should match original")
 
             // Check that the position is calculated correctly
             val expectedLon = lon.toDoubleLongitude()
@@ -77,13 +76,13 @@ class CoordinateConversionTest {
 
             assertEquals(
                 expectedLon,
-                node.position.longitude,
+                node.position.longitudeDegree,
                 1e-6,
                 "Longitude should be calculated correctly"
             )
             assertEquals(
                 expectedLat,
-                node.position.latitude,
+                node.position.latitudeDegree,
                 1e-6,
                 "Latitude should be calculated correctly"
             )
@@ -114,12 +113,12 @@ class CoordinateConversionTest {
 
             assertEquals(
                 expectedILon,
-                node.position.longitude.toIntLongitude(),
+                node.position.longitude,
                 message = "iLon should be calculated correctly from longitude $lon"
             )
             assertEquals(
                 expectedILat,
-                node.position.latitude.toIntLatitude(),
+                node.position.latitude,
                 message = "iLat should be calculated correctly from latitude $lat"
             )
         }
@@ -144,8 +143,8 @@ class CoordinateConversionTest {
             )
             val node = OsmNode(position)
 
-            assertEquals(lon, node.position.longitude.toIntLongitude(), message = "iLon should match original for extreme value")
-            assertEquals(lat, node.position.latitude.toIntLatitude(), message = "iLat should match original for extreme value")
+            assertEquals(lon, node.position.longitude, message = "iLon should match original for extreme value")
+            assertEquals(lat, node.position.latitude, message = "iLat should match original for extreme value")
         }
     }
 
@@ -174,8 +173,8 @@ class CoordinateConversionTest {
             val positionLat = node.position.latitude
 
             // Step 3: Convert Position coordinates back to integer coordinates using conversion functions
-            val resultLon = positionLon.toIntLongitude()
-            val resultLat = positionLat.toIntLatitude()
+            val resultLon = positionLon
+            val resultLat = positionLat
 
             // Step 4: Check that the integer coordinates match the original (with tolerance for precision)
             assertEquals(
@@ -189,5 +188,15 @@ class CoordinateConversionTest {
                 message = "Latitude should be preserved through round-trip"
             )
         }
+    }
+
+    @Test
+    fun testPositionStoresAltitudeInQuarterMeters() {
+        val position = Position(12.0, 34.0, 123.25)
+
+        assertEquals(493.toShort(), position.altitude)
+        assertEquals(123.25, position.altitudeMeters)
+        assertEquals(null, Position(12.0, 34.0).altitude)
+        assertEquals(null, Position(12.0, 34.0).altitudeMeters)
     }
 }

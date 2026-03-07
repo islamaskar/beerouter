@@ -1,9 +1,9 @@
 package dev.skynomads.beerouter.router
 
+import dev.skynomads.beerouter.geo.Position
 import dev.skynomads.beerouter.osm.toIntLatitude
 import dev.skynomads.beerouter.osm.toIntLongitude
 import kotlinx.coroutines.runBlocking
-import org.maplibre.spatialk.geojson.Position
 import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -36,8 +36,8 @@ class EnergyParityTest {
             waypoints.map {
                 btools.router.OsmNodeNamed().apply {
                     name = it.name
-                    ilon = it.position.longitude.toIntLongitude()
-                    ilat = it.position.latitude.toIntLatitude()
+                    ilon = it.position.longitude
+                    ilat = it.position.latitude
                 }
             },
             rc

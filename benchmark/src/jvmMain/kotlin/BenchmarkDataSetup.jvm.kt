@@ -1,9 +1,9 @@
 package dev.skynomads.beerouter.benchmark
 
-import java.net.URI
 import kotlinx.io.buffered
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
+import java.net.URI
 
 internal actual fun ensureSegmentFile(segmentFile: Path) {
     if (SystemFileSystem.exists(segmentFile)) {

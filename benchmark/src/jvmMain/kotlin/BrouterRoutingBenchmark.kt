@@ -5,8 +5,6 @@ import btools.router.RoutingContext
 import btools.router.RoutingEngine
 import dev.skynomads.beerouter.osm.toIntLatitude
 import dev.skynomads.beerouter.osm.toIntLongitude
-import java.io.File
-import kotlin.time.Duration.Companion.seconds
 import kotlinx.benchmark.Benchmark
 import kotlinx.benchmark.Measurement
 import kotlinx.benchmark.Scope
@@ -16,6 +14,8 @@ import kotlinx.benchmark.Warmup
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
 import kotlinx.io.files.SystemTemporaryDirectory
+import java.io.File
+import kotlin.time.Duration.Companion.seconds
 
 @State(Scope.Benchmark)
 @Warmup(iterations = 1)

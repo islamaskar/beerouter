@@ -4,9 +4,9 @@
  */
 package dev.skynomads.beerouter.util
 
+import dev.skynomads.beerouter.geo.Position
 import dev.skynomads.beerouter.osm.latitudeE6
 import dev.skynomads.beerouter.osm.longitudeE6
-import org.maplibre.spatialk.geojson.Position
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.atan2

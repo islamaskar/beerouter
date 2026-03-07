@@ -6,6 +6,7 @@
 package dev.skynomads.beerouter.router
 
 import androidx.collection.MutableLongObjectMap
+import dev.skynomads.beerouter.geo.Position
 import dev.skynomads.beerouter.mapaccess.MatchedWaypoint
 import dev.skynomads.beerouter.mapaccess.MatchedWaypoint.Companion.readFromStream
 import dev.skynomads.beerouter.mapaccess.OsmPos
@@ -15,7 +16,6 @@ import dev.skynomads.beerouter.osm.toSElev
 import kotlinx.io.EOFException
 import kotlinx.io.Sink
 import kotlinx.io.Source
-import org.maplibre.spatialk.geojson.Position
 import kotlin.math.abs
 
 public class OsmTrack {
@@ -164,9 +164,8 @@ public class OsmTrack {
                 e.message?.let { message ->
                     val lon = e.position.longitudeE6
                     val lat = e.position.latitudeE6
-                    if (message.lon != lon || message.lat != lat) {
-                        message.lon = lon
-                        message.lat = lat
+                    if (message.position.longitudeE6 != lon || message.position.latitudeE6 != lat) {
+                        message.position = e.position
                     }
                 }
                 nodes.add(e)

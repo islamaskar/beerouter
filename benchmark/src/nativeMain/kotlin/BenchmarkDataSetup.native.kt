@@ -1,9 +1,9 @@
 package dev.skynomads.beerouter.benchmark
 
-import io.ktor.client.*
-import io.ktor.client.call.*
-import io.ktor.client.engine.curl.*
-import io.ktor.client.request.*
+import io.ktor.client.HttpClient
+import io.ktor.client.call.body
+import io.ktor.client.engine.curl.Curl
+import io.ktor.client.request.get
 import kotlinx.coroutines.runBlocking
 import kotlinx.io.buffered
 import kotlinx.io.files.Path

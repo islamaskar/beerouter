@@ -5,6 +5,12 @@
  */
 package dev.skynomads.beerouter.router
 
+import dev.skynomads.beerouter.geo.Position
+import dev.skynomads.beerouter.osm.latitudeE6
+import dev.skynomads.beerouter.osm.longitudeE6
+import dev.skynomads.beerouter.osm.osmPositionOf
+import dev.skynomads.beerouter.osm.positionOf
+
 public data class MessageData(
     public var linkdist: Int = 0,
     public var linkelevationcost: Int = 0,
@@ -17,9 +23,7 @@ public data class MessageData(
     public var turnangle: Float = 0f,
     public var wayTags: Map<String, String>? = null,
     public var nodeTags: Map<String, String>? = null,
-    public var lon: Int = 0,
-    public var lat: Int = 0,
-    public var ele: Short = 0,
+    public var position: Position = positionOf(0, 0),
     public var time: Float = 0f,
     public var energy: Float = 0f,
     public var vmaxExplicit: Int = -1,
@@ -63,4 +67,25 @@ public data class MessageData(
 
     public val isGoodForCars: Boolean
         get() = hasFlag(ClassifierFlag.GOOD_FOR_CARS)
+
+    @Deprecated("Use position.longitude instead")
+    public var lon: Int
+        get() = position.longitudeE6
+        set(value) {
+            position = osmPositionOf(value, position.latitudeE6, position.altitude)
+        }
+
+    @Deprecated("Use position.latitude instead")
+    public var lat: Int
+        get() = position.latitudeE6
+        set(value) {
+            position = osmPositionOf(position.longitudeE6, value, position.altitude)
+        }
+
+    @Deprecated("Use position.altitude instead")
+    public var ele: Short
+        get() = position.altitude ?: Short.MIN_VALUE
+        set(value) {
+            position = position.withAltitude(value.takeUnless { it == Short.MIN_VALUE })
+        }
 }

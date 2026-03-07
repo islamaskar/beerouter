@@ -5,8 +5,6 @@
  */
 package dev.skynomads.beerouter.mapaccess
 
-import dev.skynomads.beerouter.osm.latitudeE6
-import dev.skynomads.beerouter.osm.longitudeE6
 import dev.skynomads.beerouter.osm.osmIdOf
 
 public data class TurnRestriction(

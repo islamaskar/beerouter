@@ -1,15 +1,14 @@
 package dev.skynomads.beerouter.router
 
+import dev.skynomads.beerouter.geo.Position
 import dev.skynomads.beerouter.mapaccess.OsmPos
 import dev.skynomads.beerouter.osm.latitudeE6
 import dev.skynomads.beerouter.osm.longitudeE6
 import dev.skynomads.beerouter.osm.osmPositionOf
 import dev.skynomads.beerouter.osm.positionOf
-import dev.skynomads.beerouter.osm.toSElev
 import dev.skynomads.beerouter.util.CheapRuler.distance
 import kotlinx.io.Sink
 import kotlinx.io.Source
-import org.maplibre.spatialk.geojson.Position
 import kotlin.math.max
 import kotlin.math.roundToInt
 
@@ -19,11 +18,11 @@ import kotlin.math.roundToInt
  * @author ab
  */
 public class OsmPathElement protected constructor() : OsmPos {
-    public override var position: Position = positionOf(0, 0, 0.0)
+    public override var position: Position = positionOf(0, 0)
 
     @Deprecated("Use position.altitude instead")
     public val sElev: Short
-        get() = position.altitude?.times(4.0)?.toInt()?.toShort() ?: Short.MIN_VALUE
+        get() = position.altitude ?: Short.MIN_VALUE
 
     public var message: MessageData? = null // description
 
@@ -67,7 +66,7 @@ public class OsmPathElement protected constructor() : OsmPos {
     public fun writeToStream(sink: Sink) {
         sink.writeInt(position.latitudeE6)
         sink.writeInt(position.longitudeE6)
-        sink.writeShort(toSElev(position.altitude))
+        sink.writeShort(position.altitude ?: Short.MIN_VALUE)
         sink.writeInt(cost)
     }
 

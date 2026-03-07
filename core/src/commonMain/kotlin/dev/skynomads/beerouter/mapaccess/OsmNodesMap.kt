@@ -6,9 +6,9 @@
 package dev.skynomads.beerouter.mapaccess
 
 import androidx.collection.MutableLongObjectMap
+import dev.skynomads.beerouter.geo.Position
 import dev.skynomads.beerouter.osm.toOsmId
 import dev.skynomads.beerouter.util.ByteArrayUnifier
-import org.maplibre.spatialk.geojson.Position
 
 public class OsmNodesMap {
     private val hmap: MutableLongObjectMap<OsmNode> = MutableLongObjectMap(4096)

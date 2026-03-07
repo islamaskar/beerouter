@@ -5,13 +5,14 @@
  */
 package dev.skynomads.beerouter.router
 
+import dev.skynomads.beerouter.geo.Position
 import dev.skynomads.beerouter.mapaccess.OsmLink
 import dev.skynomads.beerouter.mapaccess.OsmLinkHolder
 import dev.skynomads.beerouter.mapaccess.OsmNode
 import dev.skynomads.beerouter.mapaccess.TurnRestriction.Companion.isTurnForbidden
-import dev.skynomads.beerouter.osm.osmIdOf
 import dev.skynomads.beerouter.osm.latitudeE6
 import dev.skynomads.beerouter.osm.longitudeE6
+import dev.skynomads.beerouter.osm.osmIdOf
 import dev.skynomads.beerouter.osm.positionOf
 import dev.skynomads.beerouter.osm.toSElev
 import dev.skynomads.beerouter.util.CheapRuler
@@ -41,10 +42,8 @@ public abstract class OsmPath : OsmLinkHolder {
 
     public var treedepth: Int = 0
 
-    // the position of the waypoint just before
-    // this path position (for angle calculation)
-    public var originLon: Int = 0
-    public var originLat: Int = 0
+    // The waypoint just before this path position (for angle calculation).
+    public var originPosition: Position? = null
 
     // the classifier of the segment just before this paths position
     protected var lastClassifier: Float = 0f
@@ -75,8 +74,7 @@ public abstract class OsmPath : OsmLinkHolder {
         targetNode = link.getTarget(null)
         selev = toSElev(targetNode!!.position.altitude)
 
-        originLon = -1
-        originLat = -1
+        originPosition = null
     }
 
     public fun init(
@@ -132,9 +130,8 @@ public abstract class OsmPath : OsmLinkHolder {
                 it.priorityclassifier = 0
                 it.classifiermask = 0
                 val tgtId = targetNode!!.idFromPos
-                it.lon = (tgtId shr 32).toInt()
-                it.lat = (tgtId and 0xffffffffL).toInt()
-                it.ele = Short.MIN_VALUE
+                it.position =
+                    positionOf((tgtId shr 32).toInt(), (tgtId and 0xffffffffL).toInt())
                 it.linkdist = sourceNode!!.calcDistance(targetNode!!)
                 it.wayTags = mapOf("direct_segment" to "$seg")
                 seg++
@@ -147,8 +144,7 @@ public abstract class OsmPath : OsmLinkHolder {
         rc.nogoCost = 0.0
 
         // extract the 3 positions of the first section
-        var lon0 = origin.originLon
-        var lat0 = origin.originLat
+        var previousPosition = origin.originPosition
 
         val srcId = sourceNode!!.idFromPos
         var lon1 = (srcId shr 32).toInt()
@@ -223,8 +219,7 @@ public abstract class OsmPath : OsmLinkHolder {
 
         var nsection = 0
         while (true) {
-            originLon = lon1
-            originLat = lat1
+            originPosition = positionOf(lon1, lat1)
 
             val lon2: Int
             val lat2: Int
@@ -243,7 +238,7 @@ public abstract class OsmPath : OsmLinkHolder {
             }
             ele2 = originEle2
 
-            var isStartpoint = lon0 == -1 && lat0 == -1
+            var isStartpoint = previousPosition == null
 
             // check turn restrictions (n detail mode (=final pass) no TR to not mess up voice hints)
             if (nsection == 0 && rc.global.considerTurnRestrictions && !detailMode && !isStartpoint) {
@@ -251,14 +246,14 @@ public abstract class OsmPath : OsmLinkHolder {
                         isTurnForbidden(
                             sourceNode!!.firstRestriction,
                             osmIdOf(lon2, lat2),
-                            osmIdOf(lon0, lat0),
+                            requireNotNull(previousPosition).id,
                             rc.global.bikeMode || rc.global.footMode,
                             rc.global.carMode
                         )
                     else
                         isTurnForbidden(
                             sourceNode!!.firstRestriction,
-                            osmIdOf(lon0, lat0),
+                            requireNotNull(previousPosition).id,
                             osmIdOf(lon2, lat2),
                             rc.global.bikeMode || rc.global.footMode,
                             rc.global.carMode
@@ -286,8 +281,7 @@ public abstract class OsmPath : OsmLinkHolder {
                     // we just start here, reset everything
                     cost = 0
                     resetState()
-                    lon0 = -1 // reset turncost-pipe
-                    lat0 = -1
+                    previousPosition = null // reset turncost-pipe
                     isStartpoint = true
 
                     if (recordTransferNodes) {
@@ -295,7 +289,11 @@ public abstract class OsmPath : OsmLinkHolder {
                         if (rc.wayfraction > 0.0) {
                             ele1 = interpolateEle(ele1, ele2, 1.0 - rc.wayfraction)
                             originElement = OsmPathElement.create(
-                                positionOf(shortestPosition.longitudeE6, shortestPosition.latitudeE6, ele1.toDouble() / 4.0),
+                                positionOf(
+                                    shortestPosition.longitudeE6,
+                                    shortestPosition.latitudeE6,
+                                    ele1.toDouble() / 4.0
+                                ),
                                 null
                             )
                         } else {
@@ -304,7 +302,10 @@ public abstract class OsmPath : OsmLinkHolder {
                     }
 
                     if (rc.checkPendingEndpoint()) {
-                        dist = rc.calcDistance(requireNotNull(rc.shortestPosition), positionOf(lon2, lat2))
+                        dist = rc.calcDistance(
+                            requireNotNull(rc.shortestPosition),
+                            positionOf(lon2, lat2)
+                        )
                         if (rc.shortestmatch) {
                             stopAtEndpoint = true
                             ele2 = interpolateEle(ele1, ele2, rc.wayfraction)
@@ -320,15 +321,23 @@ public abstract class OsmPath : OsmLinkHolder {
             if (isStartpoint) {
                 if (rc.startDirectionValid) {
                     val dir = rc.startDirection!! * CheapRuler.DEG_TO_RAD
-                    val lonlat2m = getLonLatToMeterScales((lon0 + lat1) shr 1)
-                    lon0 = lon1 - (1000.0 * sin(dir) / lonlat2m[0]).toInt()
-                    lat0 = lat1 - (1000.0 * cos(dir) / lonlat2m[1]).toInt()
+                    val lonlat2m = getLonLatToMeterScales(lat1)
+                    previousPosition = positionOf(
+                        lon1 - (1000.0 * sin(dir) / lonlat2m[0]).toInt(),
+                        lat1 - (1000.0 * cos(dir) / lonlat2m[1]).toInt()
+                    )
                 } else {
-                    lon0 = lon1 - (lon2 - lon1)
-                    lat0 = lat1 - (lat2 - lat1)
+                    previousPosition = positionOf(lon1 - (lon2 - lon1), lat1 - (lat2 - lat1))
                 }
             }
-            val angle = rc.anglemeter.calcAngle(lon0, lat0, lon1, lat1, lon2, lat2)
+            val angle = rc.anglemeter.calcAngle(
+                requireNotNull(previousPosition).longitudeE6,
+                requireNotNull(previousPosition).latitudeE6,
+                lon1,
+                lat1,
+                lon2,
+                lat2
+            )
             val cosangle = rc.anglemeter.cosAngle
 
             // *** elevation stuff
@@ -375,9 +384,7 @@ public abstract class OsmPath : OsmLinkHolder {
                 it.energy = this.totalEnergy.toFloat()
                 it.priorityclassifier = priorityclassifier
                 it.classifiermask = classifiermask
-                it.lon = lon2
-                it.lat = lat2
-                it.ele = originEle2
+                it.position = positionOf(lon2, lat2, originEle2.toDouble() / 4.0)
                 it.wayTags = rc.way.getMap(isReverse, description)
             }
 
@@ -385,7 +392,11 @@ public abstract class OsmPath : OsmLinkHolder {
                 if (recordTransferNodes) {
                     val shortestPosition = requireNotNull(rc.shortestPosition)
                     originElement = OsmPathElement.create(
-                        positionOf(shortestPosition.longitudeE6, shortestPosition.latitudeE6, originEle2.toDouble() / 4.0),
+                        positionOf(
+                            shortestPosition.longitudeE6,
+                            shortestPosition.latitudeE6,
+                            originEle2.toDouble() / 4.0
+                        ),
                         originElement
                     )
                     originElement!!.cost = cost
@@ -418,8 +429,7 @@ public abstract class OsmPath : OsmLinkHolder {
                     OsmPathElement.create(lon2, lat2, originEle2, originElement)
                 originElement!!.cost = cost
             }
-            lon0 = lon1
-            lat0 = lat1
+            previousPosition = positionOf(lon1, lat1)
             lon1 = lon2
             lat1 = lat2
             ele1 = ele2
