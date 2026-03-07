@@ -342,13 +342,13 @@ public class NodesCache(
     ) {
         firstFileAccessFailed = false
         firstFileAccessName = null
-        loadSegmentFor(n.position.longitudeE6, n.position.latitudeE6)
+        loadSegmentFor(n.position.longitude, n.position.latitude)
         require(!firstFileAccessFailed) { "datafile $firstFileAccessName not found" }
         var scale = 1
         while (scale < maxscale) {
             for (idxLat in -scale..scale) for (idxLon in -scale..scale) {
                 if (idxLon != 0 || idxLat != 0) {
-                    loadSegmentFor(n.position.longitudeE6 + d * idxLon, n.position.latitudeE6 + d * idxLat)
+                    loadSegmentFor(n.position.longitude + d * idxLon, n.position.latitude + d * idxLat)
                 }
             }
             if (bUseDynamicRange && waypointMatcher!!.hasMatch(n.position)) break

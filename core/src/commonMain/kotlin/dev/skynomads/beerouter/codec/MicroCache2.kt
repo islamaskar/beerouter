@@ -1,9 +1,9 @@
 package dev.skynomads.beerouter.codec
 
-import dev.skynomads.beerouter.osm.latitudeE6
-import dev.skynomads.beerouter.osm.longitudeE6
 import dev.skynomads.beerouter.osm.osmIdOf
 import dev.skynomads.beerouter.osm.positionOf
+import dev.skynomads.beerouter.osm.latitudeE6
+import dev.skynomads.beerouter.osm.longitudeE6
 import dev.skynomads.beerouter.util.ByteDataReader
 import dev.skynomads.beerouter.util.IByteArrayUnifier
 

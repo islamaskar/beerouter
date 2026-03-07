@@ -2,8 +2,6 @@ package dev.skynomads.beerouter.mapaccess
 
 import dev.skynomads.beerouter.codec.WaypointMatcher
 import dev.skynomads.beerouter.geo.Position
-import dev.skynomads.beerouter.osm.latitudeE6
-import dev.skynomads.beerouter.osm.longitudeE6
 import dev.skynomads.beerouter.osm.osmIdOf
 import dev.skynomads.beerouter.osm.positionOf
 import dev.skynomads.beerouter.util.CheapAngleMeter.Companion.getDifferenceFromDirection
@@ -104,8 +102,8 @@ public class WaypointMatcherImpl(
             }
 
             val wp = mwp.waypoint!!
-            val wpLon = wp.position.longitudeE6
-            val wpLat = wp.position.latitudeE6
+            val wpLon = wp.position.longitude
+            val wpLat = wp.position.latitude
             val x1 = (lon1 - wpLon) * dlon2m
             val y1 = (lat1 - wpLat) * dlat2m
             val x2 = (lon2 - wpLon) * dlon2m
@@ -141,21 +139,21 @@ public class WaypointMatcherImpl(
                     val ym = y2 - wayfraction * dy
                     val newLon = (xm / dlon2m + wpLon).toInt()
                     val newLat = (ym / dlat2m + wpLat).toInt()
-                    cp.position = positionOf(newLon, newLat, 0.0)
+                    cp.position = positionOf(newLon, newLat)
                 } else if (s1 > s2) {
-                    cp.position = positionOf(lon2, lat2, 0.0)
+                    cp.position = positionOf(lon2, lat2)
                 } else {
-                    cp.position = positionOf(lon1, lat1, 0.0)
+                    cp.position = positionOf(lon1, lat1)
                 }
             }
         }
     }
 
     override public fun start(start: Position, target: Position, useAsStartWay: Boolean): Boolean {
-        val ilonStart = start.longitudeE6
-        val ilatStart = start.latitudeE6
-        val ilonTarget = target.longitudeE6
-        val ilatTarget = target.latitudeE6
+        val ilonStart = start.longitude
+        val ilatStart = start.latitude
+        val ilonTarget = target.longitude
+        val ilatTarget = target.latitude
         if (islandPairs.size != 0) {
             val n1 = osmIdOf(ilonStart, ilatStart)
             val n2 = osmIdOf(ilonTarget, ilatTarget)
@@ -173,29 +171,29 @@ public class WaypointMatcherImpl(
 
     override public fun transferNode(position: Position) {
         checkSegment(
-            lastPosition.longitudeE6,
-            lastPosition.latitudeE6,
-            position.longitudeE6,
-            position.latitudeE6
+            lastPosition.longitude,
+            lastPosition.latitude,
+            position.longitude,
+            position.latitude
         )
         lastPosition = position
     }
 
     override public fun end() {
         checkSegment(
-            lastPosition.longitudeE6,
-            lastPosition.latitudeE6,
-            targetPosition.longitudeE6,
-            targetPosition.latitudeE6
+            lastPosition.longitude,
+            lastPosition.latitude,
+            targetPosition.longitude,
+            targetPosition.latitude
         )
         if (anyUpdate) {
             for (mwp in waypoints) {
                 if (mwp.hasUpdate) {
                     var angle = getDirection(
-                        startPosition.longitudeE6,
-                        startPosition.latitudeE6,
-                        targetPosition.longitudeE6,
-                        targetPosition.latitudeE6
+                        startPosition.longitude,
+                        startPosition.latitude,
+                        targetPosition.longitude,
+                        targetPosition.latitude
                     )
                     var diff = getDifferenceFromDirection(mwp.directionToNext, angle)
 
@@ -218,10 +216,10 @@ public class WaypointMatcherImpl(
 
                     // revers
                     angle = getDirection(
-                        targetPosition.longitudeE6,
-                        targetPosition.latitudeE6,
-                        startPosition.longitudeE6,
-                        startPosition.latitudeE6
+                        targetPosition.longitude,
+                        targetPosition.latitude,
+                        startPosition.longitude,
+                        startPosition.latitude
                     )
                     diff = getDifferenceFromDirection(mwp.directionToNext, angle)
                     mw = MatchedWaypoint()
@@ -248,11 +246,11 @@ public class WaypointMatcherImpl(
     }
 
     override public fun hasMatch(position: Position): Boolean {
-        val lon = position.longitudeE6
-        val lat = position.latitudeE6
+        val lon = position.longitude
+        val lat = position.latitude
         for (mwp in waypoints) {
             val wpPos = mwp.waypoint?.position ?: continue
-            if (wpPos.longitudeE6 == lon && wpPos.latitudeE6 == lat &&
+            if (wpPos.longitude == lon && wpPos.latitude == lat &&
                 (mwp.radius < this.maxDistance || mwp.crosspoint != null)
             ) {
                 return true
