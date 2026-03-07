@@ -17,8 +17,6 @@ public abstract class BExpressionContext protected constructor(
     private var _content: String = ""
     private var _contentPos: Int = 0
     private var _readerDone = false
-    private val _tokenSb = StringBuilder(32) // reused across _parseToken() calls
-    private val _commentSb = StringBuilder(32) // reused across _parseToken() calls
 
     public var _modelClass: String? = null
 
@@ -801,67 +799,87 @@ public abstract class BExpressionContext protected constructor(
     }
 
     private fun _parseToken(): String? {
-        val sb = _tokenSb.also { it.setLength(0) }
-        val sbcom = _commentSb.also { it.setLength(0) }
-        var inComment = false
-        while (true) {
-            val ic: Int = if (_readerDone) -1 else {
-                if (_contentPos < _content.length) _content[_contentPos++].code else -1
-            }
-            if (ic < 0) {
-                if (sb.isEmpty()) return null
-                _readerDone = true
-                return sb.toString()
-            }
-            val c = ic.toChar()
-            if (c == '\n') linenr++
+        if (_readerDone) {
+            return null
+        }
 
-            if (inComment) {
-                sbcom.append(c)
-                if (c == '\r' || c == '\n') inComment = false
-                if (!inComment) {
-                    val num = variableNumbers["check_start_way"]
-                    if (num != null && noStartWays.isEmpty() && sbcom.toString()
-                            .contains("noStartWay")
-                    ) {
-                        var `var` = sbcom.toString().trim()
-                        val savar = `var`.split("|").dropLastWhile { it.isEmpty() }
-                            .toTypedArray()
-                        if (savar.size == 4) {
-                            `var` = savar[3].substring(savar[3].indexOf("=") + 1).trim()
-                            val sa = `var`.split(";").dropLastWhile { it.isEmpty() }
-                                .toTypedArray()
-                            for (s in sa) {
-                                val sa2 = s.split(",").dropLastWhile { it.isEmpty() }
-                                    .toTypedArray()
-                                val name: String = sa2[0]
-                                val value: String = sa2[1]
-                                val nidx = getLookupNameIdx(name)
-                                if (nidx == -1) break
-                                val vidx = getLookupValueIdx(nidx, value)
-                                val tmp = IntArray(noStartWays.size + 2)
-                                if (noStartWays.isNotEmpty()) noStartWays.copyInto(
-                                    tmp,
-                                    0,
-                                    0,
-                                    noStartWays.size
-                                )
-                                noStartWays = tmp
-                                noStartWays[noStartWays.size - 2] = nidx
-                                noStartWays[noStartWays.size - 1] = vidx
-                            }
+        val content = _content
+        val length = content.length
+        while (_contentPos < length) {
+            val current = content[_contentPos]
+            when {
+                current == '\n' -> {
+                    linenr++
+                    _contentPos++
+                }
+
+                current.isWhitespace() -> _contentPos++
+
+                current == '#' -> {
+                    val commentStart = _contentPos
+                    while (_contentPos < length) {
+                        val commentChar = content[_contentPos++]
+                        if (commentChar == '\n') {
+                            linenr++
+                            break
+                        }
+                        if (commentChar == '\r') {
+                            break
                         }
                     }
-                    sbcom.setLength(0)
+                    processComment(content.substring(commentStart, _contentPos))
                 }
-                continue
+
+                else -> {
+                    val tokenStart = _contentPos
+                    while (_contentPos < length && !content[_contentPos].isWhitespace()) {
+                        _contentPos++
+                    }
+                    return content.substring(tokenStart, _contentPos)
+                }
             }
-            if (c.isWhitespace()) {
-                if (sb.isNotEmpty()) return sb.toString()
-                else continue
+        }
+
+        _readerDone = true
+        return null
+    }
+
+    private fun processComment(comment: String) {
+        val num = variableNumbers["check_start_way"]
+        if (num == null || noStartWays.isNotEmpty() || !comment.contains("noStartWay")) {
+            return
+        }
+
+        var valueSection = comment.trim()
+        val parts = valueSection.split('|')
+        if (parts.size != 4) {
+            return
+        }
+
+        valueSection = parts[3].substringAfter('=', "").trim()
+        if (valueSection.isEmpty()) {
+            return
+        }
+
+        for (entry in valueSection.split(';')) {
+            if (entry.isEmpty()) continue
+            val nameValue = entry.split(',', limit = 2)
+            if (nameValue.size != 2) continue
+
+            val name = nameValue[0]
+            val value = nameValue[1]
+            val nameIdx = getLookupNameIdx(name)
+            if (nameIdx == -1) {
+                break
             }
-            if (c == '#' && sb.isEmpty()) inComment = true
-            else sb.append(c)
+            val valueIdx = getLookupValueIdx(nameIdx, value)
+            val tmp = IntArray(noStartWays.size + 2)
+            if (noStartWays.isNotEmpty()) {
+                noStartWays.copyInto(tmp, 0, 0, noStartWays.size)
+            }
+            noStartWays = tmp
+            noStartWays[noStartWays.size - 2] = nameIdx
+            noStartWays[noStartWays.size - 1] = valueIdx
         }
     }
 
