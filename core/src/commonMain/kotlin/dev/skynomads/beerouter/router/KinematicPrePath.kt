@@ -39,14 +39,7 @@ internal class KinematicPrePath : OsmPrePath() {
         }
         val targetPosition = transferNode?.position ?: currentTargetNode.position
 
-        angle = rc.anglemeter.calcAngle(
-            previousPosition.longitude,
-            previousPosition.latitude,
-            sourcePosition.longitude,
-            sourcePosition.latitude,
-            targetPosition.longitude,
-            targetPosition.latitude
-        )
+        angle = rc.anglemeter.calcAngle(previousPosition, sourcePosition, targetPosition)
         priorityclassifier = rc.way.priorityClassifier.toInt()
         classifiermask = rc.way.classifierMask.toInt()
     }

@@ -61,6 +61,14 @@ public class CheapAngleMeter {
         )
 
     public companion object {
+        public fun getAngle(start: Position, end: Position): Double =
+            getAngle(
+                start.longitude,
+                start.latitude,
+                end.longitude,
+                end.latitude
+            )
+
         public fun getAngle(lon1: Int, lat1: Int, lon2: Int, lat2: Int): Double {
             val xdiff = (lat2 - lat1).toDouble()
             val ydiff = (lon2 - lon1).toDouble()
@@ -72,12 +80,7 @@ public class CheapAngleMeter {
         }
 
         public fun getDirection(p1: Position, p2: Position): Double =
-            getDirection(
-                p1.longitude,
-                p1.latitude,
-                p2.longitude,
-                p2.latitude
-            )
+            normalize(getAngle(p1, p2))
 
         public fun normalize(a: Double): Double {
             return if (a >= 360)

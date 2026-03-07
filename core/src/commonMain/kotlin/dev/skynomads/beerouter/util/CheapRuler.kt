@@ -1,6 +1,7 @@
 package dev.skynomads.beerouter.util
 
 import dev.skynomads.beerouter.geo.Position
+import dev.skynomads.beerouter.osm.positionOf
 import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.sqrt
@@ -87,4 +88,12 @@ public object CheapRuler {
 
         return intArrayOf(lon2, lat2)
     }
+
+    public fun destination(origin: Position, distance: Double, angle: Double): Position =
+        destination(
+            origin.longitude,
+            origin.latitude,
+            distance,
+            angle
+        ).let { (longitude, latitude) -> positionOf(longitude, latitude) }
 }

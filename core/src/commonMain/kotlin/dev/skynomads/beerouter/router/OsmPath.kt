@@ -81,11 +81,9 @@ public abstract class OsmPath : OsmLinkHolder {
         rc: RoutingContext
     ) {
         if (origin.myElement == null) {
-            val n = origin.targetNode!!
+            val n = requireNotNull(origin.targetNode)
             origin.myElement = OsmPathElement.create(
-                n.position.longitude,
-                n.position.latitude,
-                toSElev(n.position.altitude),
+                n.position,
                 origin.originElement
             ).also {
                 it.cost = origin.cost
@@ -211,21 +209,26 @@ public abstract class OsmPath : OsmLinkHolder {
 
         var nsection = 0
         while (true) {
-            originPosition = positionOf(lon1, lat1)
+            val currentPosition = positionOf(lon1, lat1)
+            originPosition = currentPosition
 
             val lon2: Int
             val lat2: Int
             var ele2: Short
             val originEle2: Short
+            val nextPosition: Position
 
             if (transferNode == null) {
-                lon2 = targetNode!!.position.longitude
-                lat2 = targetNode!!.position.latitude
-                originEle2 = toSElev(targetNode!!.position.altitude)
+                val targetPosition = requireNotNull(targetNode).position
+                lon2 = targetPosition.longitude
+                lat2 = targetPosition.latitude
+                originEle2 = toSElev(targetPosition.altitude)
+                nextPosition = targetPosition
             } else {
-                lon2 = transferNode.position.longitude
-                lat2 = transferNode.position.latitude
-                originEle2 = toSElev(transferNode.position.altitude)
+                nextPosition = transferNode.position
+                lon2 = nextPosition.longitude
+                lat2 = nextPosition.latitude
+                originEle2 = toSElev(nextPosition.altitude)
             }
             ele2 = originEle2
 
@@ -322,12 +325,9 @@ public abstract class OsmPath : OsmLinkHolder {
                 }
             }
             val angle = rc.anglemeter.calcAngle(
-                requireNotNull(previousPosition).longitude,
-                requireNotNull(previousPosition).latitude,
-                lon1,
-                lat1,
-                lon2,
-                lat2
+                requireNotNull(previousPosition),
+                currentPosition,
+                nextPosition
             )
             val cosangle = rc.anglemeter.cosAngle
 

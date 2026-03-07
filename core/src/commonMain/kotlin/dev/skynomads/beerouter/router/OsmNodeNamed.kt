@@ -7,6 +7,7 @@ package dev.skynomads.beerouter.router
 
 import dev.skynomads.beerouter.mapaccess.MatchedWaypoint
 import dev.skynomads.beerouter.mapaccess.OsmNode
+import dev.skynomads.beerouter.geo.Position
 import dev.skynomads.beerouter.osm.positionOf
 import dev.skynomads.beerouter.util.CheapRuler.distance
 import dev.skynomads.beerouter.util.CheapRuler.getLonLatToMeterScales
@@ -89,6 +90,18 @@ public open class OsmNodeNamed : OsmNode {
             2 * halfDistanceWithin
         }
     }
+
+    public fun distanceWithinRadius(
+        start: Position,
+        end: Position,
+        totalSegmentLength: Double
+    ): Double = distanceWithinRadius(
+        start.longitude,
+        start.latitude,
+        end.longitude,
+        end.latitude,
+        totalSegmentLength
+    )
 
     public companion object {
         public fun decodeNogo(s: String): OsmNodeNamed {

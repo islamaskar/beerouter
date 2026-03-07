@@ -223,18 +223,8 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
             getRandomDirectionFromData(waypoints[0], searchRadius).toDouble()
 
         if (routingContext.allowSamewayback) {
-            val pos = destination(
-                waypoints[0].position.longitude,
-                waypoints[0].position.latitude,
-                searchRadius,
-                direction
-            )
-            val wpt2 = MatchedWaypoint().apply {
-                waypoint = OsmNode(pos[0], pos[1])
-                name = "rt1_$direction"
-            }
-
-            val onn = OsmNodeNamed(OsmNode(pos[0], pos[1])).apply { name = "rt1" }
+            val pos = destination(waypoints[0].position, searchRadius, direction)
+            val onn = OsmNodeNamed(OsmNode(pos)).apply { name = "rt1" }
             waypoints.add(onn)
         } else {
             buildPointsFromCircle(
@@ -259,13 +249,8 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
         //startAngle -= 90;
         for (i in 1..<points) {
             val anAngle = 90 - (180.0 * i / points)
-            val pos = destination(
-                waypoints[0].position.longitude,
-                waypoints[0].position.latitude,
-                searchRadius,
-                startAngle - anAngle
-            )
-            val onn = OsmNodeNamed(OsmNode(pos[0], pos[1])).apply { name = "rt$i" }
+            val pos = destination(waypoints[0].position, searchRadius, startAngle - anAngle)
+            val onn = OsmNodeNamed(OsmNode(pos)).apply { name = "rt$i" }
             waypoints.add(onn)
         }
 
@@ -312,13 +297,8 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
             val listOne = mutableListOf<OsmNodeNamed>()
 
             for (a in 45..315 step 90) {
-                val pos = destination(
-                    wp.position.longitude,
-                    wp.position.latitude,
-                    searchRadius * 1.5,
-                    a.toDouble()
-                )
-                val onn = OsmNodeNamed(OsmNode(pos[0], pos[1])).apply { name = "via$a" }
+                val pos = destination(wp.position, searchRadius * 1.5, a.toDouble())
+                val onn = OsmNodeNamed(OsmNode(pos)).apply { name = "via$a" }
                 listOne.add(onn)
 
                 val wpt = MatchedWaypoint().apply {

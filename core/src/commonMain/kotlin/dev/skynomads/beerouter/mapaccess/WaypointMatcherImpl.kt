@@ -2,7 +2,6 @@ package dev.skynomads.beerouter.mapaccess
 
 import dev.skynomads.beerouter.codec.WaypointMatcher
 import dev.skynomads.beerouter.geo.Position
-import dev.skynomads.beerouter.osm.osmIdOf
 import dev.skynomads.beerouter.osm.positionOf
 import dev.skynomads.beerouter.util.CheapAngleMeter.Companion.getDifferenceFromDirection
 import dev.skynomads.beerouter.util.CheapAngleMeter.Companion.getDirection
@@ -31,13 +30,13 @@ public class WaypointMatcherImpl(
     private var anyUpdate = false
     private var lastPosition: Position = Position(0, 0)
     public var useAsStartWay: Boolean = true
-    private val maxWptIdx: Int
     private var maxDistance: Double
     public var useDynamicRange: Boolean = false
 
     private val comparator: Comparator<MatchedWaypoint> = compareBy({ it.radius }, { it.directionDiff })
 
     init {
+        require(waypoints.isNotEmpty()) { "waypoints must not be empty" }
         this.waypoints = waypoints
         this.islandPairs = islandPairs
         var effectiveMaxDistance = maxDistance
@@ -52,34 +51,34 @@ public class WaypointMatcherImpl(
             mwp.radius = effectiveMaxDistance
             if (last != null && mwp.directionToNext == -1.0) {
                 last.directionToNext = getDirection(
-                    last.waypoint!!.position,
-                    mwp.waypoint!!.position
+                    requireNotNull(last.waypoint).position,
+                    requireNotNull(mwp.waypoint).position
                 )
             }
             last = mwp
         }
         // last point has no angle so we are looking back
-        val lastidx = waypoints.size - 2
-        if (lastidx < 0) {
-            last!!.directionToNext = -1.0
+        val lastWaypoint = requireNotNull(last)
+        val previousIndex = waypoints.lastIndex - 1
+        lastWaypoint.directionToNext = if (previousIndex < 0) {
+            -1.0
         } else {
-            last!!.directionToNext = getDirection(
-                last.waypoint!!.position,
-                waypoints[lastidx].waypoint!!.position
+            getDirection(
+                requireNotNull(lastWaypoint.waypoint).position,
+                requireNotNull(waypoints[previousIndex].waypoint).position
             )
         }
-        maxWptIdx = waypoints.size - 1
     }
 
-    private fun checkSegment(lon1: Int, lat1: Int, lon2: Int, lat2: Int) {
+    private fun checkSegment(start: Position, end: Position) {
         // todo: bounding-box pre-filter
 
-        val lonlat2m = getLonLatToMeterScales((lat1 + lat2) shr 1)
+        val lonlat2m = getLonLatToMeterScales((start.latitude + end.latitude) shr 1)
         val dlon2m = lonlat2m[0]
         val dlat2m = lonlat2m[1]
 
-        val dx = (lon2 - lon1) * dlon2m
-        val dy = (lat2 - lat1) * dlat2m
+        val dx = (end.longitude - start.longitude) * dlon2m
+        val dy = (end.latitude - start.latitude) * dlat2m
         val d = sqrt(dy * dy + dx * dx)
 
         if (d == 0.0) return
@@ -102,12 +101,11 @@ public class WaypointMatcherImpl(
             }
 
             val wp = mwp.waypoint!!
-            val wpLon = wp.position.longitude
-            val wpLat = wp.position.latitude
-            val x1 = (lon1 - wpLon) * dlon2m
-            val y1 = (lat1 - wpLat) * dlat2m
-            val x2 = (lon2 - wpLon) * dlon2m
-            val y2 = (lat2 - wpLat) * dlat2m
+            val waypointPosition = wp.position
+            val x1 = (start.longitude - waypointPosition.longitude) * dlon2m
+            val y1 = (start.latitude - waypointPosition.latitude) * dlat2m
+            val x2 = (end.longitude - waypointPosition.longitude) * dlon2m
+            val y2 = (end.latitude - waypointPosition.latitude) * dlat2m
             val r12 = x1 * x1 + y1 * y1
             val r22 = x2 * x2 + y2 * y2
             var radius = abs(if (r12 < r22) y1 * dx - x1 * dy else y2 * dx - x2 * dy) / d
@@ -137,27 +135,21 @@ public class WaypointMatcherImpl(
                     val wayfraction = -s2 / (d * d)
                     val xm = x2 - wayfraction * dx
                     val ym = y2 - wayfraction * dy
-                    val newLon = (xm / dlon2m + wpLon).toInt()
-                    val newLat = (ym / dlat2m + wpLat).toInt()
+                    val newLon = (xm / dlon2m + waypointPosition.longitude).toInt()
+                    val newLat = (ym / dlat2m + waypointPosition.latitude).toInt()
                     cp.position = positionOf(newLon, newLat)
                 } else if (s1 > s2) {
-                    cp.position = positionOf(lon2, lat2)
+                    cp.position = end
                 } else {
-                    cp.position = positionOf(lon1, lat1)
+                    cp.position = start
                 }
             }
         }
     }
 
     override public fun start(start: Position, target: Position, useAsStartWay: Boolean): Boolean {
-        val ilonStart = start.longitude
-        val ilatStart = start.latitude
-        val ilonTarget = target.longitude
-        val ilatTarget = target.latitude
         if (islandPairs.size != 0) {
-            val n1 = osmIdOf(ilonStart, ilatStart)
-            val n2 = osmIdOf(ilonTarget, ilatTarget)
-            if (islandPairs.hasPair(n1, n2)) {
+            if (islandPairs.hasPair(start.id, target.id)) {
                 return false
             }
         }
@@ -170,37 +162,22 @@ public class WaypointMatcherImpl(
     }
 
     override public fun transferNode(position: Position) {
-        checkSegment(
-            lastPosition.longitude,
-            lastPosition.latitude,
-            position.longitude,
-            position.latitude
-        )
+        checkSegment(lastPosition, position)
         lastPosition = position
     }
 
     override public fun end() {
-        checkSegment(
-            lastPosition.longitude,
-            lastPosition.latitude,
-            targetPosition.longitude,
-            targetPosition.latitude
-        )
+        checkSegment(lastPosition, targetPosition)
         if (anyUpdate) {
             for (mwp in waypoints) {
                 if (mwp.hasUpdate) {
-                    var angle = getDirection(
-                        startPosition.longitude,
-                        startPosition.latitude,
-                        targetPosition.longitude,
-                        targetPosition.latitude
-                    )
+                    var angle = getDirection(startPosition, targetPosition)
                     var diff = getDifferenceFromDirection(mwp.directionToNext, angle)
 
                     mwp.hasUpdate = false
 
-                    val waypointPos = mwp.waypoint!!.position
-                    val crosspointPos = mwp.crosspoint!!.position
+                    val waypointPos = requireNotNull(mwp.waypoint).position
+                    val crosspointPos = requireNotNull(mwp.crosspoint).position
 
                     var mw = MatchedWaypoint()
                     mw.waypoint = OsmNode().also { it.position = waypointPos }
@@ -215,12 +192,7 @@ public class WaypointMatcherImpl(
                     updateWayList(mwp.wayNearest, mw)
 
                     // revers
-                    angle = getDirection(
-                        targetPosition.longitude,
-                        targetPosition.latitude,
-                        startPosition.longitude,
-                        startPosition.latitude
-                    )
+                    angle = getDirection(targetPosition, startPosition)
                     diff = getDifferenceFromDirection(mwp.directionToNext, angle)
                     mw = MatchedWaypoint()
                     mw.waypoint = OsmNode().also { it.position = waypointPos }
@@ -246,11 +218,9 @@ public class WaypointMatcherImpl(
     }
 
     override public fun hasMatch(position: Position): Boolean {
-        val lon = position.longitude
-        val lat = position.latitude
         for (mwp in waypoints) {
             val wpPos = mwp.waypoint?.position ?: continue
-            if (wpPos.longitude == lon && wpPos.latitude == lat &&
+            if (wpPos.id == position.id &&
                 (mwp.radius < this.maxDistance || mwp.crosspoint != null)
             ) {
                 return true
