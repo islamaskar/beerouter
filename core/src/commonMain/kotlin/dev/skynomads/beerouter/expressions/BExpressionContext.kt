@@ -17,6 +17,8 @@ public abstract class BExpressionContext protected constructor(
     private var _content: String = ""
     private var _contentPos: Int = 0
     private var _readerDone = false
+    private val _tokenSb = StringBuilder(32) // reused across _parseToken() calls
+    private val _commentSb = StringBuilder(32) // reused across _parseToken() calls
 
     public var _modelClass: String? = null
 
@@ -796,8 +798,8 @@ public abstract class BExpressionContext protected constructor(
     }
 
     private fun _parseToken(): String? {
-        val sb = StringBuilder(32)
-        val sbcom = StringBuilder(32)
+        val sb = _tokenSb.also { it.setLength(0) }
+        val sbcom = _commentSb.also { it.setLength(0) }
         var inComment = false
         while (true) {
             val ic: Int = if (_readerDone) -1 else {
