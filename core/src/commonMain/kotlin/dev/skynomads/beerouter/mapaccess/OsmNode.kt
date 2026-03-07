@@ -40,6 +40,8 @@ public open class OsmNode : OsmLink, OsmPos {
      */
     public var firstlink: OsmLink? = null
 
+    private var hollow: Boolean = false
+
     // Cached id computed from lon/lat — stable because lon/lat never change after construction
     private var _idFromPos: Long = position.id
 
@@ -117,6 +119,7 @@ public open class OsmNode : OsmLink, OsmPos {
 
         val readSElev = mc.readShort()
         position = osmPositionOf(position.longitude, position.latitude, readSElev)
+        hollow = false
         val nodeDescSize = mc.readVarLengthUnsigned()
         nodeDescription = if (nodeDescSize == 0) null else mc.readUnified(nodeDescSize, abUnifier)
 
@@ -198,10 +201,14 @@ public open class OsmNode : OsmLink, OsmPos {
 
 
     public val isHollow: Boolean
-        get() = position.altitude == HOLLOW_SELEV
+        get() = hollow
 
     public fun setHollow() {
-        position = position.withAltitude(HOLLOW_SELEV)
+        hollow = true
+    }
+
+    public fun clearHollow() {
+        hollow = false
     }
 
     override val idFromPos: Long
@@ -265,9 +272,6 @@ public open class OsmNode : OsmLink, OsmPos {
         return _idFromPos.hashCode()
     }
 
-    private companion object {
-        private const val HOLLOW_SELEV: Short = -12345
-    }
 }
 
 private fun Long.longitudeFromId(): Int = (this shr 32).toInt()
