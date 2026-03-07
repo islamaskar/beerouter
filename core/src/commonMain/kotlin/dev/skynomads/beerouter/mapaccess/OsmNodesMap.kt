@@ -7,7 +7,6 @@ package dev.skynomads.beerouter.mapaccess
 
 import androidx.collection.MutableLongObjectMap
 import dev.skynomads.beerouter.geo.Position
-import dev.skynomads.beerouter.osm.toOsmId
 import dev.skynomads.beerouter.util.ByteArrayUnifier
 
 public class OsmNodesMap {
@@ -226,9 +225,7 @@ public class OsmNodesMap {
      */
     public fun get(id: Long): OsmNode? = hmap[id]
 
-    public fun get(position: Position): OsmNode? {
-        return hmap[position.toOsmId()]
-    }
+    public fun get(position: Position): OsmNode? = hmap[position.id]
 
 
     public fun remove(node: OsmNode) {

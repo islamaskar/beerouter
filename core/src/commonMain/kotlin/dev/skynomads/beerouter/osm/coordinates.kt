@@ -19,12 +19,6 @@ public fun Int.toDoubleLongitude(): Double = (this * COORDINATE_SCALE) - LONGITU
 
 public fun Int.toDoubleLatitude(): Double = (this * COORDINATE_SCALE) - LATITUDE_OFFSET
 
-public val Position.longitudeE6: Int
-    get() = longitude
-
-public val Position.latitudeE6: Int
-    get() = latitude
-
 public fun positionOf(longitudeE6: Int, latitudeE6: Int, altitude: Short? = null): Position =
     Position(longitudeE6, latitudeE6, altitude)
 
@@ -39,20 +33,6 @@ public fun osmPositionOf(longitudeE6: Int, latitudeE6: Int, sElev: Short): Posit
 
 public fun osmPositionOf(longitudeE6: Int, latitudeE6: Int, sElev: Short?): Position =
     positionOf(longitudeE6, latitudeE6, sElev)
-
-public val Long.longitudeE6: Int
-    get() = (this shr 32).toInt()
-
-public val Long.latitudeE6: Int
-    get() = (this and 0xffffffffL).toInt()
-
-public fun Long.toPosition(altitude: Short? = null): Position =
-    positionOf(longitudeE6, latitudeE6, altitude)
-
-public fun Long.toPosition(altitude: Double?): Position =
-    positionOf(longitudeE6, latitudeE6, altitude)
-
-public fun Position.toOsmId(): Long = osmIdOf(longitudeE6, latitudeE6)
 
 public fun toSElev(altitude: Short?): Short = altitude ?: Short.MIN_VALUE
 

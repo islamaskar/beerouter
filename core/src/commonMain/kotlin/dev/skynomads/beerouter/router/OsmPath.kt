@@ -12,7 +12,6 @@ import dev.skynomads.beerouter.mapaccess.OsmNode
 import dev.skynomads.beerouter.mapaccess.TurnRestriction.Companion.isTurnForbidden
 import dev.skynomads.beerouter.osm.osmIdOf
 import dev.skynomads.beerouter.osm.positionOf
-import dev.skynomads.beerouter.osm.toPosition
 import dev.skynomads.beerouter.osm.toSElev
 import dev.skynomads.beerouter.util.CheapRuler
 import dev.skynomads.beerouter.util.CheapRuler.getLonLatToMeterScales
@@ -496,3 +495,6 @@ public abstract class OsmPath : OsmLinkHolder {
         HAD_DESTINATION_START(8),
     }
 }
+
+private fun Long.toPosition(): Position =
+    Position((this shr 32).toInt(), (this and 0xffffffffL).toInt())
