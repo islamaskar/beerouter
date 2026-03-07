@@ -261,7 +261,7 @@ public abstract class BExpressionContext protected constructor(
         }
     }
 
-    private var lastCacheNode: CacheNode? = CacheNode()
+    private var lastCacheNode: CacheNode = CacheNode()
 
     private data class ByteArrayKey(val hash: Int, val bytes: ByteArray) {
         override fun hashCode(): Int = hash
@@ -286,7 +286,8 @@ public abstract class BExpressionContext protected constructor(
 
         val probe = ByteArray(len)
         ab.copyInto(probe, 0, offset, offset + len)
-        val cn = cache!![ByteArrayKey(hash, probe)]
+        val cache = requireNotNull(cache)
+        val cn = cache[ByteArrayKey(hash, probe)]
         if (cn != null) {
             lastCacheNode = cn
             return cn.ab
@@ -307,50 +308,51 @@ public abstract class BExpressionContext protected constructor(
             return
         }
 
-        var cn: CacheNode?
+        val cache = requireNotNull(cache)
+        val resultVarCache = requireNotNull(resultVarCache)
 
-        if (lastCacheNode!!.ab === ab) {
-            cn = lastCacheNode
+        val cn: CacheNode = if (lastCacheNode.ab === ab) {
+            lastCacheNode
         } else {
             val hash = crc(ab, 0, ab.size)
             val key = ByteArrayKey(hash, ab)
-            cn = cache!![key]
+            val existing = cache[key]
 
-            if (cn == null) {
-                cn = CacheNode()
-                cn.hash = hash
-                cn.ab = ab
-                cache!!.put(key, cn)
+            if (existing == null) {
+                val cn = CacheNode(ab = ab, hash = hash)
+                cache.put(key, cn)
 
                 if (probeVarSet.vars == null) {
                     probeVarSet.vars = FloatArray(2 * nBuildInVars)
                 }
+                val probeVars = requireNotNull(probeVarSet.vars)
 
                 decode(lookupData, false, ab)
-                evaluateInto(probeVarSet.vars!!, 0)
+                evaluateInto(probeVars, 0)
 
                 lookupData[0] = 2
-                evaluateInto(probeVarSet.vars!!, nBuildInVars)
+                evaluateInto(probeVars, nBuildInVars)
 
-                probeVarSet.hash = probeVarSet.vars.contentHashCode()
+                probeVarSet.hash = probeVars.contentHashCode()
 
-                val probeVarKey = FloatArrayKey(probeVarSet.hash, probeVarSet.vars!!)
-                var vw = resultVarCache!![probeVarKey]
+                val probeVarKey = FloatArrayKey(probeVarSet.hash, probeVars)
+                var vw = resultVarCache[probeVarKey]
 
                 if (vw == null) {
-                    vw = VarWrapper()
-                    vw.hash = probeVarSet.hash
-                    vw.vars = probeVarSet.vars
+                    vw = VarWrapper(vars = probeVars, hash = probeVarSet.hash)
                     probeVarSet.vars = null
-                    resultVarCache!!.put(FloatArrayKey(vw.hash, vw.vars!!), vw)
+                    resultVarCache.put(FloatArrayKey(vw.hash, requireNotNull(vw.vars)), vw)
                 }
                 cn.vars = vw.vars
+                cn
+            } else {
+                existing
             }
-            // Update for fast identity check on the next call with the same ab
-            lastCacheNode = cn
         }
+        // Update for fast identity check on the next call with the same ab
+        lastCacheNode = cn
 
-        currentVars = cn!!.vars
+        currentVars = cn.vars
         currentVarOffset = if (inverseDirection) nBuildInVars else 0
     }
 

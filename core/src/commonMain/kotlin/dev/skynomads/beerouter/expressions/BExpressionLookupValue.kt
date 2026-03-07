@@ -11,7 +11,7 @@
 package dev.skynomads.beerouter.expressions
 
 public class BExpressionLookupValue(public val value: String) {
-    private val aliases: MutableList<String> = mutableListOf()
+    private val aliases: MutableSet<String> = linkedSetOf()
 
     override fun toString(): String = value
 
