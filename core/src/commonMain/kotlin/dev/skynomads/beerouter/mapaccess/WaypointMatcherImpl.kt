@@ -1,14 +1,12 @@
 package dev.skynomads.beerouter.mapaccess
 
 import dev.skynomads.beerouter.codec.WaypointMatcher
-import dev.skynomads.beerouter.osm.toDoubleLatitude
-import dev.skynomads.beerouter.osm.toDoubleLongitude
-import dev.skynomads.beerouter.osm.toIntLatitude
-import dev.skynomads.beerouter.osm.toIntLongitude
+import dev.skynomads.beerouter.osm.latitudeE6
+import dev.skynomads.beerouter.osm.longitudeE6
+import dev.skynomads.beerouter.osm.positionOf
 import dev.skynomads.beerouter.util.CheapAngleMeter.Companion.getDifferenceFromDirection
 import dev.skynomads.beerouter.util.CheapAngleMeter.Companion.getDirection
 import dev.skynomads.beerouter.util.CheapRuler.getLonLatToMeterScales
-import org.maplibre.spatialk.geojson.Position
 import kotlin.math.abs
 import kotlin.math.sqrt
 
@@ -107,8 +105,8 @@ public class WaypointMatcherImpl(
             }
 
             val wp = mwp.waypoint!!
-            val wpLon = wp.position.longitude.toIntLongitude()
-            val wpLat = wp.position.latitude.toIntLatitude()
+            val wpLon = wp.position.longitudeE6
+            val wpLat = wp.position.latitudeE6
             val x1 = (lon1 - wpLon) * dlon2m
             val y1 = (lat1 - wpLat) * dlat2m
             val x2 = (lon2 - wpLon) * dlon2m
@@ -144,23 +142,11 @@ public class WaypointMatcherImpl(
                     val ym = y2 - wayfraction * dy
                     val newLon = (xm / dlon2m + wpLon).toInt()
                     val newLat = (ym / dlat2m + wpLat).toInt()
-                    cp.position = Position(
-                        newLon.toDoubleLongitude(),
-                        newLat.toDoubleLatitude(),
-                        0.0
-                    )
+                    cp.position = positionOf(newLon, newLat, 0.0)
                 } else if (s1 > s2) {
-                    cp.position = Position(
-                        lon2.toDoubleLongitude(),
-                        lat2.toDoubleLatitude(),
-                        0.0
-                    )
+                    cp.position = positionOf(lon2, lat2, 0.0)
                 } else {
-                    cp.position = Position(
-                        lon1.toDoubleLongitude(),
-                        lat1.toDoubleLatitude(),
-                        0.0
-                    )
+                    cp.position = positionOf(lon1, lat1, 0.0)
                 }
             }
         }
@@ -251,7 +237,7 @@ public class WaypointMatcherImpl(
     override public fun hasMatch(lon: Int, lat: Int): Boolean {
         for (mwp in waypoints) {
             val wpPos = mwp.waypoint?.position ?: continue
-            if (wpPos.longitude.toIntLongitude() == lon && wpPos.latitude.toIntLatitude() == lat &&
+            if (wpPos.longitudeE6 == lon && wpPos.latitudeE6 == lat &&
                 (mwp.radius < this.maxDistance || mwp.crosspoint != null)
             ) {
                 return true

@@ -10,8 +10,8 @@ import dev.skynomads.beerouter.mapaccess.OsmLink
 import dev.skynomads.beerouter.mapaccess.OsmNode
 import dev.skynomads.beerouter.mapaccess.OsmNodesMap
 import dev.skynomads.beerouter.mapaccess.PhysicalFile
-import dev.skynomads.beerouter.osm.toIntLatitude
-import dev.skynomads.beerouter.osm.toIntLongitude
+import dev.skynomads.beerouter.osm.latitudeE6
+import dev.skynomads.beerouter.osm.longitudeE6
 import kotlinx.io.Sink
 import kotlinx.io.Source
 import kotlinx.io.buffered
@@ -38,8 +38,8 @@ public class AreaReader {
         for (idxLat in -scale..scale) {
             for (idxLon in -scale..scale) {
                 if (ignoreCenter(maxscale, idxLon, idxLat)) continue
-                val tmplon: Int = wp.position.longitude.toIntLongitude() + cellsize * idxLon
-                val tmplat = wp.position.latitude.toIntLatitude() + cellsize * idxLat
+                val tmplon: Int = wp.position.longitudeE6 + cellsize * idxLon
+                val tmplat = wp.position.latitudeE6 + cellsize * idxLat
                 val lonDegree = tmplon / 1000000
                 val latDegree = tmplat / 1000000
                 val lonMod5 = lonDegree % 5
@@ -159,8 +159,8 @@ public class AreaReader {
                 if (getDirectData(
                         physicalFile,
                         dataBuffers,
-                        n.position.longitude.toIntLongitude(),
-                        n.position.latitude.toIntLatitude(),
+                        n.position.longitudeE6,
+                        n.position.latitudeE6,
                         rc,
                         expctxWay,
                         ais
@@ -227,8 +227,8 @@ public class AreaReader {
 
                                 for (ai in ais) {
                                     if (ai.polygon!!.isWithin(
-                                            node.position.longitude.toIntLongitude().toLong(),
-                                            node.position.latitude.toIntLatitude().toLong()
+                                            node.position.longitudeE6.toLong(),
+                                            node.position.latitudeE6.toLong()
                                         )
                                     ) {
                                         ai.checkAreaInfo(
@@ -282,8 +282,8 @@ public class AreaReader {
     public fun readAreaInfo(source: Source, wp: MatchedWaypoint, ais: MutableList<AreaInfo>) {
         try {
             val ep = readFromStream(source)
-            if (abs(ep.waypoint!!.position.longitude.toIntLongitude() - wp.waypoint!!.position.longitude.toIntLongitude()) > 500 &&
-                abs(ep.waypoint!!.position.latitude.toIntLatitude() - wp.waypoint!!.position.latitude.toIntLatitude()) > 500
+            if (abs(ep.waypoint!!.position.longitudeE6 - wp.waypoint!!.position.longitudeE6) > 500 &&
+                abs(ep.waypoint!!.position.latitudeE6 - wp.waypoint!!.position.latitudeE6) > 500
             ) {
                 return
             }
