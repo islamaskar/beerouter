@@ -6,6 +6,8 @@ import dev.skynomads.beerouter.codec.StatCoderContext
 import dev.skynomads.beerouter.codec.TagValueCoder
 import dev.skynomads.beerouter.codec.TagValueValidator
 import dev.skynomads.beerouter.codec.WaypointMatcher
+import dev.skynomads.beerouter.osm.latitudeE6
+import dev.skynomads.beerouter.osm.longitudeE6
 import dev.skynomads.beerouter.util.ByteDataWriter
 import org.maplibre.spatialk.geojson.Position
 
@@ -45,11 +47,9 @@ public class DirectWeaver(
 
         val nodes = (0 until size).map { n ->
             val id = expandId(faid[n])
-            val ilon = (id shr 32).toInt()
-            val ilat = (id and 0xffffffffL).toInt()
             var node = hollowNodes.get(id)
             if (node == null) {
-                node = OsmNode(ilon, ilat)
+                node = OsmNode(id)
             } else {
                 node.visitID = 1
                 hollowNodes.remove(node)
@@ -64,9 +64,8 @@ public class DirectWeaver(
         var selev = 0
         for (n in 0..<size) { // loop over nodes
             val node = nodes[n]
-            val nodeId = node.idFromPos
-            val ilon = (nodeId shr 32).toInt()
-            val ilat = (nodeId and 0xffffffffL).toInt()
+            val ilon = node.position.longitudeE6
+            val ilat = node.position.latitudeE6
 
             // future escapes (turn restrictions?)
             var trExceptions: Short = 0
@@ -113,9 +112,9 @@ public class DirectWeaver(
 
                 var isReverse = false
                 if (nodeIdx != n) { // internal (forward-) link
-                    val targetId = nodes[nodeIdx].idFromPos
-                    dlonRemaining = (targetId shr 32).toInt() - ilon
-                    dlatRemaining = (targetId and 0xffffffffL).toInt() - ilat
+                    val targetPosition = nodes[nodeIdx].position
+                    dlonRemaining = targetPosition.longitudeE6 - ilon
+                    dlatRemaining = targetPosition.latitudeE6 - ilat
                 } else {
                     isReverse = bc.decodeBit()
                     dlonRemaining = extLonDiff.decodeSignedValue()

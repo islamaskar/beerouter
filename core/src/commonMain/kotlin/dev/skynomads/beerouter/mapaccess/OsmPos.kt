@@ -5,8 +5,8 @@
  */
 package dev.skynomads.beerouter.mapaccess
 
-import dev.skynomads.beerouter.osm.toIntLatitude
-import dev.skynomads.beerouter.osm.toIntLongitude
+import dev.skynomads.beerouter.osm.latitudeE6
+import dev.skynomads.beerouter.osm.longitudeE6
 import org.maplibre.spatialk.geojson.Position
 
 
@@ -19,9 +19,9 @@ public interface OsmPos {
 
     @Deprecated("use position instead")
     public val iLat: Int
-        get() = position.latitude.toIntLatitude()
+        get() = position.latitudeE6
 
     @Deprecated("use position instead")
     public val iLon: Int
-        get() = position.longitude.toIntLongitude()
+        get() = position.longitudeE6
 }

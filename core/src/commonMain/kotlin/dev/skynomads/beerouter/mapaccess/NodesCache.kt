@@ -9,8 +9,8 @@ import dev.skynomads.beerouter.codec.DataBuffers
 import dev.skynomads.beerouter.codec.MicroCache
 import dev.skynomads.beerouter.codec.WaypointMatcher
 import dev.skynomads.beerouter.expressions.BExpressionContextWay
-import dev.skynomads.beerouter.osm.toIntLatitude
-import dev.skynomads.beerouter.osm.toIntLongitude
+import dev.skynomads.beerouter.osm.latitudeE6
+import dev.skynomads.beerouter.osm.longitudeE6
 
 public class NodesCache(
     private val mapAccessFileSystem: MapAccessFileSystem,
@@ -211,7 +211,7 @@ public class NodesCache(
         if (!node.isHollow) return true
 
         val nodeId = node.idFromPos
-        val segment = getSegmentFor((nodeId shr 32).toInt(), (nodeId and 0xffffffffL).toInt())
+        val segment = getSegmentFor(nodeId.longitudeE6, nodeId.latitudeE6)
         if (segment == null) {
             return false
         }
@@ -342,16 +342,16 @@ public class NodesCache(
     ) {
         firstFileAccessFailed = false
         firstFileAccessName = null
-        loadSegmentFor(n.position.longitude.toIntLongitude(), n.position.latitude.toIntLatitude())
+        loadSegmentFor(n.position.longitudeE6, n.position.latitudeE6)
         require(!firstFileAccessFailed) { "datafile $firstFileAccessName not found" }
         var scale = 1
         while (scale < maxscale) {
             for (idxLat in -scale..scale) for (idxLon in -scale..scale) {
                 if (idxLon != 0 || idxLat != 0) {
-                    loadSegmentFor(n.position.longitude.toIntLongitude() + d * idxLon, n.position.latitude.toIntLatitude() + d * idxLat)
+                    loadSegmentFor(n.position.longitudeE6 + d * idxLon, n.position.latitudeE6 + d * idxLat)
                 }
             }
-            if (bUseDynamicRange && waypointMatcher!!.hasMatch(n.position.longitude.toIntLongitude(), n.position.latitude.toIntLatitude())) break
+            if (bUseDynamicRange && waypointMatcher!!.hasMatch(n.position.longitudeE6, n.position.latitudeE6)) break
             scale++
         }
     }

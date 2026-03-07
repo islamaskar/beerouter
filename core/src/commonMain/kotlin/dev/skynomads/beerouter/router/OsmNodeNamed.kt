@@ -7,13 +7,11 @@ package dev.skynomads.beerouter.router
 
 import dev.skynomads.beerouter.mapaccess.MatchedWaypoint
 import dev.skynomads.beerouter.mapaccess.OsmNode
-import dev.skynomads.beerouter.osm.toIntLatitude
-import dev.skynomads.beerouter.osm.toIntLongitude
-import dev.skynomads.beerouter.osm.toDoubleLatitude
-import dev.skynomads.beerouter.osm.toDoubleLongitude
+import dev.skynomads.beerouter.osm.latitudeE6
+import dev.skynomads.beerouter.osm.longitudeE6
+import dev.skynomads.beerouter.osm.positionOf
 import dev.skynomads.beerouter.util.CheapRuler.distance
 import dev.skynomads.beerouter.util.CheapRuler.getLonLatToMeterScales
-import org.maplibre.spatialk.geojson.Position
 import kotlin.math.sqrt
 
 public open class OsmNodeNamed : OsmNode {
@@ -30,10 +28,10 @@ public open class OsmNodeNamed : OsmNode {
     public constructor(n: OsmNode) : super(n.position)
 
     private val lonInt: Int
-        get() = position.longitude.toIntLongitude()
+        get() = position.longitudeE6
 
     private val latInt: Int
-        get() = position.latitude.toIntLatitude()
+        get() = position.latitudeE6
 
     override fun toString(): String {
         return if (nogoWeight.isNaN()) "$lonInt,$latInt,$name"
@@ -113,11 +111,7 @@ public open class OsmNodeNamed : OsmNode {
                 this.name = name
                 this.nogoWeight = nogoWeight
                 isNogo = true
-                position = Position(
-                    lon.toDoubleLongitude(),
-                    lat.toDoubleLatitude(),
-                    0.0
-                )
+                position = positionOf(lon, lat, 0.0)
             }
         }
     }

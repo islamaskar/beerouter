@@ -131,8 +131,8 @@ public open class OsmNode : OsmLink, OsmPos {
 
         // Extract lon/lat once from cached id (avoids repeated double→int conversions in the loop)
         val selfId = _idFromPos
-        val selfLon = (selfId shr 32).toInt()
-        val selfLat = (selfId and 0xffffffffL).toInt()
+        val selfLon = selfId.longitudeE6
+        val selfLat = selfId.latitudeE6
 
         while (mc.hasMoreData()) {
             // read link data
@@ -162,7 +162,7 @@ public open class OsmNode : OsmLink, OsmPos {
         isReverse: Boolean
     ) {
         val selfId = _idFromPos
-        if (linklon == (selfId shr 32).toInt() && linklat == (selfId and 0xffffffffL).toInt()) {
+        if (linklon == selfId.longitudeE6 && linklat == selfId.latitudeE6) {
             return  // skip self-ref
         }
 
@@ -174,7 +174,7 @@ public open class OsmNode : OsmLink, OsmPos {
         while (l != null) {
             val t = l.getTarget(this)
             val tId = t!!.idFromPos
-            if ((tId shr 32).toInt() == linklon && (tId and 0xffffffffL).toInt() == linklat) {
+            if (tId.longitudeE6 == linklon && tId.latitudeE6 == linklat) {
                 tn = t
                 if (isReverse || (l.descriptionBitmap == null && !l.isReverse(this))) {
                     link = l // the correct one that needs our data

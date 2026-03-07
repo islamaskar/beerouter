@@ -5,13 +5,11 @@
  */
 package dev.skynomads.beerouter.mapaccess
 
-import dev.skynomads.beerouter.osm.toIntLatitude
-import dev.skynomads.beerouter.osm.toIntLongitude
-import dev.skynomads.beerouter.osm.toDoubleLatitude
-import dev.skynomads.beerouter.osm.toDoubleLongitude
+import dev.skynomads.beerouter.osm.latitudeE6
+import dev.skynomads.beerouter.osm.longitudeE6
+import dev.skynomads.beerouter.osm.positionOf
 import kotlinx.io.Sink
 import kotlinx.io.Source
-import org.maplibre.spatialk.geojson.Position
 
 public class MatchedWaypoint {
     public enum class Type {
@@ -45,20 +43,20 @@ public class MatchedWaypoint {
         val n2 = requireNotNull(node2)
         val cp = requireNotNull(crosspoint)
         val wp = requireNotNull(waypoint)
-        sink.writeInt(n1.position.latitude.toIntLatitude())
-        sink.writeInt(n1.position.longitude.toIntLongitude())
-        sink.writeInt(n2.position.latitude.toIntLatitude())
-        sink.writeInt(n2.position.longitude.toIntLongitude())
-        sink.writeInt(cp.position.latitude.toIntLatitude())
-        sink.writeInt(cp.position.longitude.toIntLongitude())
-        sink.writeInt(wp.position.latitude.toIntLatitude())
-        sink.writeInt(wp.position.longitude.toIntLongitude())
+        sink.writeInt(n1.position.latitudeE6)
+        sink.writeInt(n1.position.longitudeE6)
+        sink.writeInt(n2.position.latitudeE6)
+        sink.writeInt(n2.position.longitudeE6)
+        sink.writeInt(cp.position.latitudeE6)
+        sink.writeInt(cp.position.longitudeE6)
+        sink.writeInt(wp.position.latitudeE6)
+        sink.writeInt(wp.position.longitudeE6)
         sink.writeLong(radius.toBits())
     }
 
     public companion object {
         private fun nodeFromCoordinates(lon: Int, lat: Int): OsmNode =
-            OsmNode(Position(lon.toDoubleLongitude(), lat.toDoubleLatitude(), 0.0))
+            OsmNode(positionOf(lon, lat, 0.0))
 
         public fun readFromStream(source: Source): MatchedWaypoint {
             val node1Lat = source.readInt()

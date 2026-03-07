@@ -1,8 +1,10 @@
 package dev.skynomads.beerouter.router
 
 import dev.skynomads.beerouter.mapaccess.OsmPos
-import dev.skynomads.beerouter.osm.toDoubleLatitude
-import dev.skynomads.beerouter.osm.toDoubleLongitude
+import dev.skynomads.beerouter.osm.latitudeE6
+import dev.skynomads.beerouter.osm.longitudeE6
+import dev.skynomads.beerouter.osm.osmPositionOf
+import dev.skynomads.beerouter.osm.positionOf
 import dev.skynomads.beerouter.osm.toSElev
 import dev.skynomads.beerouter.util.CheapRuler.distance
 import kotlinx.io.Sink
@@ -56,15 +58,15 @@ public class OsmPathElement protected constructor() : OsmPos {
     public var origin: OsmPathElement? = null
 
     override fun toString(): String =
-        "${(_idFromPos shr 32).toInt()}_${(_idFromPos and 0xffffffffL).toInt()}"
+        "${position.longitudeE6}_${position.latitudeE6}"
 
     public fun positionEquals(e: OsmPathElement): Boolean {
         return _idFromPos == e._idFromPos
     }
 
     public fun writeToStream(sink: Sink) {
-        sink.writeInt((_idFromPos and 0xffffffffL).toInt())
-        sink.writeInt((_idFromPos shr 32).toInt())
+        sink.writeInt(position.latitudeE6)
+        sink.writeInt(position.longitudeE6)
         sink.writeShort(toSElev(position.altitude))
         sink.writeInt(cost)
     }
@@ -77,11 +79,7 @@ public class OsmPathElement protected constructor() : OsmPos {
             origin: OsmPathElement?
         ): OsmPathElement {
             val pe = OsmPathElement()
-            pe.position = Position(
-                ilon.toDoubleLongitude(),
-                ilat.toDoubleLatitude(),
-                selev.toDouble() / 4.0
-            )
+            pe.position = osmPositionOf(ilon, ilat, selev)
             pe._idFromPos = (ilon.toLong() shl 32) or ilat.toLong()
             pe.origin = origin
             return pe
@@ -92,11 +90,7 @@ public class OsmPathElement protected constructor() : OsmPos {
             val lat = source.readInt()
             val lon = source.readInt()
             val selev = source.readShort()
-            pe.position = Position(
-                lon.toDoubleLongitude(),
-                lat.toDoubleLatitude(),
-                selev.toDouble() / 4.0
-            )
+            pe.position = osmPositionOf(lon, lat, selev)
             pe._idFromPos = (lon.toLong() shl 32) or lat.toLong()
             pe.cost = source.readInt()
             return pe
