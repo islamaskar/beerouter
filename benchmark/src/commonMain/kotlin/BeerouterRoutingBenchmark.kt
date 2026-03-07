@@ -67,12 +67,11 @@ open class BeerouterRoutingBenchmark {
         require(track != null)
     }
 
-    private fun createWaypoint(name: String, lat: Double, lon: Double): OsmNodeNamed {
-        val waypoint = OsmNodeNamed()
-        waypoint.name = name
-        waypoint.position = Position(lon, lat)
-        return waypoint
-    }
+    private fun createWaypoint(name: String, lat: Double, lon: Double): OsmNodeNamed =
+        OsmNodeNamed().apply {
+            this.name = name
+            position = Position(lon, lat)
+        }
 
     private fun findRequiredPath(vararg candidates: String): Path {
         for (candidate in candidates) {

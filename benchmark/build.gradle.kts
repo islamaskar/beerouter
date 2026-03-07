@@ -9,6 +9,7 @@ group = "dev.skynomads.beerouter"
 
 kotlin {
     applyDefaultHierarchyTemplate()
+    jvmToolchain(21)
 
     jvm {
         compilerOptions {
@@ -48,13 +49,6 @@ kotlin {
     }
 }
 
-
-java {
-    toolchain {
-        languageVersion.set(JavaLanguageVersion.of(21))
-    }
-}
-
 repositories {
     google()
     mavenCentral()
@@ -69,6 +63,5 @@ benchmark {
         register("linuxX64")
         register("macosX64")
         register("macosArm64")
-        register("mingwX64")
     }
 }
