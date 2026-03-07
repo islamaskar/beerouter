@@ -7,6 +7,8 @@ import dev.skynomads.beerouter.mapaccess.OsmLink
 import dev.skynomads.beerouter.mapaccess.OsmNode
 import dev.skynomads.beerouter.mapaccess.OsmNodePairSet
 import dev.skynomads.beerouter.mapaccess.OsmPos
+import dev.skynomads.beerouter.osm.latitudeE6
+import dev.skynomads.beerouter.osm.longitudeE6
 import dev.skynomads.beerouter.osm.toIntLatitude
 import dev.skynomads.beerouter.osm.toIntLongitude
 import dev.skynomads.beerouter.osm.toSElev
@@ -1673,7 +1675,8 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
         val supportsGuideTrackDetours =
             guideTrack != null && TurnInstructionMode.supportsGuideTrackDetours(routingContext.global.turnInstructionMode)
 
-        var maxTotalCost = if (guideTrack != null) guideTrack!!.cost + 5000 else 1000000000
+        val currentGuideTrack = guideTrack
+        var maxTotalCost = if (currentGuideTrack != null) currentGuideTrack.cost + 5000 else 1000000000
         var firstMatchCost = 1000000000
 
         if (costCuttingTrack != null && costCuttingTrack.cost > 0) {
@@ -1687,24 +1690,28 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
         matchPath = null
         var nodesVisited = 0
 
-        val startNodeId1 = startWp.node1!!.idFromPos
-        val startNodeId2 = startWp.node2!!.idFromPos
-        val endNodeId1 = if (endWp == null) -1L else endWp.node1!!.idFromPos
-        val endNodeId2 = if (endWp == null) -1L else endWp.node2!!.idFromPos
+        val startNode1 = requireNotNull(startWp.node1)
+        val startNode2 = requireNotNull(startWp.node2)
+        val startNodeId1 = startNode1.idFromPos
+        val startNodeId2 = startNode2.idFromPos
+        val endNode1 = endWp?.node1
+        val endNode2 = endWp?.node2
+        val endNodeId1 = endNode1?.idFromPos ?: -1L
+        val endNodeId2 = endNode2?.idFromPos ?: -1L
         var end1: OsmNode?
         var end2: OsmNode?
         var endPos: OsmNodeNamed? = null
 
         val cache = nodesCache ?: return null
         var sameSegmentSearch = false
-        val start1 = cache.getGraphNode(startWp.node1!!)
-        val start2 = cache.getGraphNode(startWp.node2!!)
+        val start1 = cache.getGraphNode(startNode1)
+        val start2 = cache.getGraphNode(startNode2)
         if (endWp != null) {
-            end1 = cache.getGraphNode(endWp.node1!!)
-            end2 = cache.getGraphNode(endWp.node2!!)
+            end1 = cache.getGraphNode(requireNotNull(endNode1))
+            end2 = cache.getGraphNode(requireNotNull(endNode2))
             cache.nodesMap.endNode1 = end1
             cache.nodesMap.endNode2 = end2
-            endPos = OsmNodeNamed(endWp.crosspoint!!)
+            endPos = OsmNodeNamed(requireNotNull(endWp.crosspoint))
             sameSegmentSearch =
                 (start1 === end1 && start2 === end2) || (start1 === end2 && start2 === end1)
         }
@@ -1728,13 +1735,15 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
 
         val startPath1 = getStartPath(start1, start2, startWp, endPos, sameSegmentSearch)
         val startPath2 = getStartPath(start2, start1, startWp, endPos, sameSegmentSearch)
+        if (startPath1 == null) return null
+        if (startPath2 == null) return null
 
         // check for an INITIAL match with the cost-cutting-track
         if (costCuttingTrack != null) {
             val pe1 = costCuttingTrack.getLink(startNodeId1, startNodeId2)
             if (pe1 != null) {
                 log("initialMatch pe1.cost=${pe1.cost}")
-                var c = startPath1!!.cost - pe1.cost
+                var c = startPath1.cost - pe1.cost
                 if (c < 0) c = 0
                 if (c < firstMatchCost) firstMatchCost = c
             }
@@ -1742,14 +1751,11 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
             val pe2 = costCuttingTrack.getLink(startNodeId2, startNodeId1)
             if (pe2 != null) {
                 log("initialMatch pe2.cost=${pe2.cost}")
-                var c = startPath2!!.cost - pe2.cost
+                var c = startPath2.cost - pe2.cost
                 if (c < 0) c = 0
                 if (c < firstMatchCost) firstMatchCost = c
             }
         }
-
-        if (startPath1 == null) return null
-        if (startPath2 == null) return null
 
         openSet.clear()
         addToOpenset(startPath1)
@@ -1758,8 +1764,8 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
         val openBorderList = ArrayList<OsmPath>(4096)
 
         // Pre-compute end position integer coordinates once to avoid repeated double→int conversions in the hot loop
-        val endIlon: Int = endPos?.position?.longitude?.toIntLongitude() ?: 0
-        val endIlat: Int = endPos?.position?.latitude?.toIntLatitude() ?: 0
+        val endIlon: Int = endPos?.position?.longitudeE6 ?: 0
+        val endIlat: Int = endPos?.position?.latitudeE6 ?: 0
 
         while (true) {
             currentCoroutineContext().ensureActive()
@@ -1780,13 +1786,15 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
                 continue
             }
 
-            if (directWeaving && cache.hasHollowLinkTargets(path.targetNode!!)) {
+            val pathTargetNode = requireNotNull(path.targetNode)
+            if (directWeaving && cache.hasHollowLinkTargets(pathTargetNode)) {
                 if (!cache.nodesMap.isInMemoryBounds(openSet.size, false)) {
                     cache.nodesMap.collectOutreachers()
                     while (true) {
                         val p3: OsmPath? = openSet.popLowestKeyValue()
                         if (p3 == null) break
-                        if (p3.airdistance != -1 && cache.nodesMap.canEscape(p3.targetNode!!)) {
+                        val p3TargetNode = p3.targetNode ?: continue
+                        if (p3.airdistance != -1 && cache.nodesMap.canEscape(p3TargetNode)) {
                             openBorderList.add(p3)
                         }
                     }
@@ -1802,7 +1810,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
             }
 
 
-            if (fastPartialRecalc && matchPath != null && path.cost > 30L * firstMatchCost && !costCuttingTrack!!.isDirty) {
+            if (fastPartialRecalc && matchPath != null && costCuttingTrack != null && path.cost > 30L * firstMatchCost && !costCuttingTrack.isDirty) {
                 log("early exit: firstMatchCost=$firstMatchCost path.cost=${path.cost}")
 
                 // use an early exit, unless there's a realistc chance to complete within the timeout
@@ -1824,9 +1832,9 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
             nodesVisited++
             linksProcessed++
 
-            val currentLink = path.link!!
-            val sourceNode = path.sourceNode!!
-            val currentNode = path.targetNode!!
+            val currentLink = requireNotNull(path.link)
+            val sourceNode = requireNotNull(path.sourceNode)
+            val currentNode = pathTargetNode
 
             if (currentLink.isLinkUnused) {
                 continue
@@ -1920,15 +1928,16 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
             while (link != null) {
                 val nextNode = link.getTarget(currentNode)
 
-                if (!cache.obtainNonHollowNode(nextNode!!)) {
+                val concreteNextNode = requireNotNull(nextNode)
+                if (!cache.obtainNonHollowNode(concreteNextNode)) {
                     link = link.getNext(currentNode)
                     continue  // border node?
                 }
-                if (nextNode.firstlink == null) {
+                if (concreteNextNode.firstlink == null) {
                     link = link.getNext(currentNode)
                     continue  // don't care about dead ends
                 }
-                if (nextNode === sourceNode) {
+                if (concreteNextNode === sourceNode) {
                     link = link.getNext(currentNode)
                     continue  // border node?
                 }
@@ -1939,7 +1948,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
                     routingContext.firstPrePath = prePath
                 }
                 candidateLinks.add(link)
-                candidateNodes.add(nextNode)
+                candidateNodes.add(concreteNextNode)
                 link = link.getNext(currentNode)
             }
 
@@ -1947,13 +1956,13 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
                 val candidateLink = candidateLinks[ci]
                 val nextNode = candidateNodes[ci]
 
-                if (guideTrack != null) {
+                if (currentGuideTrack != null) {
                     val gidx = path.treedepth + 1
-                    if (gidx >= guideTrack!!.nodes.size) {
+                    if (gidx >= currentGuideTrack.nodes.size) {
                         continue
                     }
                     val guideNode =
-                        guideTrack!!.nodes[if (routingContext.global.inverseRouting) guideTrack!!.nodes.size - 1 - gidx else gidx]
+                        currentGuideTrack.nodes[if (routingContext.global.inverseRouting) currentGuideTrack.nodes.size - 1 - gidx else gidx]
                     val nextId = nextNode.idFromPos
                     if (nextId != guideNode.idFromPos) {
                         // not along the guide-track, discard, but register for voice-hint processing
@@ -1961,7 +1970,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
                             val detour =
                                 routingContext.createPath(path, candidateLink, refTrack, true)
                             if (detour.cost >= 0.0 && nextId != startNodeId1 && nextId != startNodeId2) {
-                                guideTrack!!.registerDetourForId(
+                                currentGuideTrack.registerDetourForId(
                                     currentNode.idFromPos,
                                     detour.toPathElement()
                                 )
@@ -1986,18 +1995,19 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
                     val otherPath = linkHolder as OsmPath
                     try {
                         if (isFinalLink) {
-                            endPos!!.radius =
+                            val finalEndPos = requireNotNull(endPos)
+                            finalEndPos.radius =
                                 1.5 // 1.5 meters is the upper limit that will not change the unit-test result..
-                            routingContext.setWaypoint(endPos, true)
+                            routingContext.setWaypoint(finalEndPos, true)
                         }
                         val testPath = routingContext.createPath(
                             otherPath,
                             candidateLink,
                             refTrack,
-                            guideTrack != null
+                            currentGuideTrack != null
                         )
                         if (testPath.cost >= 0 && (bestPath == null || testPath.cost < bestPath.cost) &&
-                            (testPath.sourceNode!!.idFromPos != testPath.targetNode!!.idFromPos)
+                            (requireNotNull(testPath.sourceNode).idFromPos != requireNotNull(testPath.targetNode).idFromPos)
                         ) {
                             bestPath = testPath
                         }
@@ -2053,7 +2063,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
     }
 
     private fun OsmPath.toPathElement(): OsmPathElement {
-        val n = targetNode!!
+        val n = requireNotNull(targetNode)
         val nId = n.idFromPos
         return OsmPathElement.create(
             (nId shr 32).toInt(),
@@ -2070,12 +2080,13 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
         var element: OsmPathElement? = path.toPathElement()
 
         // for final track, cut endnode
-        if (guideTrack != null && element!!.origin != null) {
+        if (guideTrack != null && requireNotNull(element).origin != null) {
             element = element.origin
         }
 
-        val totalTime = element!!.time
-        val totalEnergy = element.energy
+        val firstElement = requireNotNull(element)
+        val totalTime = firstElement.time
+        val totalEnergy = firstElement.energy
 
         val track = OsmTrack()
         track.cost = path.cost
