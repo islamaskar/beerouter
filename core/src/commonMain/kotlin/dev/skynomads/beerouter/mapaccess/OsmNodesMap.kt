@@ -71,12 +71,12 @@ public class OsmNodesMap {
         while (l != null) {
             nextLink = l.getNext(n)
 
-            val t = l.getTarget(n)
+            val t = requireNotNull(l.getTarget(n))
             if (t === source) {
                 l = nextLink
                 continue
             }
-            if (t!!.isHollow) {
+            if (t.isHollow) {
                 l = nextLink
                 continue
             }
@@ -142,8 +142,7 @@ public class OsmNodesMap {
                 nodesCreated++
                 var l = n.firstlink
                 while (l != null) {
-                    val t = l.getTarget(n)
-                    nodesToCheck.add(t!!)
+                    nodesToCheck.add(requireNotNull(l.getTarget(n)))
                     l = l.getNext(n)
                 }
             } else if (n.visitID < lastVisitID) {
@@ -162,8 +161,7 @@ public class OsmNodesMap {
                 nodesCreated--
                 var l = n.firstlink
                 while (l != null) {
-                    val t = l.getTarget(n)
-                    nodesToCheck.add(t!!)
+                    nodesToCheck.add(requireNotNull(l.getTarget(n)))
                     l = l.getNext(n)
                 }
                 n.vanish()
@@ -201,14 +199,15 @@ public class OsmNodesMap {
 
             var l = n.firstlink
             while (l != null) {
-                val t = l.getTarget(n)
-                if (t!!.visitID != lastVisitID) {
+                val t = requireNotNull(l.getTarget(n))
+                if (t.visitID != lastVisitID) {
                     addActiveNode(nodesToCheck, t)
                 }
                 l = l.getNext(n)
             }
-            if (destination != null && currentMaxCost < 1000000000) {
-                val distance = n.calcDistance(destination!!)
+            val currentDestination = destination
+            if (currentDestination != null && currentMaxCost < 1000000000) {
+                val distance = n.calcDistance(currentDestination)
                 if (distance > currentMaxCost - currentPathCost + 100) {
                     n.vanish()
                 }

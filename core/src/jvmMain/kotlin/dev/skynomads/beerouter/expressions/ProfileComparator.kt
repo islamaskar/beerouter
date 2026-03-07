@@ -61,5 +61,5 @@ public object ProfileComparator {
     private fun readUtf8(path: Path): String =
         SystemFileSystem.source(path).buffered().use(::readUtf8)
 
-    private fun fileName(path: String): String = path.substringAfterLast('/').substringAfterLast('\\')
+    private fun fileName(path: String): String = Path(path).name
 }

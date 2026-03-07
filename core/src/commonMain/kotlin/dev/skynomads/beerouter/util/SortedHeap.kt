@@ -96,7 +96,7 @@ public class SortedHeap<V> {
         // Now merge the content of these non-empty bins into the target bin
         while (firstNonEmpty != null) {
             // Copy current minimum to target array
-            val minBin = firstNonEmpty!!.minBin
+            val minBin = requireNotNull(firstNonEmpty).minBin
             alT[tp] = minBin.lv
             vlaT[tp++] = minBin.dropLowest()
         }
