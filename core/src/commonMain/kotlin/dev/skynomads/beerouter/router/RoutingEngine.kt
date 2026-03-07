@@ -499,21 +499,24 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
                     distRest -= tmpdist
                     if (hasInclineTags) incline = tmpincline
                     selev = (selev + (tmpdist / 100.0 * incline))
-                    tmp.position = tmp.position.withAltitude(selev.toInt().toDouble() / 4.0)
-                    tmp.message!!.position = tmp.message!!.position.withAltitude(selev.toInt().toShort().toDouble() / 4.0)
+                    val encodedElevation = selev.toInt().toShort().takeUnless { it == Short.MIN_VALUE }
+                    tmp.position = tmp.position.withAltitude(encodedElevation)
+                    tmp.message!!.position = tmp.message!!.position.withAltitude(encodedElevation)
                     tmpPt = tmp
                 }
                 dist = 0
             } else if (toSElev(n.position.altitude) != Short.MIN_VALUE && lastElev == Short.MIN_VALUE && startIdx == 0) {
                 // fill at start
                 track.nodes.subList(0, idx).forEach {
-                    it.position = it.position.withAltitude(toSElev(n.position.altitude).toDouble() / 4.0)
+                    it.position = it.position.withAltitude(
+                        toSElev(n.position.altitude).takeUnless { selev -> selev == Short.MIN_VALUE }
+                    )
                 }
             } else if (toSElev(n.position.altitude) == Short.MIN_VALUE && idx == track.nodes.size - 1) {
                 // fill at end
                 startIdx = idx
                 track.nodes.subList(startIdx, track.nodes.size).forEach {
-                    it.position = it.position.withAltitude(lastElev.toDouble() / 4.0)
+                    it.position = it.position.withAltitude(lastElev.takeUnless { selev -> selev == Short.MIN_VALUE })
                 }
             } else if (toSElev(n.position.altitude) == Short.MIN_VALUE) {
                 if (lastPt != null) dist += n.calcDistance(lastPt)

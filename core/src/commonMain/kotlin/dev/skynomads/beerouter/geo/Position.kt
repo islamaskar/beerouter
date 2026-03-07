@@ -6,12 +6,15 @@ private const val COORDINATE_SCALE = 1e-6
 private const val LONGITUDE_OFFSET = 180.0
 private const val LATITUDE_OFFSET = 90.0
 private const val ALTITUDE_SCALE: Double = 4.0
+private const val UNSET_ALTITUDE: Short = Short.MIN_VALUE
+private const val MIN_ENCODED_ALTITUDE: Int = Short.MIN_VALUE.toInt() + 1
+private const val MAX_ENCODED_ALTITUDE: Int = Short.MAX_VALUE.toInt()
 
 /**
  * Geographic position stored as E6 integers (~11cm precision).
  * Longitude: 0..360_000_000 (offset by +180°)
  * Latitude:  0..180_000_000 (offset by +90°)
- * Altitude:  quarter meters (−8,192m to +8,191m)
+ * Altitude:  quarter meters (−8,191.75m to +8,191.75m)
  */
 public data class Position(
     public val longitude: Int,
@@ -67,7 +70,14 @@ public data class Position(
 }
 
 private fun Double?.toShortAltitude(): Short? =
-    if (this == null || this.isNaN()) null else (this * ALTITUDE_SCALE).toInt().toShort()
+    if (this == null || this.isNaN()) {
+        null
+    } else {
+        (this * ALTITUDE_SCALE)
+            .toInt()
+            .coerceIn(MIN_ENCODED_ALTITUDE, MAX_ENCODED_ALTITUDE)
+            .toShort()
+    }
 
 private fun Short?.toDoubleAltitude(): Double? =
-    this?.div(ALTITUDE_SCALE)
+    this?.takeUnless { it == UNSET_ALTITUDE }?.div(ALTITUDE_SCALE)

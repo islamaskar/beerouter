@@ -5,6 +5,8 @@ import dev.skynomads.beerouter.osm.toDoubleLatitude
 import dev.skynomads.beerouter.osm.toDoubleLongitude
 import dev.skynomads.beerouter.osm.toIntLatitude
 import dev.skynomads.beerouter.osm.toIntLongitude
+import dev.skynomads.beerouter.osm.toAltitude
+import dev.skynomads.beerouter.osm.toSElev
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -198,5 +200,35 @@ class CoordinateConversionTest {
         assertEquals(123.25, position.altitudeMeters)
         assertEquals(null, Position(12.0, 34.0).altitude)
         assertEquals(null, Position(12.0, 34.0).altitudeMeters)
+    }
+
+    @Test
+    fun testAltitudeBoundaryDoesNotCollideWithUnsetSentinel() {
+        val position = Position(12.0, 34.0, -8192.0)
+
+        assertEquals((-32767).toShort(), position.altitude)
+        assertEquals(-8191.75, position.altitudeMeters)
+    }
+
+    @Test
+    fun testOutOfRangeAltitudeIsClampedInsteadOfWrapping() {
+        val high = Position(12.0, 34.0, 8849.0)
+        val low = Position(12.0, 34.0, -9000.0)
+
+        assertEquals(32767.toShort(), high.altitude)
+        assertEquals(8191.75, high.altitudeMeters)
+        assertEquals((-32767).toShort(), low.altitude)
+        assertEquals(-8191.75, low.altitudeMeters)
+    }
+
+    @Test
+    fun testToSElevClampsToRepresentableRange() {
+        val high = toSElev(8849.0)
+        val low = toSElev(-9000.0)
+
+        assertEquals(32767.toShort(), high)
+        assertEquals(8191.75, high.toAltitude())
+        assertEquals((-32767).toShort(), low)
+        assertEquals(-8191.75, low.toAltitude())
     }
 }
