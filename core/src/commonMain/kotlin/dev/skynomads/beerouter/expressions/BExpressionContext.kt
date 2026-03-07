@@ -74,7 +74,7 @@ public abstract class BExpressionContext protected constructor(
     public abstract val buildInVariableNames: Array<String?>
 
     public fun getBuildInVariable(idx: Int): Float {
-        return currentVars!![idx + currentVarOffset]
+        return requireNotNull(currentVars)[idx + currentVarOffset]
     }
 
     private var linenr = 0
@@ -255,9 +255,10 @@ public abstract class BExpressionContext protected constructor(
     }
 
     private fun evaluate() {
-        val n = expressionList!!.size
+        val expressions = requireNotNull(expressionList)
+        val n = expressions.size
         for (expidx in 0..<n) {
-            expressionList!![expidx]!!.evaluate(this)
+            requireNotNull(expressions[expidx]).evaluate(this)
         }
     }
 
@@ -300,10 +301,10 @@ public abstract class BExpressionContext protected constructor(
 
         if (cache == null) {
             decode(lookupData, inverseDirection, ab)
-            if (currentVars == null || currentVars!!.size != nBuildInVars) {
+            if (currentVars == null || requireNotNull(currentVars).size != nBuildInVars) {
                 currentVars = FloatArray(nBuildInVars)
             }
-            evaluateInto(currentVars!!, 0)
+            evaluateInto(requireNotNull(currentVars), 0)
             currentVarOffset = 0
             return
         }
@@ -358,9 +359,10 @@ public abstract class BExpressionContext protected constructor(
 
     private fun evaluateInto(vars: FloatArray, offset: Int) {
         evaluate()
+        val variableData = requireNotNull(variableData)
         for (vi in 0..<nBuildInVars) {
             val idx = buildInVariableIdx[vi]
-            vars[vi + offset] = if (idx == -1) 0f else variableData!![idx]
+            vars[vi + offset] = if (idx == -1) 0f else variableData[idx]
         }
     }
 
@@ -392,14 +394,16 @@ public abstract class BExpressionContext protected constructor(
     }
 
     public fun assertAllVariablesEqual(other: BExpressionContext) {
-        val nv = variableData!!.size
-        val nv2 = other.variableData!!.size
+        val variableData = requireNotNull(variableData)
+        val otherVariableData = requireNotNull(other.variableData)
+        val nv = variableData.size
+        val nv2 = otherVariableData.size
         if (nv != nv2) throw RuntimeException("mismatch in variable-count: $nv<->$nv2")
         for (i in 0..<nv) {
-            if (variableData!![i] != other.variableData!![i]) {
+            if (variableData[i] != otherVariableData[i]) {
                 throw RuntimeException(
-                    "mismatch in variable " + variableName(i) + " " + variableData!![i] + "<->" + other.variableData!![i]
-                            + "\ntags = " + getKeyValueDescription(false, encode()!!)
+                    "mismatch in variable " + variableName(i) + " " + variableData[i] + "<->" + otherVariableData[i]
+                            + "\ntags = " + getKeyValueDescription(false, requireNotNull(encode()))
                 )
             }
         }
@@ -658,7 +662,7 @@ public abstract class BExpressionContext protected constructor(
                 context = realContext
             }
             linenr = 1
-            minWriteIdx = if (variableData == null) 0 else variableData!!.size
+            minWriteIdx = variableData?.size ?: 0
             expressionList = _parseContent(content, emptyMap())
             lastAssignedExpression = null
 
@@ -672,14 +676,14 @@ public abstract class BExpressionContext protected constructor(
             val readOnlyData = variableData
             variableData = FloatArray(variableNumbers.size)
             for (i in 0..<minWriteIdx) {
-                variableData!![i] = readOnlyData!![i]
+                requireNotNull(variableData)[i] = requireNotNull(readOnlyData)[i]
             }
         } catch (e: IllegalArgumentException) {
             throw IllegalArgumentException("ParseException $name at line $linenr: ${e.message}")
         } catch (e: Exception) {
             throw RuntimeException(e)
         }
-        require(expressionList!!.isNotEmpty()) {
+        require(requireNotNull(expressionList).isNotEmpty()) {
             "$name does not contain expressions for context $context (old version?)"
         }
     }
@@ -707,16 +711,16 @@ public abstract class BExpressionContext protected constructor(
     public fun setVariableValue(name: String?, value: Float, create: Boolean) {
         var num = variableNumbers[name]
         if (num != null) {
-            variableData!![num] = value
+            requireNotNull(variableData)[num] = value
         } else if (create) {
             num = getVariableIdx(name, true)
             val readOnlyData = variableData
-            val minWriteIdx = readOnlyData!!.size
+            val minWriteIdx = requireNotNull(readOnlyData).size
             variableData = FloatArray(variableNumbers.size)
             for (i in 0..<minWriteIdx) {
-                variableData!![i] = readOnlyData[i]
+                requireNotNull(variableData)[i] = readOnlyData[i]
             }
-            variableData!![num] = value
+            requireNotNull(variableData)[num] = value
         }
     }
 
@@ -726,7 +730,7 @@ public abstract class BExpressionContext protected constructor(
     }
 
     public fun getVariableValue(variableIdx: Int): Float {
-        return variableData!![variableIdx]
+        return requireNotNull(variableData)[variableIdx]
     }
 
     public fun getVariableIdx(name: String?, create: Boolean): Int {
@@ -735,7 +739,7 @@ public abstract class BExpressionContext protected constructor(
             if (create) {
                 num = variableNumbers.size
                 variableNumbers[name] = num
-                lastAssignedExpression!!.add(null)
+                requireNotNull(lastAssignedExpression).add(null)
             } else {
                 return -1
             }
@@ -863,7 +867,7 @@ public abstract class BExpressionContext protected constructor(
     }
 
     public fun assign(variableIdx: Int, value: Float): Float {
-        variableData!![variableIdx] = value
+        requireNotNull(variableData)[variableIdx] = value
         return value
     }
 
