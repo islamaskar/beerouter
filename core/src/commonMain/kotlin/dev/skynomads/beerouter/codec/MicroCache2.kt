@@ -1,5 +1,6 @@
 package dev.skynomads.beerouter.codec
 
+import dev.skynomads.beerouter.osm.positionOf
 import dev.skynomads.beerouter.util.ByteDataReader
 import dev.skynomads.beerouter.util.IByteArrayUnifier
 
@@ -172,7 +173,7 @@ public class MicroCache2 : MicroCache {
                     val ilattarget = ilat + dlatRemaining
                     if (matcher != null) {
                         val useAsStartWay = wayValidator!!.checkStartWay(wayTags!!.data)
-                        if (!matcher.start(ilon, ilat, ilontarget, ilattarget, useAsStartWay)) {
+                        if (!matcher.start(positionOf(ilon, ilat), positionOf(ilontarget, ilattarget), useAsStartWay)) {
                             matcher = null
                         }
                     }
@@ -193,10 +194,7 @@ public class MicroCache2 : MicroCache {
                             writeVarLengthSigned(elediff)
                         }
 
-                        matcher?.transferNode(
-                            ilontarget - dlonRemaining,
-                            ilattarget - dlatRemaining
-                        )
+                        matcher?.transferNode(positionOf(ilontarget - dlonRemaining, ilattarget - dlatRemaining))
                     }
                     matcher?.end()
                 }

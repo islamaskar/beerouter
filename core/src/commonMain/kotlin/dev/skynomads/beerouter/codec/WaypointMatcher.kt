@@ -1,5 +1,7 @@
 package dev.skynomads.beerouter.codec
 
+import org.maplibre.spatialk.geojson.Position
+
 /**
  * a waypoint matcher gets way geometries
  * from the decoder to find the closest
@@ -7,16 +9,14 @@ package dev.skynomads.beerouter.codec
  */
 public interface WaypointMatcher {
     public fun start(
-        ilonStart: Int,
-        ilatStart: Int,
-        ilonTarget: Int,
-        ilatTarget: Int,
+        start: Position,
+        target: Position,
         useAsStartWay: Boolean
     ): Boolean
 
-    public fun transferNode(ilon: Int, ilat: Int)
+    public fun transferNode(position: Position)
 
     public fun end()
 
-    public fun hasMatch(lon: Int, lat: Int): Boolean
+    public fun hasMatch(position: Position): Boolean
 }

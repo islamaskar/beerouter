@@ -3,10 +3,12 @@ package dev.skynomads.beerouter.mapaccess
 import dev.skynomads.beerouter.codec.WaypointMatcher
 import dev.skynomads.beerouter.osm.latitudeE6
 import dev.skynomads.beerouter.osm.longitudeE6
+import dev.skynomads.beerouter.osm.osmIdOf
 import dev.skynomads.beerouter.osm.positionOf
 import dev.skynomads.beerouter.util.CheapAngleMeter.Companion.getDifferenceFromDirection
 import dev.skynomads.beerouter.util.CheapAngleMeter.Companion.getDirection
 import dev.skynomads.beerouter.util.CheapRuler.getLonLatToMeterScales
+import org.maplibre.spatialk.geojson.Position
 import kotlin.math.abs
 import kotlin.math.sqrt
 
@@ -152,16 +154,14 @@ public class WaypointMatcherImpl(
         }
     }
 
-    override public fun start(
-        ilonStart: Int,
-        ilatStart: Int,
-        ilonTarget: Int,
-        ilatTarget: Int,
-        useAsStartWay: Boolean
-    ): Boolean {
+    override public fun start(start: Position, target: Position, useAsStartWay: Boolean): Boolean {
+        val ilonStart = start.longitudeE6
+        val ilatStart = start.latitudeE6
+        val ilonTarget = target.longitudeE6
+        val ilatTarget = target.latitudeE6
         if (islandPairs.size != 0) {
-            val n1 = (ilonStart.toLong()) shl 32 or ilatStart.toLong()
-            val n2 = (ilonTarget.toLong()) shl 32 or ilatTarget.toLong()
+            val n1 = osmIdOf(ilonStart, ilatStart)
+            val n2 = osmIdOf(ilonTarget, ilatTarget)
             if (islandPairs.hasPair(n1, n2)) {
                 return false
             }
@@ -177,10 +177,12 @@ public class WaypointMatcherImpl(
         return true
     }
 
-    override public fun transferNode(ilon: Int, ilat: Int) {
-        checkSegment(lonLast, latLast, ilon, ilat)
-        lonLast = ilon
-        latLast = ilat
+    override public fun transferNode(position: Position) {
+        val lon = position.longitudeE6
+        val lat = position.latitudeE6
+        checkSegment(lonLast, latLast, lon, lat)
+        lonLast = lon
+        latLast = lat
     }
 
     override public fun end() {
@@ -234,7 +236,9 @@ public class WaypointMatcherImpl(
         }
     }
 
-    override public fun hasMatch(lon: Int, lat: Int): Boolean {
+    override public fun hasMatch(position: Position): Boolean {
+        val lon = position.longitudeE6
+        val lat = position.latitudeE6
         for (mwp in waypoints) {
             val wpPos = mwp.waypoint?.position ?: continue
             if (wpPos.longitudeE6 == lon && wpPos.latitudeE6 == lat &&

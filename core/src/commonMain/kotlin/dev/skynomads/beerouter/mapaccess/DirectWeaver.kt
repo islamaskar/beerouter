@@ -9,6 +9,7 @@ import dev.skynomads.beerouter.codec.WaypointMatcher
 import dev.skynomads.beerouter.osm.latitudeE6
 import dev.skynomads.beerouter.osm.longitudeE6
 import dev.skynomads.beerouter.osm.osmIdOf
+import dev.skynomads.beerouter.osm.positionOf
 import dev.skynomads.beerouter.util.ByteDataWriter
 import org.maplibre.spatialk.geojson.Position
 
@@ -139,7 +140,7 @@ public class DirectWeaver(
                     if (matcher != null) {
                         val useAsStartWay =
                             wayTags == null || wayValidator.checkStartWay(wayTags.data)
-                        if (!matcher.start(ilon, ilat, ilontarget, ilattarget, useAsStartWay)) {
+                        if (!matcher.start(positionOf(ilon, ilat), positionOf(ilontarget, ilattarget), useAsStartWay)) {
                             matcher = null
                         }
                     }
@@ -159,10 +160,7 @@ public class DirectWeaver(
                             writeVarLengthSigned(elediff)
                         }
 
-                        matcher?.transferNode(
-                            ilontarget - dlonRemaining,
-                            ilattarget - dlatRemaining
-                        )
+                        matcher?.transferNode(positionOf(ilontarget - dlonRemaining, ilattarget - dlatRemaining))
                     }
                     matcher?.end()
                 }

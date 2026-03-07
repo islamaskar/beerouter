@@ -351,7 +351,7 @@ public class NodesCache(
                     loadSegmentFor(n.position.longitudeE6 + d * idxLon, n.position.latitudeE6 + d * idxLat)
                 }
             }
-            if (bUseDynamicRange && waypointMatcher!!.hasMatch(n.position.longitudeE6, n.position.latitudeE6)) break
+            if (bUseDynamicRange && waypointMatcher!!.hasMatch(n.position)) break
             scale++
         }
     }
