@@ -28,13 +28,6 @@ public open class OsmNode : OsmLink, OsmPos {
         positionOf(0, 0)
 
     /**
-     * The elevation
-     */
-    @Deprecated("Use position.altitude instead")
-    public val sElev: Short
-        get() = position.altitude ?: Short.MIN_VALUE
-
-    /**
      * The node-tags, if any
      */
     public var nodeDescription: ByteArray? = null

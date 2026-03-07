@@ -194,13 +194,6 @@ public class OsmTrack {
     public var energy: Int = 0
     public var itinerary: MutableList<String?> = mutableListOf()
 
-    @Deprecated("Use itinerary")
-    public var iternity: MutableList<String?>?
-        get() = itinerary
-        set(value) {
-            itinerary = value ?: mutableListOf()
-        }
-
     public fun getVoiceHint(i: Int): VoiceHint? {
         return voiceHints.firstOrNull { it.indexInTrack == i }
     }

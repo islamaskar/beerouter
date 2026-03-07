@@ -20,10 +20,6 @@ import kotlin.math.roundToInt
 public class OsmPathElement protected constructor() : OsmPos {
     public override var position: Position = positionOf(0, 0)
 
-    @Deprecated("Use position.altitude instead")
-    public val sElev: Short
-        get() = position.altitude ?: Short.MIN_VALUE
-
     public var message: MessageData? = null // description
 
     public var cost: Int = 0

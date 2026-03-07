@@ -6,9 +6,6 @@
 package dev.skynomads.beerouter.router
 
 import dev.skynomads.beerouter.geo.Position
-import dev.skynomads.beerouter.osm.latitudeE6
-import dev.skynomads.beerouter.osm.longitudeE6
-import dev.skynomads.beerouter.osm.osmPositionOf
 import dev.skynomads.beerouter.osm.positionOf
 
 public data class MessageData(
@@ -67,25 +64,4 @@ public data class MessageData(
 
     public val isGoodForCars: Boolean
         get() = hasFlag(ClassifierFlag.GOOD_FOR_CARS)
-
-    @Deprecated("Use position.longitude instead")
-    public var lon: Int
-        get() = position.longitudeE6
-        set(value) {
-            position = osmPositionOf(value, position.latitudeE6, position.altitude)
-        }
-
-    @Deprecated("Use position.latitude instead")
-    public var lat: Int
-        get() = position.latitudeE6
-        set(value) {
-            position = osmPositionOf(position.longitudeE6, value, position.altitude)
-        }
-
-    @Deprecated("Use position.altitude instead")
-    public var ele: Short
-        get() = position.altitude ?: Short.MIN_VALUE
-        set(value) {
-            position = position.withAltitude(value.takeUnless { it == Short.MIN_VALUE })
-        }
 }
