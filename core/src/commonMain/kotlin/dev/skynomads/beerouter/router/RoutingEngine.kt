@@ -15,6 +15,7 @@ import org.maplibre.spatialk.geojson.Position
 import dev.skynomads.beerouter.util.CheapAngleMeter.Companion.getDifferenceFromDirection
 import dev.skynomads.beerouter.util.CheapAngleMeter.Companion.getDirection
 import dev.skynomads.beerouter.util.CheapRuler.destination
+import dev.skynomads.beerouter.util.CheapRuler.distance
 import dev.skynomads.beerouter.util.SortedHeap
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
@@ -1756,6 +1757,10 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
 
         val openBorderList = ArrayList<OsmPath>(4096)
 
+        // Pre-compute end position integer coordinates once to avoid repeated double→int conversions in the hot loop
+        val endIlon: Int = endPos?.position?.longitude?.toIntLongitude() ?: 0
+        val endIlat: Int = endPos?.position?.latitude?.toIntLatitude() ?: 0
+
         while (true) {
             currentCoroutineContext().ensureActive()
 
@@ -2004,8 +2009,11 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
                     linkHolder = linkHolder.nextForLink
                 }
                 if (bestPath != null) {
-                    bestPath.airdistance =
-                        if (isFinalLink) 0 else nextNode.calcDistance(endPos!!)
+                    bestPath.airdistance = if (isFinalLink) 0 else {
+                        val tLon = (targetNodeId shr 32).toInt()
+                        val tLat = (targetNodeId and 0xffffffffL).toInt()
+                        max(1, distance(tLon, tLat, endIlon, endIlat).roundToInt())
+                    }
 
                     val inRadius =
                         boundary == null || boundary!!.isInBoundary(nextNode, bestPath.cost)
