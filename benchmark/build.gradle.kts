@@ -17,10 +17,7 @@ kotlin {
         }
     }
 
-    // Add other targets as needed for multiplatform support
     linuxX64()
-    macosX64()
-    macosArm64()
 
     sourceSets {
         val commonMain by getting {
@@ -61,7 +58,5 @@ benchmark {
     targets {
         register("jvm")
         register("linuxX64")
-        register("macosX64")
-        register("macosArm64")
     }
 }
