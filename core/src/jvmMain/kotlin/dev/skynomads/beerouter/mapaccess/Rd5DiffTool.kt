@@ -29,7 +29,7 @@ public class Rd5DiffTool : ProgressListener {
 
     private class MCOutputStream(
         private val sink: Sink,
-        private val buffer: ByteArray?
+        private val buffer: ByteArray
     ) {
         private var skips: Short = 0
 
@@ -40,7 +40,7 @@ public class Rd5DiffTool : ProgressListener {
             }
             sink.writeShort(skips)
             skips = 0
-            val len = mc.encodeMicroCache(buffer!!)
+            val len = mc.encodeMicroCache(buffer)
             require(len != 0) { "encoded buffer of non-empty micro-cache cannot be empty" }
             sink.writeInt(len)
             sink.write(buffer, 0, len)
@@ -57,7 +57,7 @@ public class Rd5DiffTool : ProgressListener {
 
     private class MCInputStream(
         private val source: Source,
-        private val dataBuffers: DataBuffers?
+        private val dataBuffers: DataBuffers
     ) {
         private var skips: Short = -1
         private val empty: MicroCache = MicroCache.emptyCache()
@@ -71,7 +71,7 @@ public class Rd5DiffTool : ProgressListener {
                 val size = source.readInt()
                 val ab = source.readBytes(size)
                 val bc = StatCoderContext(ab)
-                mc = MicroCache2(bc, dataBuffers!!, 0, 0, 32, null, null)
+                mc = MicroCache2(bc, dataBuffers, 0, 0, 32, null, null)
             }
             skips--
             return mc
@@ -167,12 +167,12 @@ public class Rd5DiffTool : ProgressListener {
             return source.readBytes(size)
         }
 
-        private fun createMicroCache(ab: ByteArray?, dataBuffers: DataBuffers?): MicroCache {
+        private fun createMicroCache(ab: ByteArray?, dataBuffers: DataBuffers): MicroCache {
             if (ab == null || ab.isEmpty()) {
                 return MicroCache.emptyCache()
             }
             val bc = StatCoderContext(ab)
-            return MicroCache2(bc, dataBuffers!!, 0, 0, 32, null, null)
+            return MicroCache2(bc, dataBuffers, 0, 0, 32, null, null)
         }
 
         /**

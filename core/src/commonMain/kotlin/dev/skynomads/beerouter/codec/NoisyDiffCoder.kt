@@ -13,7 +13,7 @@ public class NoisyDiffCoder {
     private var tot = 0
     private val freqs: IntArray = IntArray(14)
     private var noisybits = 0
-    private lateinit var bc: StatCoderContext
+    private var bc: StatCoderContext = StatCoderContext(ByteArray(0))
     private var pass = 0
 
     /**

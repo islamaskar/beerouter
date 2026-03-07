@@ -62,9 +62,7 @@ public open class ByteDataWriter(byteArray: ByteArray = ByteArray(0)) : ByteData
         val len = sa?.size ?: 0
         val sizecode = len shl 1 or (if (isReverse) 1 else 0)
         writeVarLengthUnsigned(sizecode)
-        if (len > 0) {
-            write(sa!!, 0, len)
-        }
+        sa?.let { write(it, 0, len) }
     }
 
 

@@ -14,7 +14,7 @@ import dev.skynomads.beerouter.util.BitCoderContext
 public class TagValueCoder {
     private val identityMap: MutableMap<TagValueSet, TagValueSet> = mutableMapOf()
     private var tree: Any? = null
-    private lateinit var bc: BitCoderContext
+    private var bc: BitCoderContext = BitCoderContext(ByteArray(0))
     private var pass = 0
     private var nextTagValueSetId = 0
 
@@ -26,7 +26,8 @@ public class TagValueCoder {
         tvsProbe.data = data
         var tvs = identityMap[tvsProbe]
         if (pass == 3) {
-            bc.encodeBounded(requireNotNull(tvs).range - 1, tvs.code)
+            val knownSet = requireNotNull(tvs)
+            bc.encodeBounded(knownSet.range - 1, knownSet.code)
         } else if (pass == 2) {
             if (tvs == null) {
                 tvs = tvsProbe
@@ -58,10 +59,12 @@ public class TagValueCoder {
             queue.addAll(identityMap.values)
             queue.sortWith(comparator)
             while (queue.size > 1) {
+                val child1 = queue.removeFirst()
+                val child2 = queue.removeFirst()
                 val node = TagValueSet(nextTagValueSetId++)
-                node.child1 = queue.removeFirst()
-                node.child2 = queue.removeFirst()
-                node.frequency = node.child1!!.frequency + node.child2!!.frequency
+                node.child1 = child1
+                node.child2 = child2
+                node.frequency = child1.frequency + child2.frequency
                 val insertIdx = queue.indexOfFirst { comparator.compare(node, it) <= 0 }
                 if (insertIdx == -1) queue.addLast(node) else queue.add(insertIdx, node)
             }
@@ -85,10 +88,10 @@ public class TagValueCoder {
     ): Any? {
         val isNode = bc.decodeBit()
         if (isNode) {
-            val node = TreeNode()
-            node.child1 = decodeTree(bc, buffers, validator)
-            node.child2 = decodeTree(bc, buffers, validator)
-            return node
+            return TreeNode(
+                child1 = decodeTree(bc, buffers, validator),
+                child2 = decodeTree(bc, buffers, validator)
+            )
         }
 
         val buffer = buffers.tagbuf1
@@ -138,10 +141,7 @@ public class TagValueCoder {
         return null
     }
 
-    public class TreeNode {
-        public var child1: Any? = null
-        public var child2: Any? = null
-    }
+    public data class TreeNode(public val child1: Any?, public val child2: Any?)
 
     public class TagValueSet(
         private val id: Int
@@ -156,17 +156,20 @@ public class TagValueCoder {
         public fun encode(bc: BitCoderContext, range: Int, code: Int) {
             this.range = range
             this.code = code
-            val isNode = child1 != null
+            val left = child1
+            val right = child2
+            val isNode = left != null
             bc.encodeBit(isNode)
             if (isNode) {
-                child1!!.encode(bc, range shl 1, code)
-                child2!!.encode(bc, range shl 1, code + range)
+                requireNotNull(left).encode(bc, range shl 1, code)
+                requireNotNull(right).encode(bc, range shl 1, code + range)
             } else {
-                if (data == null) {
+                val encodedData = data
+                if (encodedData == null) {
                     bc.encodeVarBits(0)
                     return
                 }
-                val src = BitCoderContext(data!!)
+                val src = BitCoderContext(encodedData)
                 while (true) {
                     val delta = src.decodeVarBits()
                     bc.encodeVarBits(delta)
