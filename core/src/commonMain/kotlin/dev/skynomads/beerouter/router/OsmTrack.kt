@@ -9,8 +9,6 @@ import androidx.collection.MutableLongObjectMap
 import dev.skynomads.beerouter.mapaccess.MatchedWaypoint
 import dev.skynomads.beerouter.mapaccess.MatchedWaypoint.Companion.readFromStream
 import dev.skynomads.beerouter.mapaccess.OsmPos
-import dev.skynomads.beerouter.osm.latitudeE6
-import dev.skynomads.beerouter.osm.longitudeE6
 import dev.skynomads.beerouter.osm.toSElev
 import kotlinx.io.EOFException
 import kotlinx.io.Sink
@@ -222,8 +220,8 @@ public class OsmTrack {
         for (i in nodes.indices) {
             val e1 = nodes[i]
             val e2 = t.nodes[i]
-            if (e1.position.longitudeE6 != e2.position.longitudeE6 ||
-                e1.position.latitudeE6 != e2.position.latitudeE6) return false
+            if (e1.position.longitude != e2.position.longitude ||
+                e1.position.latitude != e2.position.latitude) return false
         }
         return true
     }
@@ -375,8 +373,8 @@ public class OsmTrack {
         ): OsmTrack? {
             val ep = readFromStream(source)
             val waypoint = requireNotNull(ep.waypoint)
-            val dlon: Int = waypoint.position.longitudeE6 - newEp.position.longitudeE6
-            val dlat = waypoint.position.latitudeE6 - newEp.position.latitudeE6
+            val dlon = waypoint.position.longitude - newEp.position.longitude
+            val dlat = waypoint.position.latitude - newEp.position.latitude
             val targetMatch = dlon < 20 && dlon > -20 && dlat < 20 && dlat > -20
             debugInfo?.append("target-delta = $dlon/$dlat targetMatch=$targetMatch")
             if (!targetMatch) return null

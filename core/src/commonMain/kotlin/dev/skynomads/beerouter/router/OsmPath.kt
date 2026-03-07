@@ -10,8 +10,6 @@ import dev.skynomads.beerouter.mapaccess.OsmLink
 import dev.skynomads.beerouter.mapaccess.OsmLinkHolder
 import dev.skynomads.beerouter.mapaccess.OsmNode
 import dev.skynomads.beerouter.mapaccess.TurnRestriction.Companion.isTurnForbidden
-import dev.skynomads.beerouter.osm.latitudeE6
-import dev.skynomads.beerouter.osm.longitudeE6
 import dev.skynomads.beerouter.osm.osmIdOf
 import dev.skynomads.beerouter.osm.positionOf
 import dev.skynomads.beerouter.osm.toPosition
@@ -86,8 +84,8 @@ public abstract class OsmPath : OsmLinkHolder {
         if (origin.myElement == null) {
             val n = origin.targetNode!!
             origin.myElement = OsmPathElement.create(
-                n.position.longitudeE6,
-                n.position.latitudeE6,
+                n.position.longitude,
+                n.position.latitude,
                 toSElev(n.position.altitude),
                 origin.originElement
             ).also {
@@ -142,8 +140,8 @@ public abstract class OsmPath : OsmLinkHolder {
         // extract the 3 positions of the first section
         var previousPosition = origin.originPosition
 
-        var lon1 = sourceNode!!.position.longitudeE6
-        var lat1 = sourceNode!!.position.latitudeE6
+        var lon1 = sourceNode!!.position.longitude
+        var lat1 = sourceNode!!.position.latitude
         var ele1 = origin.selev
 
         var linkdisttotal = 0
@@ -222,12 +220,12 @@ public abstract class OsmPath : OsmLinkHolder {
             val originEle2: Short
 
             if (transferNode == null) {
-                lon2 = targetNode!!.position.longitudeE6
-                lat2 = targetNode!!.position.latitudeE6
+                lon2 = targetNode!!.position.longitude
+                lat2 = targetNode!!.position.latitude
                 originEle2 = toSElev(targetNode!!.position.altitude)
             } else {
-                lon2 = transferNode.position.longitudeE6
-                lat2 = transferNode.position.latitudeE6
+                lon2 = transferNode.position.longitude
+                lat2 = transferNode.position.latitude
                 originEle2 = toSElev(transferNode.position.altitude)
             }
             ele2 = originEle2
@@ -284,8 +282,8 @@ public abstract class OsmPath : OsmLinkHolder {
                             ele1 = interpolateEle(ele1, ele2, 1.0 - rc.wayfraction)
                             originElement = OsmPathElement.create(
                                 positionOf(
-                                    shortestPosition.longitudeE6,
-                                    shortestPosition.latitudeE6,
+                                    shortestPosition.longitude,
+                                    shortestPosition.latitude,
                                     ele1.toDouble() / 4.0
                                 ),
                                 null
@@ -325,8 +323,8 @@ public abstract class OsmPath : OsmLinkHolder {
                 }
             }
             val angle = rc.anglemeter.calcAngle(
-                requireNotNull(previousPosition).longitudeE6,
-                requireNotNull(previousPosition).latitudeE6,
+                requireNotNull(previousPosition).longitude,
+                requireNotNull(previousPosition).latitude,
                 lon1,
                 lat1,
                 lon2,
@@ -387,8 +385,8 @@ public abstract class OsmPath : OsmLinkHolder {
                     val shortestPosition = requireNotNull(rc.shortestPosition)
                     originElement = OsmPathElement.create(
                         positionOf(
-                            shortestPosition.longitudeE6,
-                            shortestPosition.latitudeE6,
+                            shortestPosition.longitude,
+                            shortestPosition.latitude,
                             originEle2.toDouble() / 4.0
                         ),
                         originElement
