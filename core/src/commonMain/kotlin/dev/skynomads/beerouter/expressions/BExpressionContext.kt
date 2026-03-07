@@ -219,7 +219,7 @@ public abstract class BExpressionContext protected constructor(
 
     public fun parseMetaLine(line: String) {
         parsedLines++
-        val tokens = line.split("\\s+".toRegex()).filter { it.isNotEmpty() }
+        val tokens = line.split(WHITESPACE_REGEX).filter { it.isNotEmpty() }
         if (tokens.size < 2) return
         var name = tokens[0]
         val value = tokens[1]
@@ -824,14 +824,14 @@ public abstract class BExpressionContext protected constructor(
                             .contains("noStartWay")
                     ) {
                         var `var` = sbcom.toString().trim()
-                        val savar = `var`.split("\\|".toRegex()).dropLastWhile { it.isEmpty() }
+                        val savar = `var`.split("|").dropLastWhile { it.isEmpty() }
                             .toTypedArray()
                         if (savar.size == 4) {
                             `var` = savar[3].substring(savar[3].indexOf("=") + 1).trim()
-                            val sa = `var`.split(";".toRegex()).dropLastWhile { it.isEmpty() }
+                            val sa = `var`.split(";").dropLastWhile { it.isEmpty() }
                                 .toTypedArray()
                             for (s in sa) {
-                                val sa2 = s.split(",".toRegex()).dropLastWhile { it.isEmpty() }
+                                val sa2 = s.split(",").dropLastWhile { it.isEmpty() }
                                     .toTypedArray()
                                 val name: String = sa2[0]
                                 val value: String = sa2[1]
@@ -905,6 +905,7 @@ public abstract class BExpressionContext protected constructor(
     public companion object {
         private const val CONTEXT_TAG = "---context:"
         private const val MODEL_TAG = "---model:"
+        private val WHITESPACE_REGEX = "\\s+".toRegex()
 
         /**
          * Format a float with exactly one decimal place using '.' as separator.
