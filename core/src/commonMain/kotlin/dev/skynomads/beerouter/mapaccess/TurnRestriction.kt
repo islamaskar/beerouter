@@ -5,13 +5,15 @@
  */
 package dev.skynomads.beerouter.mapaccess
 
+import dev.skynomads.beerouter.osm.latitudeE6
+import dev.skynomads.beerouter.osm.longitudeE6
+import dev.skynomads.beerouter.osm.osmIdOf
+
 public data class TurnRestriction(
     public var isPositive: Boolean = false,
     public var exceptions: Short = 0,
-    public var fromLon: Int = 0,
-    public var fromLat: Int = 0,
-    public var toLon: Int = 0,
-    public var toLat: Int = 0,
+    public var fromId: Long = 0,
+    public var toId: Long = 0,
     public var next: TurnRestriction? = null
 ) {
     public enum class RestrictionException(public val bit: Int) {
@@ -27,16 +29,14 @@ public data class TurnRestriction(
     public fun exceptMotorcars(): Boolean = hasException(RestrictionException.MOTORCARS)
 
     override fun toString(): String {
-        return "pos=$isPositive fromLon=$fromLon fromLat=$fromLat toLon=$toLon toLat=$toLat"
+        return "pos=$isPositive fromId=$fromId toId=$toId"
     }
 
     public companion object {
         public fun isTurnForbidden(
             first: TurnRestriction?,
-            fromLon: Int,
-            fromLat: Int,
-            toLon: Int,
-            toLat: Int,
+            fromId: Long,
+            toId: Long,
             bikeMode: Boolean,
             carMode: Boolean
         ): Boolean {
@@ -53,12 +53,12 @@ public data class TurnRestriction(
                     continue
                 }
 
-                if (restriction.fromLon == fromLon && restriction.fromLat == fromLat) {
+                if (restriction.fromId == fromId) {
                     if (restriction.isPositive) {
                         hasAnyPositive = true
                     }
 
-                    if (restriction.toLon == toLon && restriction.toLat == toLat) {
+                    if (restriction.toId == toId) {
                         if (restriction.isPositive) {
                             hasPositive = true
                         } else {
@@ -72,5 +72,19 @@ public data class TurnRestriction(
 
             return !hasPositive && (hasAnyPositive || hasNegative)
         }
+
+        public fun create(
+            isPositive: Boolean,
+            exceptions: Short,
+            fromLon: Int,
+            fromLat: Int,
+            toLon: Int,
+            toLat: Int
+        ): TurnRestriction = TurnRestriction(
+            isPositive = isPositive,
+            exceptions = exceptions,
+            fromId = osmIdOf(fromLon, fromLat),
+            toId = osmIdOf(toLon, toLat)
+        )
     }
 }

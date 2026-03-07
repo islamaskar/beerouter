@@ -9,6 +9,7 @@ import dev.skynomads.beerouter.mapaccess.OsmLink
 import dev.skynomads.beerouter.mapaccess.OsmLinkHolder
 import dev.skynomads.beerouter.mapaccess.OsmNode
 import dev.skynomads.beerouter.mapaccess.TurnRestriction.Companion.isTurnForbidden
+import dev.skynomads.beerouter.osm.osmIdOf
 import dev.skynomads.beerouter.osm.latitudeE6
 import dev.skynomads.beerouter.osm.longitudeE6
 import dev.skynomads.beerouter.osm.toSElev
@@ -248,20 +249,16 @@ public abstract class OsmPath : OsmLinkHolder {
                 if (if (rc.inverseDirection)
                         isTurnForbidden(
                             sourceNode!!.firstRestriction,
-                            lon2,
-                            lat2,
-                            lon0,
-                            lat0,
+                            osmIdOf(lon2, lat2),
+                            osmIdOf(lon0, lat0),
                             rc.global.bikeMode || rc.global.footMode,
                             rc.global.carMode
                         )
                     else
                         isTurnForbidden(
                             sourceNode!!.firstRestriction,
-                            lon0,
-                            lat0,
-                            lon2,
-                            lat2,
+                            osmIdOf(lon0, lat0),
+                            osmIdOf(lon2, lat2),
                             rc.global.bikeMode || rc.global.footMode,
                             rc.global.carMode
                         )

@@ -8,6 +8,7 @@ import dev.skynomads.beerouter.codec.TagValueValidator
 import dev.skynomads.beerouter.codec.WaypointMatcher
 import dev.skynomads.beerouter.osm.latitudeE6
 import dev.skynomads.beerouter.osm.longitudeE6
+import dev.skynomads.beerouter.osm.osmIdOf
 import dev.skynomads.beerouter.util.ByteDataWriter
 import org.maplibre.spatialk.geojson.Position
 
@@ -80,15 +81,19 @@ public class DirectWeaver(
                     }
 
                     1 -> { // turn-restriction
-                        val tr = TurnRestriction()
-                        tr.exceptions = trExceptions
+                        val exceptions = trExceptions
                         trExceptions = 0
-                        tr.isPositive = bc.decodeBit()
-                        tr.fromLon = ilon + bc.decodeNoisyDiff(10)
-                        tr.fromLat = ilat + bc.decodeNoisyDiff(10)
-                        tr.toLon = ilon + bc.decodeNoisyDiff(10)
-                        tr.toLat = ilat + bc.decodeNoisyDiff(10)
-                        node.addTurnRestriction(tr)
+                        val isPositive = bc.decodeBit()
+                        val fromId = osmIdOf(ilon + bc.decodeNoisyDiff(10), ilat + bc.decodeNoisyDiff(10))
+                        val toId = osmIdOf(ilon + bc.decodeNoisyDiff(10), ilat + bc.decodeNoisyDiff(10))
+                        node.addTurnRestriction(
+                            TurnRestriction(
+                                isPositive = isPositive,
+                                exceptions = exceptions,
+                                fromId = fromId,
+                                toId = toId
+                            )
+                        )
                     }
 
                     else -> {

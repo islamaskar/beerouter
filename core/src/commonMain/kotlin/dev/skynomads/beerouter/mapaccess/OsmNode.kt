@@ -4,6 +4,7 @@ import dev.skynomads.beerouter.codec.MicroCache
 import dev.skynomads.beerouter.codec.MicroCache2
 import dev.skynomads.beerouter.osm.latitudeE6
 import dev.skynomads.beerouter.osm.longitudeE6
+import dev.skynomads.beerouter.osm.osmIdOf
 import dev.skynomads.beerouter.osm.positionOf
 import dev.skynomads.beerouter.osm.toOsmId
 import dev.skynomads.beerouter.osm.toPosition
@@ -114,14 +115,16 @@ public open class OsmNode : OsmLink, OsmPos {
 
         // read turn restrictions
         while (mc.readBoolean()) {
-            val tr = TurnRestriction()
-            tr.exceptions = mc.readShort()
-            tr.isPositive = mc.readBoolean()
-            tr.fromLon = mc.readInt()
-            tr.fromLat = mc.readInt()
-            tr.toLon = mc.readInt()
-            tr.toLat = mc.readInt()
-            addTurnRestriction(tr)
+            addTurnRestriction(
+                TurnRestriction.create(
+                    exceptions = mc.readShort(),
+                    isPositive = mc.readBoolean(),
+                    fromLon = mc.readInt(),
+                    fromLat = mc.readInt(),
+                    toLon = mc.readInt(),
+                    toLat = mc.readInt()
+                )
+            )
         }
 
         val readSElev = mc.readShort()
@@ -184,7 +187,7 @@ public open class OsmNode : OsmLink, OsmPos {
             l = l.getNext(this)
         }
         if (tn == null) { // .. not found, then check the hollow nodes
-            tn = hollowNodes.get((linklon.toLong() shl 32) or linklat.toLong()) // target node
+                tn = hollowNodes.get(osmIdOf(linklon, linklat)) // target node
             if (tn == null) { // node not yet known, create a new hollow proxy
                 tn = OsmNode(linklon, linklat)
                 tn.setHollow()

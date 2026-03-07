@@ -25,6 +25,9 @@ public val Position.latitudeE6: Int
 public fun positionOf(longitudeE6: Int, latitudeE6: Int, altitude: Double? = null): Position =
     Position(longitudeE6.toDoubleLongitude(), latitudeE6.toDoubleLatitude(), altitude)
 
+public fun osmIdOf(longitudeE6: Int, latitudeE6: Int): Long =
+    (longitudeE6.toLong() shl 32) or latitudeE6.toLong()
+
 public fun osmPositionOf(longitudeE6: Int, latitudeE6: Int, sElev: Short): Position =
     positionOf(longitudeE6, latitudeE6, sElev.toAltitude())
 
@@ -38,7 +41,7 @@ public fun Long.toPosition(altitude: Double? = null): Position =
     positionOf(longitudeE6, latitudeE6, altitude)
 
 public fun Position.toOsmId(): Long {
-    return (longitudeE6.toLong()) shl 32 or latitudeE6.toLong()
+    return osmIdOf(longitudeE6, latitudeE6)
 }
 
 public fun toSElev(altitude: Double?): Short =
