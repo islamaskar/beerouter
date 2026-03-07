@@ -8,6 +8,7 @@ package dev.skynomads.beerouter.router
 
 import dev.skynomads.beerouter.osm.latitudeE6
 import dev.skynomads.beerouter.osm.longitudeE6
+import dev.skynomads.beerouter.osm.positionOf
 import dev.skynomads.beerouter.osm.osmPositionOf
 import dev.skynomads.beerouter.osm.toSElev
 import org.maplibre.spatialk.geojson.Position
@@ -37,7 +38,7 @@ public class VoiceHint {
         END,  // end point
     }
 
-    public var position: Position = Position(0.0, 0.0, null)
+    public var position: Position = positionOf(0, 0)
 
     private val sElevation: Short
         get() = toSElev(position.altitude)

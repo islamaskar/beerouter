@@ -23,7 +23,7 @@ public open class OsmNode : OsmLink, OsmPos {
      * The position
      */
     override var position: Position =
-        Position(0.0, 0.0, UNSET_ALTITUDE)
+        positionOf(0, 0, UNSET_ALTITUDE)
 
     /**
      * The elevation

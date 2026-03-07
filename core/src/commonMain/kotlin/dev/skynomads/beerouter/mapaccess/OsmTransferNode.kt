@@ -7,13 +7,14 @@ package dev.skynomads.beerouter.mapaccess
 
 import dev.skynomads.beerouter.osm.latitudeE6
 import dev.skynomads.beerouter.osm.longitudeE6
+import dev.skynomads.beerouter.osm.positionOf
 import dev.skynomads.beerouter.osm.osmPositionOf
 import dev.skynomads.beerouter.osm.toSElev
 import org.maplibre.spatialk.geojson.Position
 
 public data class OsmTransferNode(
     public var next: OsmTransferNode? = null,
-    public var position: Position = Position(0.0, 0.0, null)
+    public var position: Position = positionOf(0, 0)
 ) {
     private val sElevation: Short
         get() = toSElev(position.altitude)
