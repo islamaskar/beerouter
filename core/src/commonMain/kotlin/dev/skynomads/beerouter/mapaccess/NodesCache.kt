@@ -9,8 +9,6 @@ import dev.skynomads.beerouter.codec.DataBuffers
 import dev.skynomads.beerouter.codec.MicroCache
 import dev.skynomads.beerouter.codec.WaypointMatcher
 import dev.skynomads.beerouter.expressions.BExpressionContextWay
-import dev.skynomads.beerouter.osm.latitudeE6
-import dev.skynomads.beerouter.osm.longitudeE6
 
 public class NodesCache(
     private val mapAccessFileSystem: MapAccessFileSystem,
@@ -211,7 +209,7 @@ public class NodesCache(
         if (!node.isHollow) return true
 
         val nodeId = node.idFromPos
-        val segment = getSegmentFor(nodeId.longitudeE6, nodeId.latitudeE6)
+        val segment = getSegmentFor(nodeId.longitudeFromId(), nodeId.latitudeFromId())
         if (segment == null) {
             return false
         }
@@ -411,3 +409,7 @@ public class NodesCache(
         public const val RETRY_RANGE: Int = 250
     }
 }
+
+private fun Long.longitudeFromId(): Int = (this shr 32).toInt()
+
+private fun Long.latitudeFromId(): Int = (this and 0xffffffffL).toInt()

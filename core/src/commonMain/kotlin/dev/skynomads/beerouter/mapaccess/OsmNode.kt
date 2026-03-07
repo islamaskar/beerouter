@@ -3,13 +3,9 @@ package dev.skynomads.beerouter.mapaccess
 import dev.skynomads.beerouter.codec.MicroCache
 import dev.skynomads.beerouter.codec.MicroCache2
 import dev.skynomads.beerouter.geo.Position
-import dev.skynomads.beerouter.osm.latitudeE6
-import dev.skynomads.beerouter.osm.longitudeE6
 import dev.skynomads.beerouter.osm.osmIdOf
 import dev.skynomads.beerouter.osm.osmPositionOf
 import dev.skynomads.beerouter.osm.positionOf
-import dev.skynomads.beerouter.osm.toOsmId
-import dev.skynomads.beerouter.osm.toPosition
 import dev.skynomads.beerouter.util.CheapRuler.distance
 import dev.skynomads.beerouter.util.IByteArrayUnifier
 import kotlin.math.max
@@ -47,7 +43,7 @@ public open class OsmNode : OsmLink, OsmPos {
     public var firstlink: OsmLink? = null
 
     // Cached id computed from lon/lat — stable because lon/lat never change after construction
-    private var _idFromPos: Long = position.toOsmId()
+    private var _idFromPos: Long = position.id
 
     public constructor()
 
@@ -57,7 +53,7 @@ public open class OsmNode : OsmLink, OsmPos {
     }
 
     public constructor(id: Long) {
-        this.position = id.toPosition()
+        this.position = positionOf(id.longitudeFromId(), id.latitudeFromId())
         _idFromPos = id
     }
 
@@ -128,8 +124,8 @@ public open class OsmNode : OsmLink, OsmPos {
 
         // Extract lon/lat once from cached id (avoids repeated double→int conversions in the loop)
         val selfId = _idFromPos
-        val selfLon = selfId.longitudeE6
-        val selfLat = selfId.latitudeE6
+        val selfLon = selfId.longitudeFromId()
+        val selfLat = selfId.latitudeFromId()
 
         while (mc.hasMoreData()) {
             // read link data
@@ -159,7 +155,7 @@ public open class OsmNode : OsmLink, OsmPos {
         isReverse: Boolean
     ) {
         val selfId = _idFromPos
-        if (linklon == selfId.longitudeE6 && linklat == selfId.latitudeE6) {
+        if (linklon == selfId.longitudeFromId() && linklat == selfId.latitudeFromId()) {
             return  // skip self-ref
         }
 
@@ -171,7 +167,7 @@ public open class OsmNode : OsmLink, OsmPos {
         while (l != null) {
             val t = l.getTarget(this)
             val tId = t!!.idFromPos
-            if (tId.longitudeE6 == linklon && tId.latitudeE6 == linklat) {
+            if (tId.longitudeFromId() == linklon && tId.latitudeFromId() == linklat) {
                 tn = t
                 if (isReverse || (l.descriptionBitmap == null && !l.isReverse(this))) {
                     link = l // the correct one that needs our data
@@ -181,7 +177,7 @@ public open class OsmNode : OsmLink, OsmPos {
             l = l.getNext(this)
         }
         if (tn == null) { // .. not found, then check the hollow nodes
-                tn = hollowNodes.get(osmIdOf(linklon, linklat)) // target node
+            tn = hollowNodes.get(osmIdOf(linklon, linklat)) // target node
             if (tn == null) { // node not yet known, create a new hollow proxy
                 tn = OsmNode(linklon, linklat)
                 tn.setHollow()
@@ -274,5 +270,8 @@ public open class OsmNode : OsmLink, OsmPos {
     private companion object {
         private const val HOLLOW_SELEV: Short = -12345
     }
-
 }
+
+private fun Long.longitudeFromId(): Int = (this shr 32).toInt()
+
+private fun Long.latitudeFromId(): Int = (this and 0xffffffffL).toInt()
