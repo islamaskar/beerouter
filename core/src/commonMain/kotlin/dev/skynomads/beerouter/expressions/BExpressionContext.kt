@@ -345,6 +345,8 @@ public abstract class BExpressionContext protected constructor(
                 }
                 cn.vars = vw.vars
             }
+            // Update for fast identity check on the next call with the same ab
+            lastCacheNode = cn
         }
 
         currentVars = cn!!.vars
