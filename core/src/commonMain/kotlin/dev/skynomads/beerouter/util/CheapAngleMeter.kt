@@ -4,8 +4,8 @@
  */
 package dev.skynomads.beerouter.util
 
-import dev.skynomads.beerouter.osm.toIntLatitude
-import dev.skynomads.beerouter.osm.toIntLongitude
+import dev.skynomads.beerouter.osm.latitudeE6
+import dev.skynomads.beerouter.osm.longitudeE6
 import org.maplibre.spatialk.geojson.Position
 import kotlin.math.PI
 import kotlin.math.abs
@@ -54,12 +54,12 @@ public class CheapAngleMeter {
 
     public fun calcAngle(p0: Position, p1: Position, p2: Position): Double {
         return calcAngle(
-            p0.longitude.toIntLongitude(),
-            p0.latitude.toIntLatitude(),
-            p1.longitude.toIntLongitude(),
-            p1.latitude.toIntLatitude(),
-            p2.longitude.toIntLongitude(),
-            p2.latitude.toIntLatitude()
+            p0.longitudeE6,
+            p0.latitudeE6,
+            p1.longitudeE6,
+            p1.latitudeE6,
+            p2.longitudeE6,
+            p2.latitudeE6
         )
     }
 
@@ -76,10 +76,10 @@ public class CheapAngleMeter {
 
         public fun getDirection(p1: Position, p2: Position): Double {
             return getDirection(
-                p1.longitude.toIntLongitude(),
-                p1.latitude.toIntLatitude(),
-                p2.longitude.toIntLongitude(),
-                p2.latitude.toIntLatitude()
+                p1.longitudeE6,
+                p1.latitudeE6,
+                p2.longitudeE6,
+                p2.latitudeE6
             )
         }
 
