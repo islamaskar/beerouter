@@ -643,7 +643,7 @@ public abstract class BExpressionContext protected constructor(
         content: String,
         name: String,
         readOnlyContext: String?,
-        keyValues: MutableMap<String, String>? = null
+        keyValues: Map<String, String> = emptyMap()
     ) {
         try {
             if (readOnlyContext != null) {
@@ -657,7 +657,7 @@ public abstract class BExpressionContext protected constructor(
             }
             linenr = 1
             minWriteIdx = if (variableData == null) 0 else variableData!!.size
-            expressionList = _parseContent(content, null)
+            expressionList = _parseContent(content, emptyMap())
             lastAssignedExpression = null
 
             val varNames = this.buildInVariableNames
@@ -684,20 +684,15 @@ public abstract class BExpressionContext protected constructor(
 
     private fun _parseContent(
         content: String,
-        keyValues: MutableMap<String, String>?
+        keyValues: Map<String, String>
     ): MutableList<BExpression?> {
         _content = content
         _contentPos = 0
         _readerDone = false
         val result = mutableListOf<BExpression?>()
 
-        if (keyValues != null) {
-            for (key in keyValues.keys) {
-                val value = keyValues[key]
-                result.add(
-                    BExpression.createAssignExpressionFromKeyValue(this, key, value!!)
-                )
-            }
+        for ((key, value) in keyValues) {
+            result.add(BExpression.createAssignExpressionFromKeyValue(this, key, value))
         }
 
         while (true) {

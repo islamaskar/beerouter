@@ -194,7 +194,7 @@ public class RoutingContext(
 
     public var profileTimestamp: Long = 0
 
-    public var keyValues: MutableMap<String, String>? = null
+    public var keyValues: MutableMap<String, String> = mutableMapOf()
 
     public var rawTrackSourceFactory: (() -> Source)? = null
     public var rawAreaSourceFactory: (() -> Source)? = null
@@ -209,7 +209,7 @@ public class RoutingContext(
     public var memoryclass: Int = 64
 
     public var ai: AreaInfo? = null
-    public var pm: OsmPathModel? = null
+    public lateinit var pm: OsmPathModel
 
     init {
         val meta = BExpressionMetaData()
@@ -424,7 +424,7 @@ public class RoutingContext(
                 else -> throw RuntimeException("Cannot create path-model: unsupported model '$className'")
             }
         }
-        model.init(way, node, keyValues ?: mutableMapOf())
+        model.init(way, node, keyValues)
         pm = model
     }
 
@@ -574,13 +574,13 @@ public class RoutingContext(
 
 
     public fun createPrePath(origin: OsmPath, link: OsmLink): OsmPrePath? {
-        val p = pm!!.createPrePath()
+        val p = pm.createPrePath()
         p?.init(origin, link, this)
         return p
     }
 
     public fun createPath(link: OsmLink): OsmPath {
-        val p = pm!!.createPath()
+        val p = pm.createPath()
         p.init(link)
         return p
     }
@@ -591,7 +591,7 @@ public class RoutingContext(
         refTrack: OsmTrack?,
         detailMode: Boolean
     ): OsmPath {
-        val p = pm!!.createPath()
+        val p = pm.createPath()
         p.init(origin, link, refTrack, detailMode, this)
         return p
     }
