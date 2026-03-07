@@ -87,7 +87,7 @@ public object Rd5DiffManager {
         return (if (v > 9) 'a'.code + (v - 10) else '0'.code + v).toChar()
     }
 
-    private fun resolve(base: Path, child: String): Path = Path("${base.toString()}/$child")
+    private fun resolve(base: Path, child: String): Path = Path(base, child)
 
     private fun fileName(path: Path): String = path.toString().substringAfterLast('/').substringAfterLast('\\')
 

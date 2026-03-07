@@ -48,7 +48,7 @@ public object Rd5DiffValidator {
         }
     }
 
-    private fun resolve(base: Path, child: String): Path = Path("${base.toString()}/$child")
+    private fun resolve(base: Path, child: String): Path = Path(base, child)
 
     private fun fileName(path: Path): String = path.toString().substringAfterLast('/').substringAfterLast('\\')
 }

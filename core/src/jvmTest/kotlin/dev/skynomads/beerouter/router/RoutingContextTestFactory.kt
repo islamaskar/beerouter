@@ -7,16 +7,20 @@ import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
 
 internal fun routingContextFromFiles(profile: File, segmentDir: File): RoutingContext {
-    require(profile.exists()) { "profile exists ${profile.path}" }
-    val lookup = File(profile.parentFile, "lookups.dat")
-    require(lookup.exists()) { "lookup exists ${lookup.path}" }
-    return SystemFileSystem.source(Path(profile.path)).buffered().use { profileSource ->
-        SystemFileSystem.source(Path(lookup.path)).buffered().use { lookupSource ->
+    return routingContextFromFiles(Path(profile.path), Path(segmentDir.path))
+}
+
+internal fun routingContextFromFiles(profile: Path, segmentDir: Path): RoutingContext {
+    require(SystemFileSystem.exists(profile)) { "profile exists $profile" }
+    val lookup = Path(profile.parent ?: error("profile has no parent: $profile"), "lookups.dat")
+    require(SystemFileSystem.exists(lookup)) { "lookup exists $lookup" }
+    return SystemFileSystem.source(profile).buffered().use { profileSource ->
+        SystemFileSystem.source(lookup).buffered().use { lookupSource ->
             RoutingContext(
                 profileName = profile.name,
                 profileSource = profileSource,
                 lookupSource = lookupSource,
-                mapAccessFileSystem = DefaultMapAccessFileSystem(Path(segmentDir.path))
+                mapAccessFileSystem = DefaultMapAccessFileSystem(segmentDir)
             )
         }
     }

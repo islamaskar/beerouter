@@ -16,7 +16,7 @@ public interface MapAccessFileSystem {
 }
 
 public class DefaultMapAccessFileSystem(private val segmentDir: Path) : MapAccessFileSystem {
-    private fun resolve(fileName: String): Path = Path("${segmentDir}/$fileName")
+    private fun resolve(fileName: String): Path = Path(segmentDir, fileName)
 
     override fun exists(fileName: String): Boolean = SystemFileSystem.exists(resolve(fileName))
 
