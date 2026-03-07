@@ -25,7 +25,6 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 implementation(project(":core"))
-                implementation(kotlin("stdlib"))
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
                 implementation("org.maplibre.spatialk:geojson:0.6.1")
                 implementation("org.jetbrains.kotlinx:kotlinx-benchmark-runtime:0.4.15")
@@ -46,9 +45,6 @@ kotlin {
                 implementation("com.github.abrensch.brouter:brouter-mapaccess:c09ddffad9")
             }
         }
-    }
-    sourceSets.jvmMain.dependencies {
-        implementation(kotlin("test"))
     }
 }
 

@@ -38,7 +38,6 @@ kotlin {
     sourceSets {
         val commonMain by getting {
             dependencies {
-                implementation(kotlin("stdlib"))
                 implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.10.2")
                 implementation("org.maplibre.spatialk:geojson:0.6.1")
                 implementation("org.maplibre.spatialk:turf:0.6.1")
@@ -55,8 +54,6 @@ kotlin {
                 implementation(kotlin("test"))
                 implementation("com.github.abrensch.brouter:brouter-core:c09ddffad9")
                 implementation("com.github.abrensch.brouter:brouter-mapaccess:c09ddffad9")
-                implementation("com.github.pieterclaerhout:kotlin-yellowduck-gpx:34fb8865e5")
-                implementation("ch.qos.logback:logback-classic:1.5.18")
             }
         }
     }

@@ -56,7 +56,7 @@ public class OsmTrack {
     }
 
     private fun appendHolder(
-        map: LongObjectMap<OsmPathElementHolder>,
+        map: MutableLongObjectMap<OsmPathElementHolder>,
         id: Long,
         node: OsmPathElement?
     ) {
