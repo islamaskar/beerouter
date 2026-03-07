@@ -15,6 +15,8 @@ import dev.skynomads.beerouter.mapaccess.MatchedWaypoint
 import dev.skynomads.beerouter.mapaccess.DefaultMapAccessFileSystem
 import dev.skynomads.beerouter.mapaccess.OsmLink
 import dev.skynomads.beerouter.mapaccess.OsmNode
+import dev.skynomads.beerouter.osm.latitudeE6
+import dev.skynomads.beerouter.osm.longitudeE6
 import dev.skynomads.beerouter.osm.toIntLatitude
 import dev.skynomads.beerouter.osm.toIntLongitude
 import dev.skynomads.beerouter.util.CheapAngleMeter
@@ -317,18 +319,18 @@ public class RoutingContext(
         for (i in 0..<theSize) {
             val mwp = matchedWaypoints[i]
             var isInsideNogo = false
-            val wp = mwp.crosspoint
+            val wp = requireNotNull(mwp.crosspoint)
             for (nogo in nogopoints) {
                 if (nogo.nogoWeight.isNaN()
-                    && wp!!.calcDistance(nogo) < nogo.radius && (nogo !is OsmNogoPolygon || (if (nogo.isClosed)
+                    && wp.calcDistance(nogo) < nogo.radius && (nogo !is OsmNogoPolygon || (if (nogo.isClosed)
                         nogo.isWithin(
-                            wp.position.longitude.toIntLongitude().toLong(),
-                            wp.position.latitude.toIntLatitude().toLong()
+                            wp.position.longitudeE6.toLong(),
+                            wp.position.latitudeE6.toLong()
                         )
                     else
                         nogo.isOnPolyline(
-                            wp.position.longitude.toIntLongitude().toLong(),
-                            wp.position.latitude.toIntLatitude().toLong()
+                            wp.position.longitudeE6.toLong(),
+                            wp.position.latitudeE6.toLong()
                         )))
                 ) {
                     isInsideNogo = true
@@ -372,13 +374,13 @@ public class RoutingContext(
                 if (dist < nogo.radius
                     && (nogo !is OsmNogoPolygon || (if (nogo.isClosed)
                         nogo.isWithin(
-                            wp.position.longitude.toIntLongitude().toLong(),
-                            wp.position.latitude.toIntLatitude().toLong()
+                            wp.position.longitudeE6.toLong(),
+                            wp.position.latitudeE6.toLong()
                         )
                     else
                         nogo.isOnPolyline(
-                            wp.position.longitude.toIntLongitude().toLong(),
-                            wp.position.latitude.toIntLatitude().toLong()
+                            wp.position.longitudeE6.toLong(),
+                            wp.position.latitudeE6.toLong()
                         )))
                 ) {
                     continue
@@ -394,8 +396,8 @@ public class RoutingContext(
         get() {
             val cs = LongArray(3)
             for (nogo in nogopoints) {
-                cs[0] += nogo.position.longitude.toIntLongitude()
-                cs[1] += nogo.position.latitude.toIntLatitude()
+                cs[0] += nogo.position.longitudeE6
+                cs[1] += nogo.position.latitudeE6
                 // 10 is an arbitrary constant to get sub-integer precision in the checksum
                 cs[2] += (nogo.radius * 10.0).toLong()
             }
@@ -407,8 +409,9 @@ public class RoutingContext(
     }
 
     public fun setWaypoint(wp: OsmNodeNamed?, pendingEndpoint: OsmNodeNamed?, endpoint: Boolean) {
+        val waypoint = requireNotNull(wp)
         keepnogopoints = nogopoints
-        nogopoints = mutableListOf(wp!!)
+        nogopoints = mutableListOf(waypoint)
         if (keepnogopoints.isNotEmpty()) nogopoints.addAll(keepnogopoints)
         isEndpoint = endpoint
         this.pendingEndpoint = pendingEndpoint
@@ -439,10 +442,11 @@ public class RoutingContext(
     }
 
     public fun checkPendingEndpoint(): Boolean {
+        val pendingEndpoint = pendingEndpoint
         if (pendingEndpoint != null) {
             isEndpoint = true
-            nogopoints[0] = pendingEndpoint!!
-            pendingEndpoint = null
+            nogopoints[0] = pendingEndpoint
+            this.pendingEndpoint = null
             return true
         }
         return false
@@ -602,7 +606,7 @@ public class RoutingContext(
                 if (nogo is OsmNogoPolygon) {
                     continue
                 }
-                var s = nogo.name!!
+                var s = requireNotNull(nogo.name)
                 val idx = s.indexOf(' ')
                 if (idx > 0) s = s.take(idx)
                 var ir = 20 // default radius
