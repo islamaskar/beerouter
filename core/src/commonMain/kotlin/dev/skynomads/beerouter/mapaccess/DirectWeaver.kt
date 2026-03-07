@@ -6,8 +6,6 @@ import dev.skynomads.beerouter.codec.StatCoderContext
 import dev.skynomads.beerouter.codec.TagValueCoder
 import dev.skynomads.beerouter.codec.TagValueValidator
 import dev.skynomads.beerouter.codec.WaypointMatcher
-import dev.skynomads.beerouter.osm.latitudeE6
-import dev.skynomads.beerouter.osm.longitudeE6
 import dev.skynomads.beerouter.osm.osmIdOf
 import dev.skynomads.beerouter.osm.positionOf
 import dev.skynomads.beerouter.util.ByteDataWriter
@@ -65,8 +63,9 @@ public class DirectWeaver(
         var selev = 0
         for (n in 0..<size) { // loop over nodes
             val node = nodes[n]
-            val ilon = node.position.longitudeE6
-            val ilat = node.position.latitudeE6
+            val nodePosition = node.position
+            val ilon = nodePosition.longitude
+            val ilat = nodePosition.latitude
 
             // future escapes (turn restrictions?)
             var trExceptions: Short = 0
@@ -117,8 +116,8 @@ public class DirectWeaver(
                 var isReverse = false
                 if (nodeIdx != n) { // internal (forward-) link
                     val targetPosition = nodes[nodeIdx].position
-                    dlonRemaining = targetPosition.longitudeE6 - ilon
-                    dlatRemaining = targetPosition.latitudeE6 - ilat
+                    dlonRemaining = targetPosition.longitude - ilon
+                    dlatRemaining = targetPosition.latitude - ilat
                 } else {
                     isReverse = bc.decodeBit()
                     dlonRemaining = extLonDiff.decodeSignedValue()

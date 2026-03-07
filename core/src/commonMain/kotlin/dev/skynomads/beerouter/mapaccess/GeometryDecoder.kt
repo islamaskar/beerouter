@@ -5,8 +5,6 @@
  */
 package dev.skynomads.beerouter.mapaccess
 
-import dev.skynomads.beerouter.osm.latitudeE6
-import dev.skynomads.beerouter.osm.longitudeE6
 import dev.skynomads.beerouter.osm.osmPositionOf
 import dev.skynomads.beerouter.osm.toSElev
 import dev.skynomads.beerouter.util.ByteDataReader
@@ -34,8 +32,8 @@ public class GeometryDecoder {
         var lastTransferNode: OsmTransferNode? = null
         val startnode: OsmNode = if (reverseLink) targetNode else requireNotNull(sourceNode)
         r.reset(geometry)
-        var olon = startnode.position.longitudeE6
-        var olat = startnode.position.latitudeE6
+        var olon = startnode.position.longitude
+        var olat = startnode.position.latitude
         var oselev = toSElev(startnode.position.altitude).toInt()
         var idx = 0
         while (r.hasMoreData()) {

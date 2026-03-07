@@ -95,7 +95,7 @@ public open class OsmNode : OsmLink, OsmPos {
     }
 
     override fun toString(): String {
-        return "n_${position.longitudeE6 - 180000000}_${position.latitudeE6 - 90000000}"
+        return "n_${position.longitude - 180000000}_${position.latitude - 90000000}"
     }
 
     public fun parseNodeBody(mc: MicroCache, hollowNodes: OsmNodesMap, expCtxWay: IByteArrayUnifier) {

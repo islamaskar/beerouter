@@ -5,9 +5,6 @@
  */
 package dev.skynomads.beerouter.router
 
-import dev.skynomads.beerouter.osm.latitudeE6
-import dev.skynomads.beerouter.osm.longitudeE6
-
 internal class KinematicPrePath : OsmPrePath() {
     var angle: Double = 0.0
     var priorityclassifier: Int = 0
@@ -30,37 +27,25 @@ internal class KinematicPrePath : OsmPrePath() {
         // extract the 3 positions of the first section
         val previousPosition = requireNotNull(origin.originPosition)
 
-        val p1 = requireNotNull(sourceNode)
-        val lon1 = p1.position.longitudeE6
-        val lat1 = p1.position.latitudeE6
-
+        val sourceNode = requireNotNull(sourceNode)
+        val sourcePosition = sourceNode.position
         val isReverse = currentLink.isReverse(sourceNode)
 
         // evaluate the way tags
         rc.way.evaluate(rc.inverseDirection xor isReverse, description)
 
         val transferNode = currentLink.geometry?.let {
-            rc.geometryDecoder.decodeGeometry(it, p1, currentTargetNode, isReverse)
+            rc.geometryDecoder.decodeGeometry(it, sourceNode, currentTargetNode, isReverse)
         }
-
-        val lon2: Int
-        val lat2: Int
-
-        if (transferNode == null) {
-            lon2 = currentTargetNode.position.longitudeE6
-            lat2 = currentTargetNode.position.latitudeE6
-        } else {
-            lon2 = transferNode.position.longitudeE6
-            lat2 = transferNode.position.latitudeE6
-        }
+        val targetPosition = transferNode?.position ?: currentTargetNode.position
 
         angle = rc.anglemeter.calcAngle(
-            previousPosition.longitudeE6,
-            previousPosition.latitudeE6,
-            lon1,
-            lat1,
-            lon2,
-            lat2
+            previousPosition.longitude,
+            previousPosition.latitude,
+            sourcePosition.longitude,
+            sourcePosition.latitude,
+            targetPosition.longitude,
+            targetPosition.latitude
         )
         priorityclassifier = rc.way.priorityClassifier.toInt()
         classifiermask = rc.way.classifierMask.toInt()

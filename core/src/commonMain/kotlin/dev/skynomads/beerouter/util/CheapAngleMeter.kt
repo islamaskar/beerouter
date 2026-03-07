@@ -5,8 +5,6 @@
 package dev.skynomads.beerouter.util
 
 import dev.skynomads.beerouter.geo.Position
-import dev.skynomads.beerouter.osm.latitudeE6
-import dev.skynomads.beerouter.osm.longitudeE6
 import kotlin.math.PI
 import kotlin.math.abs
 import kotlin.math.atan2
@@ -52,16 +50,15 @@ public class CheapAngleMeter {
         return offset + sinp * (57.4539 + s2 * (9.57565 + s2 * (4.30904 + s2 * 2.56491)))
     }
 
-    public fun calcAngle(p0: Position, p1: Position, p2: Position): Double {
-        return calcAngle(
-            p0.longitudeE6,
-            p0.latitudeE6,
-            p1.longitudeE6,
-            p1.latitudeE6,
-            p2.longitudeE6,
-            p2.latitudeE6
+    public fun calcAngle(p0: Position, p1: Position, p2: Position): Double =
+        calcAngle(
+            p0.longitude,
+            p0.latitude,
+            p1.longitude,
+            p1.latitude,
+            p2.longitude,
+            p2.latitude
         )
-    }
 
     public companion object {
         public fun getAngle(lon1: Int, lat1: Int, lon2: Int, lat2: Int): Double {
@@ -74,14 +71,13 @@ public class CheapAngleMeter {
             return normalize(getAngle(lon1, lat1, lon2, lat2))
         }
 
-        public fun getDirection(p1: Position, p2: Position): Double {
-            return getDirection(
-                p1.longitudeE6,
-                p1.latitudeE6,
-                p2.longitudeE6,
-                p2.latitudeE6
+        public fun getDirection(p1: Position, p2: Position): Double =
+            getDirection(
+                p1.longitude,
+                p1.latitude,
+                p2.longitude,
+                p2.latitude
             )
-        }
 
         public fun normalize(a: Double): Double {
             return if (a >= 360)

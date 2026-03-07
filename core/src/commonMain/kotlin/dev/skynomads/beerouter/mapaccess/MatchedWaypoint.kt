@@ -5,8 +5,6 @@
  */
 package dev.skynomads.beerouter.mapaccess
 
-import dev.skynomads.beerouter.osm.latitudeE6
-import dev.skynomads.beerouter.osm.longitudeE6
 import dev.skynomads.beerouter.osm.positionOf
 import kotlinx.io.Sink
 import kotlinx.io.Source
@@ -48,7 +46,7 @@ public data class MatchedWaypoint(
 
     public companion object {
         private fun nodeFromCoordinates(lon: Int, lat: Int): OsmNode =
-            OsmNode(positionOf(lon, lat, 0.0))
+            OsmNode(positionOf(lon, lat))
 
         private fun Source.readNode(): OsmNode {
             val lat = readInt()
@@ -69,6 +67,6 @@ public data class MatchedWaypoint(
 }
 
 private fun Sink.writeNode(node: OsmNode) {
-    writeInt(node.position.latitudeE6)
-    writeInt(node.position.longitudeE6)
+    writeInt(node.position.latitude)
+    writeInt(node.position.longitude)
 }

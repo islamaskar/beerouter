@@ -2,8 +2,6 @@ package dev.skynomads.beerouter.router
 
 import dev.skynomads.beerouter.geo.Position
 import dev.skynomads.beerouter.mapaccess.OsmPos
-import dev.skynomads.beerouter.osm.latitudeE6
-import dev.skynomads.beerouter.osm.longitudeE6
 import dev.skynomads.beerouter.osm.osmPositionOf
 import dev.skynomads.beerouter.osm.positionOf
 import dev.skynomads.beerouter.util.CheapRuler.distance
@@ -53,27 +51,26 @@ public class OsmPathElement protected constructor() : OsmPos {
     public var origin: OsmPathElement? = null
 
     override fun toString(): String =
-        "${position.longitudeE6}_${position.latitudeE6}"
+        "${position.longitude}_${position.latitude}"
 
     public fun positionEquals(e: OsmPathElement): Boolean {
         return _idFromPos == e._idFromPos
     }
 
     public fun writeToStream(sink: Sink) {
-        sink.writeInt(position.latitudeE6)
-        sink.writeInt(position.longitudeE6)
+        sink.writeInt(position.latitude)
+        sink.writeInt(position.longitude)
         sink.writeShort(position.altitude ?: Short.MIN_VALUE)
         sink.writeInt(cost)
     }
 
     public companion object {
-        public fun create(position: Position, origin: OsmPathElement?): OsmPathElement {
-            val pe = OsmPathElement()
-            pe.position = position
-            pe._idFromPos = position.id
-            pe.origin = origin
-            return pe
-        }
+        public fun create(position: Position, origin: OsmPathElement?): OsmPathElement =
+            OsmPathElement().apply {
+                this.position = position
+                _idFromPos = position.id
+                this.origin = origin
+            }
 
         public fun create(
             ilon: Int,
@@ -83,14 +80,14 @@ public class OsmPathElement protected constructor() : OsmPos {
         ): OsmPathElement = create(osmPositionOf(ilon, ilat, selev), origin)
 
         public fun readFromStream(source: Source): OsmPathElement {
-            val pe = OsmPathElement()
             val lat = source.readInt()
             val lon = source.readInt()
-            val selev = source.readShort()
-            pe.position = osmPositionOf(lon, lat, selev)
-            pe._idFromPos = pe.position.id
-            pe.cost = source.readInt()
-            return pe
+            val position = osmPositionOf(lon, lat, source.readShort())
+            return OsmPathElement().apply {
+                this.position = position
+                _idFromPos = position.id
+                cost = source.readInt()
+            }
         }
     }
 }
