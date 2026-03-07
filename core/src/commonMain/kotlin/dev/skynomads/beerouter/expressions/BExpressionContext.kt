@@ -313,13 +313,14 @@ public abstract class BExpressionContext protected constructor(
             cn = lastCacheNode
         } else {
             val hash = crc(ab, 0, ab.size)
-            cn = cache!![ByteArrayKey(hash, ab)]
+            val key = ByteArrayKey(hash, ab)
+            cn = cache!![key]
 
             if (cn == null) {
                 cn = CacheNode()
                 cn.hash = hash
                 cn.ab = ab
-                cache!!.put(ByteArrayKey(hash, ab), cn)
+                cache!!.put(key, cn)
 
                 if (probeVarSet.vars == null) {
                     probeVarSet.vars = FloatArray(2 * nBuildInVars)
