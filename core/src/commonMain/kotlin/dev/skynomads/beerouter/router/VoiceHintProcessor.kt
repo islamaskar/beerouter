@@ -14,20 +14,20 @@ internal class VoiceHintProcessor // this.catchingRange = catchingRange;
     catchingRange: Double, // private double catchingRange; // range to catch angles and merge turns
     private val explicitRoundabouts: Boolean, private val transportMode: VoiceHintList.TransportMode
 ) {
-    var significantAngle: Double = 22.5
-    var internalCatchingRangeNear: Double = 2.0
-    var internalCatchingRangeWide: Double = 10.0
+    private val significantAngle: Double = 22.5
+    private val internalCatchingRangeNear: Double = 2.0
+    private val internalCatchingRangeWide: Double = 10.0
 
     private fun sumNonConsumedWithinCatchingRange(
-        inputs: MutableList<VoiceHint>,
+        inputs: List<VoiceHint>,
         offset: Int,
         range: Double
     ): Float {
-        var offset = offset
+        var index = offset
         var distance = 0.0
         var angle = 0f
-        while (offset >= 0 && distance < range) {
-            val input = inputs[offset--]
+        while (index >= 0 && distance < range) {
+            val input = inputs[index--]
             if (input.turnAngleConsumed || input.command == VoiceHint.Command.BL || input.command == VoiceHint.Command.END) {
                 break
             }
@@ -59,8 +59,8 @@ internal class VoiceHintProcessor // this.catchingRange = catchingRange;
      * @param inputs tracknodes, un reverse order
      * @return voice hints, in forward order
      */
-    fun process(inputs: MutableList<VoiceHint>): MutableList<VoiceHint> {
-        val results= mutableListOf<VoiceHint>()
+    fun process(inputs: List<VoiceHint>): MutableList<VoiceHint> {
+        val results = mutableListOf<VoiceHint>()
         var distance = 0.0
         var roundAboutTurnAngle = 0f // sums up angles in roundabout
 
@@ -358,11 +358,11 @@ internal class VoiceHintProcessor // this.catchingRange = catchingRange;
     }
 
     fun postProcess(
-        inputs: MutableList<VoiceHint>,
+        inputs: List<VoiceHint>,
         catchingRange: Double,
         minRange: Double
     ): MutableList<VoiceHint> {
-        val results= mutableListOf<VoiceHint>()
+        val results = mutableListOf<VoiceHint>()
         var inputLast: VoiceHint? = null
         var inputLastSaved: VoiceHint? = null
         var hintIdx = 0
@@ -528,7 +528,7 @@ internal class VoiceHintProcessor // this.catchingRange = catchingRange;
     }
 
     fun checkForNextNoneMotorway(
-        inputs: MutableList<VoiceHint>,
+        inputs: List<VoiceHint>,
         offset: Int,
         testsize: Int
     ): Boolean {
