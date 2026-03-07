@@ -9,13 +9,9 @@ import dev.skynomads.beerouter.expressions.BExpressionContextNode
 import dev.skynomads.beerouter.expressions.BExpressionContextWay
 
 internal class KinematicModel : OsmPathModel() {
-    override fun createPrePath(): OsmPrePath {
-        return KinematicPrePath()
-    }
+    override fun createPrePath(): OsmPrePath = KinematicPrePath()
 
-    override fun createPath(): OsmPath {
-        return KinematicPath()
-    }
+    override fun createPath(): OsmPath = KinematicPath()
 
     var turnAngleDecayTime: Double = 0.0
     var fRoll: Double = 0.0
@@ -39,11 +35,9 @@ internal class KinematicModel : OsmPathModel() {
 
     private var nodeIdxMaxspeed = 0
 
-    protected lateinit var ctxWay: BExpressionContextWay
-    protected lateinit var ctxNode: BExpressionContextNode
-    protected var params: MutableMap<String, String> = mutableMapOf()
-
-    private var initDone = false
+    private lateinit var ctxWay: BExpressionContextWay
+    private lateinit var ctxNode: BExpressionContextNode
+    private val params: MutableMap<String, String> = mutableMapOf()
 
     private var lastEffectiveLimit = 0.0
     private var lastBrakingSpeed = 0.0
@@ -51,19 +45,19 @@ internal class KinematicModel : OsmPathModel() {
     override fun init(
         expctxWay: BExpressionContextWay?,
         expctxNode: BExpressionContextNode?,
-        keyValues: MutableMap<String, String>
+        keyValues: Map<String, String>
     ) {
-        if (!initDone) {
+        if (!::ctxWay.isInitialized) {
             ctxWay = requireNotNull(expctxWay)
             ctxNode = requireNotNull(expctxNode)
             wayIdxMaxspeed = ctxWay.getOutputVariableIndex("maxspeed", false)
             wayIdxMaxspeedExplicit = ctxWay.getOutputVariableIndex("maxspeed_explicit", false)
             wayIdxMinspeed = ctxWay.getOutputVariableIndex("minspeed", false)
             nodeIdxMaxspeed = ctxNode.getOutputVariableIndex("maxspeed", false)
-            initDone = true
         }
 
-        params = keyValues
+        params.clear()
+        params.putAll(keyValues)
 
         turnAngleDecayTime = getParam("turnAngleDecayTime", 5f).toDouble()
         fRoll = getParam("f_roll", 232f).toDouble()
@@ -82,13 +76,10 @@ internal class KinematicModel : OsmPathModel() {
     }
 
     protected fun getParam(name: String, defaultValue: Float): Float {
-        val sval = params[name]
-        if (sval != null) {
-            return sval.toFloat()
+        val value = params.getOrPut(name) {
+            ctxWay.getVariableValue(name, defaultValue).toString()
         }
-        val v = ctxWay.getVariableValue(name, defaultValue)
-        params[name] = v.toString()
-        return v
+        return value.toFloat()
     }
 
     val wayMaxspeed: Float
@@ -107,13 +98,7 @@ internal class KinematicModel : OsmPathModel() {
         /**
          * get the effective speed limit from the way-limit and vmax/vmin
          */
-        get() {
-            // performance related inline coding
-            val minspeed = this.wayMinspeed.toDouble()
-            val espeed = if (minspeed > vmax) minspeed else vmax
-            val maxspeed = this.wayMaxspeed.toDouble()
-            return if (maxspeed < espeed) maxspeed else espeed
-        }
+        get() = minOf(wayMaxspeed.toDouble(), maxOf(wayMinspeed.toDouble(), vmax))
 
     /**
      * get the braking speed for current balance-power (pw) and effective speed limit (vl)

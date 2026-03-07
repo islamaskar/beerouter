@@ -13,10 +13,9 @@ internal class StdModel : OsmPathModel() {
 
     override fun createPath(): OsmPath = StdPath()
 
-
     override fun init(
         expctxWay: BExpressionContextWay?,
         expctxNode: BExpressionContextNode?,
-        keyValues: MutableMap<String, String>
+        keyValues: Map<String, String>
     ) = Unit
 }
