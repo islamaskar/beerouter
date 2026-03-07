@@ -20,7 +20,7 @@ import kotlin.math.abs
 
 public class OsmTrack {
     public var endPoint: MatchedWaypoint? = null
-    public lateinit var nogoChecksums: LongArray
+    public var nogoChecksums: LongArray = LongArray(3)
     public var profileTimestamp: Long = 0
     public var isDirty: Boolean = false
 
@@ -32,10 +32,10 @@ public class OsmTrack {
 
     public var pois: MutableList<OsmNodeNamed> = mutableListOf()
 
-    public class OsmPathElementHolder {
-        public var node: OsmPathElement? = null
+    public class OsmPathElementHolder(
+        public var node: OsmPathElement? = null,
         public var nextHolder: OsmPathElementHolder? = null
-    }
+    )
 
     public var nodes: MutableList<OsmPathElement> = mutableListOf()
 
@@ -55,18 +55,26 @@ public class OsmTrack {
         nodes.add(0, node)
     }
 
-    public fun registerDetourForId(id: Long, detour: OsmPathElement?) {
-        val nh = OsmPathElementHolder()
-        nh.node = detour
-        var h = detourMap[id]
-        if (h != null) {
-            while (h!!.nextHolder != null) {
-                h = h.nextHolder
-            }
-            h.nextHolder = nh
-        } else {
-            detourMap.put(id, nh)
+    private fun appendHolder(
+        map: LongObjectMap<OsmPathElementHolder>,
+        id: Long,
+        node: OsmPathElement?
+    ) {
+        val holder = OsmPathElementHolder(node = node)
+        var current = map[id]
+        if (current == null) {
+            map.put(id, holder)
+            return
         }
+
+        while (current?.nextHolder != null) {
+            current = current.nextHolder
+        }
+        current?.nextHolder = holder
+    }
+
+    public fun registerDetourForId(id: Long, detour: OsmPathElement?) {
+        appendHolder(detourMap, id, detour)
     }
 
     public fun replaceDetours(source: OsmTrack) {
@@ -89,18 +97,7 @@ public class OsmTrack {
 
     public fun buildMap() {
         for (node in nodes) {
-            val id = node.idFromPos
-            val nh = OsmPathElementHolder()
-            nh.node = node
-            var h = nodesMap[id]
-            if (h != null) {
-                while (h!!.nextHolder != null) {
-                    h = h.nextHolder
-                }
-                h.nextHolder = nh
-            } else {
-                nodesMap.put(id, nh)
-            }
+            appendHolder(nodesMap, node.idFromPos, node)
         }
     }
 
@@ -212,21 +209,11 @@ public class OsmTrack {
         }
 
     public fun getVoiceHint(i: Int): VoiceHint? {
-        for (hint in voiceHints) {
-            if (hint.indexInTrack == i) {
-                return hint
-            }
-        }
-        return null
+        return voiceHints.firstOrNull { it.indexInTrack == i }
     }
 
     public fun getMatchedWaypoint(idx: Int): MatchedWaypoint? {
-        for (wp in matchedWaypoints) {
-            if (idx == wp.indexInTrack) {
-                return wp
-            }
-        }
-        return null
+        return matchedWaypoints.firstOrNull { idx == it.indexInTrack }
     }
 
     private fun getVNode(i: Int): Int {
