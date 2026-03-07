@@ -9,6 +9,8 @@ import dev.skynomads.beerouter.mapaccess.OsmLink
 import dev.skynomads.beerouter.mapaccess.OsmLinkHolder
 import dev.skynomads.beerouter.mapaccess.OsmNode
 import dev.skynomads.beerouter.mapaccess.TurnRestriction.Companion.isTurnForbidden
+import dev.skynomads.beerouter.osm.latitudeE6
+import dev.skynomads.beerouter.osm.longitudeE6
 import dev.skynomads.beerouter.osm.toSElev
 import dev.skynomads.beerouter.util.CheapRuler
 import dev.skynomads.beerouter.util.CheapRuler.getLonLatToMeterScales
@@ -233,9 +235,9 @@ public abstract class OsmPath : OsmLinkHolder {
                 lat2 = (tgtId and 0xffffffffL).toInt()
                 originEle2 = toSElev(targetNode!!.position.altitude)
             } else {
-                lon2 = transferNode.ilon
-                lat2 = transferNode.ilat
-                originEle2 = transferNode.selev
+                lon2 = transferNode.position.longitudeE6
+                lat2 = transferNode.position.latitudeE6
+                originEle2 = toSElev(transferNode.position.altitude)
             }
             ele2 = originEle2
 

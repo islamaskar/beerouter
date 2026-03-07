@@ -6,8 +6,8 @@
 package dev.skynomads.beerouter.router
 
 import dev.skynomads.beerouter.mapaccess.OsmNode
-import dev.skynomads.beerouter.osm.toIntLatitude
-import dev.skynomads.beerouter.osm.toIntLongitude
+import dev.skynomads.beerouter.osm.latitudeE6
+import dev.skynomads.beerouter.osm.longitudeE6
 
 internal class SearchBoundary(n: OsmNode, private val radius: Int, val direction: Int) {
     private enum class Direction(public val id: Int) {
@@ -57,8 +57,8 @@ internal class SearchBoundary(n: OsmNode, private val radius: Int, val direction
         if (radius > 0) {
             return n.calcDistance(p) < radius
         }
-        val nLon = n.position.longitude.toIntLongitude()
-        val nLat = n.position.latitude.toIntLatitude()
+        val nLon = n.position.longitudeE6
+        val nLat = n.position.latitudeE6
         if (cost == 0) {
             return nLon in (minlon0 + 1)..<maxlon0 && nLat > minlat0 && nLat < maxlat0
         }
@@ -66,8 +66,8 @@ internal class SearchBoundary(n: OsmNode, private val radius: Int, val direction
     }
 
     fun getBoundaryDistance(n: OsmNode): Int {
-        val nLon = n.position.longitude.toIntLongitude()
-        val nLat = n.position.latitude.toIntLatitude()
+        val nLon = n.position.longitudeE6
+        val nLat = n.position.latitudeE6
         return when (searchDirection) {
             Direction.NORTH -> n.calcDistance(OsmNode(nLon, minlat))
             Direction.WEST -> n.calcDistance(OsmNode(minlon, nLat))
@@ -78,8 +78,8 @@ internal class SearchBoundary(n: OsmNode, private val radius: Int, val direction
 
     companion object {
         private fun tileOrigin(n: OsmNode): Pair<Int, Int> {
-            val lon = (n.position.longitude.toIntLongitude() / 5000000) * 5000000
-            val lat = (n.position.latitude.toIntLatitude() / 5000000) * 5000000
+            val lon = (n.position.longitudeE6 / 5000000) * 5000000
+            val lat = (n.position.latitudeE6 / 5000000) * 5000000
             return lon to lat
         }
 

@@ -5,9 +5,37 @@
  */
 package dev.skynomads.beerouter.mapaccess
 
+import dev.skynomads.beerouter.osm.latitudeE6
+import dev.skynomads.beerouter.osm.longitudeE6
+import dev.skynomads.beerouter.osm.osmPositionOf
+import dev.skynomads.beerouter.osm.toSElev
+import org.maplibre.spatialk.geojson.Position
+
 public data class OsmTransferNode(
     public var next: OsmTransferNode? = null,
-    public var ilon: Int = 0,
-    public var ilat: Int = 0,
-    public var selev: Short = 0
-)
+    public var position: Position = Position(0.0, 0.0, null)
+) {
+    private val sElevation: Short
+        get() = toSElev(position.altitude)
+
+    @Deprecated("Use position instead")
+    public var ilon: Int
+        get() = position.longitudeE6
+        set(value) {
+            position = osmPositionOf(value, position.latitudeE6, sElevation)
+        }
+
+    @Deprecated("Use position instead")
+    public var ilat: Int
+        get() = position.latitudeE6
+        set(value) {
+            position = osmPositionOf(position.longitudeE6, value, sElevation)
+        }
+
+    @Deprecated("Use position instead")
+    public var selev: Short
+        get() = toSElev(position.altitude)
+        set(value) {
+            position = osmPositionOf(position.longitudeE6, position.latitudeE6, value)
+        }
+}

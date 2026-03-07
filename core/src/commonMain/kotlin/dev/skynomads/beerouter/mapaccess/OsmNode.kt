@@ -2,9 +2,11 @@ package dev.skynomads.beerouter.mapaccess
 
 import dev.skynomads.beerouter.codec.MicroCache
 import dev.skynomads.beerouter.codec.MicroCache2
-import dev.skynomads.beerouter.osm.toDoubleLatitude
-import dev.skynomads.beerouter.osm.toDoubleLongitude
+import dev.skynomads.beerouter.osm.latitudeE6
+import dev.skynomads.beerouter.osm.longitudeE6
+import dev.skynomads.beerouter.osm.positionOf
 import dev.skynomads.beerouter.osm.toOsmId
+import dev.skynomads.beerouter.osm.toPosition
 import dev.skynomads.beerouter.util.CheapRuler.distance
 import dev.skynomads.beerouter.util.IByteArrayUnifier
 import org.maplibre.spatialk.geojson.Position
@@ -55,22 +57,12 @@ public open class OsmNode : OsmLink, OsmPos {
     public constructor()
 
     public constructor(ilon: Int, ilat: Int) {
-        this.position = Position(
-            ilon.toDoubleLongitude(),
-            ilat.toDoubleLatitude(),
-            UNSET_ALTITUDE
-        )
+        this.position = positionOf(ilon, ilat, UNSET_ALTITUDE)
         _idFromPos = (ilon.toLong() shl 32) or ilat.toLong()
     }
 
     public constructor(id: Long) {
-        val lon = (id shr 32).toInt()
-        val lat = (id and 0xffffffffL).toInt()
-        this.position = Position(
-            lon.toDoubleLongitude(),
-            lat.toDoubleLatitude(),
-            UNSET_ALTITUDE
-        )
+        this.position = id.toPosition(UNSET_ALTITUDE)
         _idFromPos = id
     }
 
@@ -108,8 +100,7 @@ public open class OsmNode : OsmLink, OsmPos {
     }
 
     override fun toString(): String {
-        val id = _idFromPos
-        return "n_${(id shr 32).toInt() - 180000000}_${(id and 0xffffffffL).toInt() - 90000000}"
+        return "n_${position.longitudeE6 - 180000000}_${position.latitudeE6 - 90000000}"
     }
 
     public fun parseNodeBody(mc: MicroCache, hollowNodes: OsmNodesMap, expCtxWay: IByteArrayUnifier) {

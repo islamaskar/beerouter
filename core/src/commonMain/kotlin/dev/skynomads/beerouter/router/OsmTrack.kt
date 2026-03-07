@@ -9,13 +9,13 @@ import androidx.collection.MutableLongObjectMap
 import dev.skynomads.beerouter.mapaccess.MatchedWaypoint
 import dev.skynomads.beerouter.mapaccess.MatchedWaypoint.Companion.readFromStream
 import dev.skynomads.beerouter.mapaccess.OsmPos
-import dev.skynomads.beerouter.osm.toIntLatitude
-import dev.skynomads.beerouter.osm.toIntLongitude
+import dev.skynomads.beerouter.osm.latitudeE6
+import dev.skynomads.beerouter.osm.longitudeE6
 import dev.skynomads.beerouter.osm.toSElev
-import org.maplibre.spatialk.geojson.Position
 import kotlinx.io.EOFException
 import kotlinx.io.Sink
 import kotlinx.io.Source
+import org.maplibre.spatialk.geojson.Position
 import kotlin.math.abs
 
 public class OsmTrack {
@@ -161,8 +161,8 @@ public class OsmTrack {
                 e.energy += e0
                 e.cost += c0
                 if (e.message != null) {
-                    val lon = e.position.longitude.toIntLongitude()
-                    val lat = e.position.latitude.toIntLatitude()
+                    val lon = e.position.longitudeE6
+                    val lat = e.position.latitudeE6
                     if (!(e.message!!.lon == lon && e.message!!.lat == lat)) {
                         e.message!!.lon = lon
                         e.message!!.lat = lat
@@ -236,8 +236,8 @@ public class OsmTrack {
         for (i in nodes.indices) {
             val e1 = nodes[i]
             val e2 = t.nodes[i]
-            if (e1.position.longitude.toIntLongitude() != e2.position.longitude.toIntLongitude() ||
-                e1.position.latitude.toIntLatitude() != e2.position.latitude.toIntLatitude()) return false
+            if (e1.position.longitudeE6 != e2.position.longitudeE6 ||
+                e1.position.latitudeE6 != e2.position.latitudeE6) return false
         }
         return true
     }
@@ -272,9 +272,7 @@ public class OsmTrack {
                 if (nodeNr == nodes.size - 1) {
                     val input = VoiceHint()
                     inputs.add(0, input)
-                    input.ilat = node.position.latitude.toIntLatitude()
-                    input.ilon = node.position.longitude.toIntLongitude()
-                    input.selev = toSElev(node.position.altitude)
+                    input.position = node.position
                     input.goodWay = node.message
                     input.oldWay = node.message
                     input.indexInTrack = nodes.size - 1
@@ -282,9 +280,7 @@ public class OsmTrack {
                 }
                 val input = VoiceHint()
                 inputs.add(input)
-                input.ilat = origin.position.latitude.toIntLatitude()
-                input.ilon = origin.position.longitude.toIntLongitude()
-                input.selev = toSElev(origin.position.altitude)
+                input.position = origin.position
                 input.indexInTrack = --nodeNr
                 input.goodWay = node.message
                 input.oldWay = if (origin.message == null) node.message else origin.message
@@ -386,8 +382,8 @@ public class OsmTrack {
             debugInfo: StringBuilder?
         ): OsmTrack? {
             val ep = readFromStream(source)
-            val dlon: Int = ep.waypoint!!.position.longitude.toIntLongitude() - newEp.position.longitude.toIntLongitude()
-            val dlat = ep.waypoint!!.position.latitude.toIntLatitude() - newEp.position.latitude.toIntLatitude()
+            val dlon: Int = ep.waypoint!!.position.longitudeE6 - newEp.position.longitudeE6
+            val dlat = ep.waypoint!!.position.latitudeE6 - newEp.position.latitudeE6
             val targetMatch = dlon < 20 && dlon > -20 && dlat < 20 && dlat > -20
             debugInfo?.append("target-delta = $dlon/$dlat targetMatch=$targetMatch")
             if (!targetMatch) return null

@@ -5,6 +5,8 @@
  */
 package dev.skynomads.beerouter.router
 
+import dev.skynomads.beerouter.osm.latitudeE6
+import dev.skynomads.beerouter.osm.longitudeE6
 import dev.skynomads.beerouter.osm.toIntLatitude
 import dev.skynomads.beerouter.osm.toIntLongitude
 
@@ -51,8 +53,8 @@ internal class KinematicPrePath : OsmPrePath() {
             lon2 = currentTargetNode.position.longitude.toIntLongitude()
             lat2 = currentTargetNode.position.latitude.toIntLatitude()
         } else {
-            lon2 = transferNode.ilon
-            lat2 = transferNode.ilat
+            lon2 = transferNode.position.longitudeE6
+            lat2 = transferNode.position.latitudeE6
         }
 
         angle = rc.anglemeter.calcAngle(lon0, lat0, lon1, lat1, lon2, lat2)
