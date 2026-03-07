@@ -45,6 +45,7 @@ public abstract class BExpressionContext protected constructor(
     private var variableData: FloatArray? = null
 
     private var cache: LruCache<ByteArrayKey, CacheNode>? = null
+    private var identityCache: LruCache<ByteArray, CacheNode>? = null
 
     private val probeVarSet = VarWrapper()
 
@@ -307,44 +308,52 @@ public abstract class BExpressionContext protected constructor(
         }
 
         val cache = requireNotNull(cache)
+        val identityCache = requireNotNull(identityCache)
         val resultVarCache = requireNotNull(resultVarCache)
 
         val cn: CacheNode = if (lastCacheNode.ab === ab) {
             lastCacheNode
         } else {
-            val hash = crc(ab, 0, ab.size)
-            val key = ByteArrayKey(hash, ab)
-            val existing = cache[key]
-
-            if (existing == null) {
-                val cn = CacheNode(ab = ab, hash = hash)
-                cache.put(key, cn)
-
-                if (probeVarSet.vars == null) {
-                    probeVarSet.vars = FloatArray(2 * nBuildInVars)
-                }
-                val probeVars = requireNotNull(probeVarSet.vars)
-
-                decode(lookupData, false, ab)
-                evaluateInto(probeVars, 0)
-
-                lookupData[0] = 2
-                evaluateInto(probeVars, nBuildInVars)
-
-                probeVarSet.hash = probeVars.contentHashCode()
-
-                val probeVarKey = FloatArrayKey(probeVarSet.hash, probeVars)
-                var vw = resultVarCache[probeVarKey]
-
-                if (vw == null) {
-                    vw = VarWrapper(vars = probeVars, hash = probeVarSet.hash)
-                    probeVarSet.vars = null
-                    resultVarCache.put(FloatArrayKey(vw.hash, requireNotNull(vw.vars)), vw)
-                }
-                cn.vars = vw.vars
-                cn
+            val identityHit = identityCache[ab]
+            if (identityHit != null) {
+                identityHit
             } else {
-                existing
+                val hash = crc(ab, 0, ab.size)
+                val key = ByteArrayKey(hash, ab)
+                val existing = cache[key]
+
+                if (existing == null) {
+                    val cn = CacheNode(ab = ab, hash = hash)
+                    cache.put(key, cn)
+
+                    if (probeVarSet.vars == null) {
+                        probeVarSet.vars = FloatArray(2 * nBuildInVars)
+                    }
+                    val probeVars = requireNotNull(probeVarSet.vars)
+
+                    decode(lookupData, false, ab)
+                    evaluateInto(probeVars, 0)
+
+                    lookupData[0] = 2
+                    evaluateInto(probeVars, nBuildInVars)
+
+                    probeVarSet.hash = probeVars.contentHashCode()
+
+                    val probeVarKey = FloatArrayKey(probeVarSet.hash, probeVars)
+                    var vw = resultVarCache[probeVarKey]
+
+                    if (vw == null) {
+                        vw = VarWrapper(vars = probeVars, hash = probeVarSet.hash)
+                        probeVarSet.vars = null
+                        resultVarCache.put(FloatArrayKey(vw.hash, requireNotNull(vw.vars)), vw)
+                    }
+                    cn.vars = vw.vars
+                    identityCache.put(ab, cn)
+                    cn
+                } else {
+                    identityCache.put(ab, existing)
+                    existing
+                }
             }
         }
         // Update for fast identity check on the next call with the same ab
@@ -899,6 +908,7 @@ public abstract class BExpressionContext protected constructor(
 
         if (hashSize > 0) {
             cache = LruCache(hashSize)
+            identityCache = LruCache(hashSize)
             resultVarCache = LruCache(4096)
         }
     }
