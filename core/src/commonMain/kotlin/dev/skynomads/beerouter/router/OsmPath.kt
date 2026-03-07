@@ -9,8 +9,6 @@ import dev.skynomads.beerouter.mapaccess.OsmLink
 import dev.skynomads.beerouter.mapaccess.OsmLinkHolder
 import dev.skynomads.beerouter.mapaccess.OsmNode
 import dev.skynomads.beerouter.mapaccess.TurnRestriction.Companion.isTurnForbidden
-import dev.skynomads.beerouter.osm.toIntLatitude
-import dev.skynomads.beerouter.osm.toIntLongitude
 import dev.skynomads.beerouter.osm.toSElev
 import dev.skynomads.beerouter.util.CheapRuler
 import dev.skynomads.beerouter.util.CheapRuler.getLonLatToMeterScales
@@ -86,9 +84,10 @@ public abstract class OsmPath : OsmLinkHolder {
     ) {
         if (origin.myElement == null) {
             val n = origin.targetNode!!
+            val nId = n.idFromPos
             origin.myElement = OsmPathElement.create(
-                n.position.longitude.toIntLongitude(),
-                n.position.latitude.toIntLatitude(),
+                (nId shr 32).toInt(),
+                (nId and 0xffffffffL).toInt(),
                 toSElev(n.position.altitude),
                 origin.originElement
             ).also {
@@ -128,8 +127,9 @@ public abstract class OsmPath : OsmLinkHolder {
                 it.energy = 0f
                 it.priorityclassifier = 0
                 it.classifiermask = 0
-                it.lon = targetNode!!.position.longitude.toIntLongitude()
-                it.lat = targetNode!!.position.latitude.toIntLatitude()
+                val tgtId = targetNode!!.idFromPos
+                it.lon = (tgtId shr 32).toInt()
+                it.lat = (tgtId and 0xffffffffL).toInt()
                 it.ele = Short.MIN_VALUE
                 it.linkdist = sourceNode!!.calcDistance(targetNode!!)
                 it.wayTags = mapOf("direct_segment" to "$seg")
@@ -146,8 +146,9 @@ public abstract class OsmPath : OsmLinkHolder {
         var lon0 = origin.originLon
         var lat0 = origin.originLat
 
-        var lon1 = sourceNode!!.position.longitude.toIntLongitude()
-        var lat1 = sourceNode!!.position.latitude.toIntLatitude()
+        val srcId = sourceNode!!.idFromPos
+        var lon1 = (srcId shr 32).toInt()
+        var lat1 = (srcId and 0xffffffffL).toInt()
         var ele1 = origin.selev
 
         var linkdisttotal = 0
@@ -227,8 +228,9 @@ public abstract class OsmPath : OsmLinkHolder {
             val originEle2: Short
 
             if (transferNode == null) {
-                lon2 = targetNode!!.position.longitude.toIntLongitude()
-                lat2 = targetNode!!.position.latitude.toIntLatitude()
+                val tgtId = targetNode!!.idFromPos
+                lon2 = (tgtId shr 32).toInt()
+                lat2 = (tgtId and 0xffffffffL).toInt()
                 originEle2 = toSElev(targetNode!!.position.altitude)
             } else {
                 lon2 = transferNode.ilon

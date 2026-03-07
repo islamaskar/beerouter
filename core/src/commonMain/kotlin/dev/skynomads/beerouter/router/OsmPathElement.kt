@@ -20,7 +20,7 @@ import kotlin.math.roundToInt
  * @author ab
  */
 public class OsmPathElement protected constructor() : OsmPos {
-    override public var position: Position = Position(0.0, 0.0, 0.0)
+    public override var position: Position = Position(0.0, 0.0, 0.0)
 
     @Deprecated("Use position.altitude instead")
     public val sElev: Short
@@ -55,7 +55,8 @@ public class OsmPathElement protected constructor() : OsmPos {
 
     public var origin: OsmPathElement? = null
 
-    override fun toString(): String = "${position.longitude.toIntLongitude()}_${position.latitude.toIntLatitude()}"
+    override fun toString(): String =
+        "${position.longitude.toIntLongitude()}_${position.latitude.toIntLatitude()}"
 
     public fun positionEquals(e: OsmPathElement): Boolean {
         return this.position.longitude.toIntLongitude() == e.position.longitude.toIntLongitude() &&

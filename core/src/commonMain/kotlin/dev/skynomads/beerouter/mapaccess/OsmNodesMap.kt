@@ -225,11 +225,7 @@ public class OsmNodesMap {
      *
      * @return the node for the given id if exist, else null
      */
-    @Deprecated("use get(position: Position)")
-    public fun get(ilon: Int, ilat: Int): OsmNode? {
-        val id = (ilon.toLong()) shl 32 or ilat.toLong()
-        return hmap[id]
-    }
+    public fun get(id: Long): OsmNode? = hmap[id]
 
     public fun get(position: Position): OsmNode? {
         return hmap[position.toOsmId()]
