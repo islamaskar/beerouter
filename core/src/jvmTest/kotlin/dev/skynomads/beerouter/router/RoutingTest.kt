@@ -3,9 +3,6 @@ package dev.skynomads.beerouter.router
 import kotlinx.coroutines.runBlocking
 import kotlinx.io.files.SystemFileSystem
 import org.maplibre.spatialk.geojson.Position
-import java.net.URI
-import java.nio.file.Files
-import java.nio.file.StandardCopyOption
 import dev.skynomads.beerouter.osm.toIntLatitude
 import dev.skynomads.beerouter.osm.toIntLongitude
 import kotlin.test.BeforeTest
@@ -31,11 +28,7 @@ class RoutingTest {
 
     @BeforeTest
     fun before() {
-        if (!SystemFileSystem.exists(testSegmentFile)) {
-            val url = URI("https://brouter.de/brouter/segments4/E5_N45.rd5").toURL()
-            url.openStream()
-                .use { Files.copy(it, testSegmentFile.toJavaFile().toPath(), StandardCopyOption.REPLACE_EXISTING) }
-        }
+        ensureTestSegmentFile()
     }
 
     @Test

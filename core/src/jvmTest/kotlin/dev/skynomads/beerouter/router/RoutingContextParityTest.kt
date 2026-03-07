@@ -2,10 +2,16 @@ package dev.skynomads.beerouter.router
 
 import dev.skynomads.beerouter.osm.toIntLatitude
 import dev.skynomads.beerouter.osm.toIntLongitude
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class RoutingContextParityTest {
+    @BeforeTest
+    fun before() {
+        ensureTestSegmentFile()
+    }
+
     private fun waypoint(name: String, lat: Double, lon: Double): btools.router.OsmNodeNamed {
         return btools.router.OsmNodeNamed().apply {
             this.name = name

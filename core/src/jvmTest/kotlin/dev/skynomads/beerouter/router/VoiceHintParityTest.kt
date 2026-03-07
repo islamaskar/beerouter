@@ -4,11 +4,17 @@ import dev.skynomads.beerouter.osm.toIntLatitude
 import dev.skynomads.beerouter.osm.toIntLongitude
 import kotlinx.coroutines.runBlocking
 import org.maplibre.spatialk.geojson.Position
+import kotlin.test.BeforeTest
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 
 class VoiceHintParityTest {
+    @BeforeTest
+    fun before() {
+        ensureTestSegmentFile()
+    }
+
     private fun waypoint(name: String, lat: Double, lon: Double): OsmNodeNamed {
         val n = OsmNodeNamed()
         n.name = name
