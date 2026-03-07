@@ -9,8 +9,6 @@ import dev.skynomads.beerouter.mapaccess.OsmNodePairSet
 import dev.skynomads.beerouter.mapaccess.OsmPos
 import dev.skynomads.beerouter.osm.latitudeE6
 import dev.skynomads.beerouter.osm.longitudeE6
-import dev.skynomads.beerouter.osm.toIntLatitude
-import dev.skynomads.beerouter.osm.toIntLongitude
 import dev.skynomads.beerouter.osm.toSElev
 import dev.skynomads.beerouter.router.OsmTrack.OsmPathElementHolder
 import org.maplibre.spatialk.geojson.Position
@@ -144,16 +142,16 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
         guideTrack = OsmTrack().apply {
             addNode(
                 OsmPathElement.create(
-                    wpt1.node2!!.position.longitude.toIntLongitude(),
-                    wpt1.node2!!.position.latitude.toIntLatitude(),
+                    wpt1.node2!!.position.longitudeE6,
+                    wpt1.node2!!.position.latitudeE6,
                     0.toShort(),
                     null
                 )
             )
             addNode(
                 OsmPathElement.create(
-                    wpt1.node1!!.position.longitude.toIntLongitude(),
-                    wpt1.node1!!.position.latitude.toIntLatitude(),
+                    wpt1.node1!!.position.longitudeE6,
+                    wpt1.node1!!.position.latitudeE6,
                     0.toShort(),
                     null
                 )
@@ -228,8 +226,8 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
 
         if (routingContext.allowSamewayback) {
             val pos = destination(
-                waypoints[0].position.longitude.toIntLongitude(),
-                waypoints[0].position.latitude.toIntLatitude(),
+                waypoints[0].position.longitudeE6,
+                waypoints[0].position.latitudeE6,
                 searchRadius,
                 direction
             )
@@ -264,8 +262,8 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
         for (i in 1..<points) {
             val anAngle = 90 - (180.0 * i / points)
             val pos = destination(
-                waypoints[0].position.longitude.toIntLongitude(),
-                waypoints[0].position.latitude.toIntLatitude(),
+                waypoints[0].position.longitudeE6,
+                waypoints[0].position.latitudeE6,
                 searchRadius,
                 startAngle - anAngle
             )
@@ -317,8 +315,8 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
 
             for (a in 45..315 step 90) {
                 val pos = destination(
-                    wp.position.longitude.toIntLongitude(),
-                    wp.position.latitude.toIntLatitude(),
+                    wp.position.longitudeE6,
+                    wp.position.latitudeE6,
                     searchRadius * 1.5,
                     a.toDouble()
                 )
@@ -350,10 +348,10 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
             var maxlat = Int.MIN_VALUE
             var minlat = Int.MAX_VALUE
             for (on in listOne) {
-                maxlon = max(on.position.longitude.toIntLongitude(), maxlon)
-                minlon = min(on.position.longitude.toIntLongitude(), minlon)
-                maxlat = max(on.position.latitude.toIntLatitude(), maxlat)
-                minlat = min(on.position.latitude.toIntLatitude(), minlat)
+                maxlon = max(on.position.longitudeE6, maxlon)
+                minlon = min(on.position.longitudeE6, minlon)
+                maxlat = max(on.position.latitudeE6, maxlat)
+                minlat = min(on.position.latitudeE6, minlat)
             }
 
             val searchRect = OsmNogoPolygon(true).apply {
@@ -372,20 +370,20 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
                 val polygon = OsmNogoPolygon(true)
                 rc.ai!!.polygon = polygon
                 polygon.addVertex(
-                    wp.position.longitude.toIntLongitude(),
-                    wp.position.latitude.toIntLatitude()
+                    wp.position.longitudeE6,
+                    wp.position.latitudeE6
                 )
                 polygon.addVertex(
-                    listOne[a].position.longitude.toIntLongitude(),
-                    listOne[a].position.latitude.toIntLatitude()
+                    listOne[a].position.longitudeE6,
+                    listOne[a].position.latitudeE6
                 )
                 if (a == 3) polygon.addVertex(
-                    listOne[0].position.longitude.toIntLongitude(),
-                    listOne[0].position.latitude.toIntLatitude()
+                    listOne[0].position.longitudeE6,
+                    listOne[0].position.latitudeE6
                 )
                 else polygon.addVertex(
-                    listOne[a + 1].position.longitude.toIntLongitude(),
-                    listOne[a + 1].position.latitude.toIntLatitude()
+                    listOne[a + 1].position.longitudeE6,
+                    listOne[a + 1].position.latitudeE6
                 )
 
                 ais.add(rc.ai!!)
@@ -1336,8 +1334,8 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
     private fun elevationFilter(n: OsmPos): Double {
         if (nodesCache != null) {
             val r = nodesCache!!.getElevationType(
-                n.position.longitude.toIntLongitude(),
-                n.position.latitude.toIntLatitude()
+                n.position.longitudeE6,
+                n.position.latitudeE6
             )
             if (r == 1) return -5.0
         }
