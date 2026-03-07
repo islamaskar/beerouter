@@ -31,8 +31,9 @@ internal class VoiceHintProcessor // this.catchingRange = catchingRange;
             if (input.turnAngleConsumed || input.command == VoiceHint.Command.BL || input.command == VoiceHint.Command.END) {
                 break
             }
-            angle += input.goodWay!!.turnangle
-            distance += input.goodWay!!.linkdist.toDouble()
+            val goodWay = requireNotNull(input.goodWay)
+            angle += goodWay.turnangle
+            distance += goodWay.linkdist.toDouble()
             input.turnAngleConsumed = true
         }
         return angle
@@ -68,23 +69,25 @@ internal class VoiceHintProcessor // this.catchingRange = catchingRange;
 
         for (hintIdx in inputs.indices) {
             val input = inputs[hintIdx]
+            val goodWay = requireNotNull(input.goodWay)
+            val oldWay = requireNotNull(input.oldWay)
 
             if (input.command == VoiceHint.Command.BL) {
                 results.add(input)
                 continue
             }
 
-            val turnAngle = input.goodWay!!.turnangle
-            if (hintIdx != 0) distance += input.goodWay!!.linkdist.toDouble()
+            val turnAngle = goodWay.turnangle
+            if (hintIdx != 0) distance += goodWay.linkdist.toDouble()
 
-            val currentPrio = input.goodWay!!.priorityclassifier
-            val oldPrio = input.oldWay!!.priorityclassifier
+            val currentPrio = goodWay.priorityclassifier
+            val oldPrio = oldWay.priorityclassifier
             val minPrio = min(oldPrio, currentPrio)
 
-            val isLink2Highway = input.oldWay!!.isLinkType && !input.goodWay!!.isLinkType
-            val isHighway2Link = !input.oldWay!!.isLinkType && input.goodWay!!.isLinkType
+            val isLink2Highway = oldWay.isLinkType && !goodWay.isLinkType
+            val isHighway2Link = !oldWay.isLinkType && goodWay.isLinkType
 
-            if (explicitRoundabouts && input.oldWay!!.isRoundabout) {
+            if (explicitRoundabouts && oldWay.isRoundabout) {
                 if (roundaboudStartIdx == -1) roundaboudStartIdx = hintIdx
                 roundAboutTurnAngle += sumNonConsumedWithinCatchingRange(
                     inputs,
@@ -94,7 +97,7 @@ internal class VoiceHintProcessor // this.catchingRange = catchingRange;
                 if (roundaboudStartIdx == hintIdx) {
                     if (input.badWays.isNotEmpty()) {
                         // remove goodWay
-                        roundAboutTurnAngle -= input.goodWay!!.turnangle
+                        roundAboutTurnAngle -= goodWay.turnangle
                         // add a badWay
                         for (badWay in input.badWays) {
                             if (!badWay.isBadOneway) roundAboutTurnAngle += badWay.turnangle
@@ -119,7 +122,7 @@ internal class VoiceHintProcessor // this.catchingRange = catchingRange;
             }
             if (roundaboutExit > 0) {
                 input.angle = roundAboutTurnAngle
-                input.goodWay!!.turnangle = roundAboutTurnAngle
+                goodWay.turnangle = roundAboutTurnAngle
                 input.distanceToNext = distance
                 input.turnAngleConsumed = true
                 //input.roundaboutExit = startTurn < 0 ? roundaboutExit : -roundaboutExit;
@@ -130,13 +133,14 @@ internal class VoiceHintProcessor // this.catchingRange = catchingRange;
                 tmpRndAbt.badWays = tmpRndAbtBadWays
                 for (i in hintIdx - 1 downTo roundaboudStartIdx + 1) {
                     val vh = inputs[i]
-                    tmpangle += inputs[i].goodWay!!.turnangle
+                    val vhGoodWay = requireNotNull(vh.goodWay)
+                    tmpangle += vhGoodWay.turnangle
                     if (vh.badWays.isNotEmpty()) {
                         for (badWay in vh.badWays) {
                             if (!badWay.isBadOneway) {
                                 val md = MessageData()
-                                md.linkdist = vh.goodWay!!.linkdist
-                                md.priorityclassifier = vh.goodWay!!.priorityclassifier
+                                md.linkdist = vhGoodWay.linkdist
+                                md.priorityclassifier = vhGoodWay.priorityclassifier
                                 md.turnangle = tmpangle
                                 tmpRndAbtBadWays.add(md)
                             }
@@ -172,7 +176,7 @@ internal class VoiceHintProcessor // this.catchingRange = catchingRange;
                     if (badWay.isLinkType) {
                         isBadwayLink = true
                     }
-                    val isBadHighway2Link = !input.oldWay!!.isLinkType && badWay.isLinkType
+                    val isBadHighway2Link = !oldWay.isLinkType && badWay.isLinkType
 
                     if (badPrio > maxPrioAll && !isBadHighway2Link) {
                         maxPrioAll = badPrio
@@ -364,6 +368,7 @@ internal class VoiceHintProcessor // this.catchingRange = catchingRange;
         var hintIdx = 0
         while (hintIdx < inputs.size) {
             val input = inputs[hintIdx]
+            val goodWay = requireNotNull(input.goodWay)
             var nextInput: VoiceHint? = null
             if (hintIdx + 1 < inputs.size) {
                 nextInput = inputs[hintIdx + 1]
@@ -380,7 +385,7 @@ internal class VoiceHintProcessor // this.catchingRange = catchingRange;
                     hintIdx++
                     continue
                 } else if ((input.command == VoiceHint.Command.C || input.command == VoiceHint.Command.KR || input.command == VoiceHint.Command.KL)
-                    && !input.goodWay!!.isLinkType
+                    && !goodWay.isLinkType
                 ) {
                     if (checkStraightHold(input, inputLastSaved, minRange)) {
                         results.add(input)
@@ -397,7 +402,7 @@ internal class VoiceHintProcessor // this.catchingRange = catchingRange;
             } else {
                 if ((inputLastSaved != null && inputLastSaved.distanceToNext > catchingRange) || input.distanceToNext > catchingRange) {
                     if ((input.command == VoiceHint.Command.C || input.command == VoiceHint.Command.KR || input.command == VoiceHint.Command.KL)
-                        && !input.goodWay!!.isLinkType
+                        && !goodWay.isLinkType
                     ) {
                         if (checkStraightHold(input, inputLastSaved, minRange)) {
                             // add only on prio
@@ -408,7 +413,7 @@ internal class VoiceHintProcessor // this.catchingRange = catchingRange;
                                 inputLastSaved.distanceToNext += input.distanceToNext
                             }
                         }
-                    } else if ((input.goodWay!!.priorityclassifier == 29 && input.maxBadPrio == 30) &&
+                    } else if ((goodWay.priorityclassifier == 29 && input.maxBadPrio == 30) &&
                         checkForNextNoneMotorway(inputs, hintIdx, 3)
                     ) {
                         // leave motorway
@@ -422,9 +427,9 @@ internal class VoiceHintProcessor // this.catchingRange = catchingRange;
                     } else {
                         // add all others
                         // ignore motorway / primary continue
-                        if (((input.goodWay!!.priorityclassifier != 28) &&
-                                    (input.goodWay!!.priorityclassifier != 30) &&
-                                    (input.goodWay!!.priorityclassifier != 26))
+                        if (((goodWay.priorityclassifier != 28) &&
+                                    (goodWay.priorityclassifier != 30) &&
+                                    (goodWay.priorityclassifier != 26))
                             || input.isRoundabout
                             || abs(input.angle) > 21f
                         ) {
@@ -445,9 +450,9 @@ internal class VoiceHintProcessor // this.catchingRange = catchingRange;
                     angles += nextInput.angle
 
                     if ((input.command == VoiceHint.Command.C || input.command == VoiceHint.Command.KR || input.command == VoiceHint.Command.KL)
-                        && !input.goodWay!!.isLinkType
+                    && !goodWay.isLinkType
                     ) {
-                        if (input.goodWay!!.priorityclassifier < input.maxBadPrio) {
+                        if (goodWay.priorityclassifier < input.maxBadPrio) {
                             if (inputLastSaved != null && inputLastSaved.command != VoiceHint.Command.C && inputLastSaved.distanceToNext > minRange
                                 && transportMode != VoiceHintList.TransportMode.CAR
                             ) {
@@ -455,7 +460,7 @@ internal class VoiceHintProcessor // this.catchingRange = catchingRange;
                                 // and last vh not straight
                                 save = true
                                 // remove when next straight and not linktype
-                                if (nextInput.command == VoiceHint.Command.C && !nextInput.goodWay!!.isLinkType) {
+                                if (nextInput.command == VoiceHint.Command.C && !requireNotNull(nextInput.goodWay).isLinkType) {
                                     input.distanceToNext += nextInput.distanceToNext
                                     hintIdx++
                                 }
@@ -465,7 +470,7 @@ internal class VoiceHintProcessor // this.catchingRange = catchingRange;
                                 inputLastSaved.distanceToNext += input.distanceToNext
                             }
                         }
-                    } else if ((input.goodWay!!.priorityclassifier == 29 && input.maxBadPrio == 30)) {
+                    } else if ((goodWay.priorityclassifier == 29 && input.maxBadPrio == 30)) {
                         // leave motorway
                         if (input.command == VoiceHint.Command.KR || input.command == VoiceHint.Command.TSLR) {
                             input.command = VoiceHint.Command.ER
@@ -529,7 +534,7 @@ internal class VoiceHintProcessor // this.catchingRange = catchingRange;
     ): Boolean {
         var i = 1
         while (i < testsize + 1 && offset + i < inputs.size) {
-            val prio = inputs[offset + i].goodWay!!.priorityclassifier
+            val prio = requireNotNull(inputs[offset + i].goodWay).priorityclassifier
             if (prio < 29) return true
             if (prio == 30) return false
             i++
@@ -540,8 +545,11 @@ internal class VoiceHintProcessor // this.catchingRange = catchingRange;
     fun checkStraightHold(input: VoiceHint, inputLastSaved: VoiceHint?, minRange: Double): Boolean {
         if (input.indexInTrack == 0) return false
 
+        val goodWay = requireNotNull(input.goodWay)
+        val oldWay = requireNotNull(input.oldWay)
+
         return ((abs(input.lowerBadWayAngle) < 35f || input.higherBadWayAngle < 35f)
-                || input.goodWay!!.priorityclassifier < input.maxBadPrio || input.goodWay!!.priorityclassifier > input.oldWay!!.priorityclassifier)
+                || goodWay.priorityclassifier < input.maxBadPrio || goodWay.priorityclassifier > oldWay.priorityclassifier)
                 && (inputLastSaved == null || inputLastSaved.distanceToNext > minRange)
                 && (input.distanceToNext > minRange)
     }
