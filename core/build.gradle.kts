@@ -49,6 +49,8 @@ kotlin {
         val jvmTest by getting {
             dependencies {
                 implementation(kotlin("test"))
+                implementation("io.ktor:ktor-client-core:3.1.1")
+                implementation("io.ktor:ktor-client-cio:3.1.1")
                 implementation("com.github.abrensch.brouter:brouter-core:c09ddffad9")
                 implementation("com.github.abrensch.brouter:brouter-mapaccess:c09ddffad9")
             }

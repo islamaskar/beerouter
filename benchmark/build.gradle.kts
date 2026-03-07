@@ -38,6 +38,8 @@ kotlin {
 
         val jvmMain by getting {
             dependencies {
+                implementation("io.ktor:ktor-client-core:3.1.1")
+                implementation("io.ktor:ktor-client-cio:3.1.1")
                 implementation("org.jetbrains.kotlinx:kotlinx-io-core:0.8.2")
                 implementation("com.github.abrensch.brouter:brouter-core:c09ddffad9")
                 implementation("com.github.abrensch.brouter:brouter-mapaccess:c09ddffad9")
