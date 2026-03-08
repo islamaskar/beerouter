@@ -1,5 +1,7 @@
 package dev.skynomads.beerouter.codec
 
+import dev.skynomads.beerouter.geo.Position
+
 import dev.skynomads.beerouter.util.ByteDataWriter
 
 /**
@@ -184,7 +186,7 @@ public open class MicroCache protected constructor(ab: ByteArray = ByteArray(0))
     /**
      * @return true if the given lon/lat position is internal for that micro-cache
      */
-    public open fun isInternal(ilon: Int, ilat: Int): Boolean {
+    public open fun isInternal(position: Position): Boolean {
         throw IllegalArgumentException("isInternal for empty cache")
     }
 

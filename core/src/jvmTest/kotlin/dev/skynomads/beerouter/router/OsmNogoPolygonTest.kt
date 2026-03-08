@@ -4,8 +4,9 @@
 package dev.skynomads.beerouter.router
 
 import dev.skynomads.beerouter.router.OsmNogoPolygon.Companion.isOnLine
-import dev.skynomads.beerouter.util.CheapRuler.distance
-import dev.skynomads.beerouter.util.CheapRuler.getLonLatToMeterScales
+import dev.skynomads.beerouter.geo.Position
+import dev.skynomads.beerouter.geo.CheapRuler.distance
+import dev.skynomads.beerouter.geo.CheapRuler.getLonLatToMeterScales
 import kotlin.math.sqrt
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -77,10 +78,8 @@ class OsmNogoPolygonTest {
             assertEquals(
                 within[i],
                 polygon!!.intersects(
-                    toOsmLon(p0lons[i], OFFSET_X),
-                    toOsmLat(p0lats[i], OFFSET_Y),
-                    toOsmLon(p1lons[i], OFFSET_X),
-                    toOsmLat(p1lats[i], OFFSET_Y)
+                    Position(toOsmLon(p0lons[i], OFFSET_X), toOsmLat(p0lats[i], OFFSET_Y)),
+                    Position(toOsmLon(p1lons[i], OFFSET_X), toOsmLat(p1lats[i], OFFSET_Y))
                 ),
                 message = "(" + p0lons[i] + "," + p0lats[i] + ")-(" + p1lons[i] + "," + p1lats[i] + ")"
             )
@@ -99,10 +98,8 @@ class OsmNogoPolygonTest {
             assertEquals(
                 within[i],
                 polyline!!.intersects(
-                    toOsmLon(p0lons[i], OFFSET_X),
-                    toOsmLat(p0lats[i], OFFSET_Y),
-                    toOsmLon(p1lons[i], OFFSET_X),
-                    toOsmLat(p1lats[i], OFFSET_Y)
+                    Position(toOsmLon(p0lons[i], OFFSET_X), toOsmLat(p0lats[i], OFFSET_Y)),
+                    Position(toOsmLon(p1lons[i], OFFSET_X), toOsmLat(p1lats[i], OFFSET_Y))
                 ),
                 message = "(" + p0lons[i] + "," + p0lats[i] + ")-(" + p1lons[i] + "," + p1lats[i] + ")"
             )
@@ -135,11 +132,11 @@ class OsmNogoPolygonTest {
         val lats = doubleArrayOf(48.823778, 48.824091, 48.82389, 48.824165, 48.824232, 48.82384)
         val polygon = OsmNogoPolygon(true)
         for (i in lons.indices) {
-            polygon.addVertex(toOsmLon(lons[i], 0), toOsmLat(lats[i], 0))
+            polygon.addVertex(Position(toOsmLon(lons[i], 0), toOsmLat(lats[i], 0)))
         }
         val polyline = OsmNogoPolygon(false)
         for (i in lons.indices) {
-            polyline.addVertex(toOsmLon(lons[i], 0), toOsmLat(lats[i], 0))
+            polyline.addVertex(Position(toOsmLon(lons[i], 0), toOsmLat(lats[i], 0)))
         }
 
         // Check with a segment with a single intersection with the polygon
@@ -147,9 +144,11 @@ class OsmNogoPolygonTest {
         var lat1: Int = toOsmLat(48.8238790443901, 0)
         var lon2: Int = toOsmLon(2.33378201723099, 0)
         var lat2: Int = toOsmLat(48.8239585098974, 0)
+        var start = Position(lon1, lat1)
+        var end = Position(lon2, lat2)
         assertEquals(
             17.5,
-            polygon.distanceWithinPolygon(lon1, lat1, lon2, lat2),
+            polygon.distanceWithinPolygon(start, end),
             0.05 * 17.5,
             "Should give the correct length for a segment with a single intersection"
         )
@@ -157,9 +156,10 @@ class OsmNogoPolygonTest {
         // Check with a segment crossing multiple times the polygon
         lon2 = toOsmLon(2.33488172292709, 0)
         lat2 = toOsmLat(48.8240891862353, 0)
+        end = Position(lon2, lat2)
         assertEquals(
             85.0,
-            polygon.distanceWithinPolygon(lon1, lat1, lon2, lat2),
+            polygon.distanceWithinPolygon(start, end),
             0.05 * 85,
             "Should give the correct length for a segment with multiple intersections"
         )
@@ -167,9 +167,10 @@ class OsmNogoPolygonTest {
         // Check that it works when a point is within the polygon
         lon2 = toOsmLon(2.33433187007904, 0)
         lat2 = toOsmLat(48.8240238480664, 0)
+        end = Position(lon2, lat2)
         assertEquals(
             50.0,
-            polygon.distanceWithinPolygon(lon1, lat1, lon2, lat2),
+            polygon.distanceWithinPolygon(start, end),
             0.05 * 50,
             "Should give the correct length when last point is within the polygon"
         )
@@ -177,9 +178,11 @@ class OsmNogoPolygonTest {
         lat1 = toOsmLat(48.8240238480664, 0)
         lon2 = toOsmLon(2.33488172292709, 0)
         lat2 = toOsmLat(48.8240891862353, 0)
+        start = Position(lon1, lat1)
+        end = Position(lon2, lat2)
         assertEquals(
             35.0,
-            polygon.distanceWithinPolygon(lon1, lat1, lon2, lat2),
+            polygon.distanceWithinPolygon(start, end),
             0.05 * 35,
             "Should give the correct length when first point is within the polygon"
         )
@@ -188,10 +191,12 @@ class OsmNogoPolygonTest {
         lat1 = toOsmLat(48.823778, 0)
         lon2 = toOsmLon(2.333432, 0)
         lat2 = toOsmLat(48.824091, 0)
+        start = Position(lon1, lat1)
+        end = Position(lon2, lat2)
         assertEquals(
-            distance(lon1, lat1, lon2, lat2),
-            polygon.distanceWithinPolygon(lon1, lat1, lon2, lat2),
-            0.05 * distance(lon1, lat1, lon2, lat2),
+            distance(start, end),
+            polygon.distanceWithinPolygon(start, end),
+            0.05 * distance(start, end),
             "Should give the correct length if the segment overlaps with an edge of the polygon"
         )
 
@@ -199,10 +204,12 @@ class OsmNogoPolygonTest {
         lat1 = toOsmLat(48.823778, 0)
         lon2 = toOsmLon(2.3334775, 0)
         lat2 = toOsmLat(48.8239345, 0)
+        start = Position(lon1, lat1)
+        end = Position(lon2, lat2)
         assertEquals(
-            distance(lon1, lat1, lon2, lat2),
-            polyline.distanceWithinPolygon(lon1, lat1, lon2, lat2),
-            0.05 * distance(lon1, lat1, lon2, lat2),
+            distance(start, end),
+            polyline.distanceWithinPolygon(start, end),
+            0.05 * distance(start, end),
             "Should give the correct length if the segment overlaps with a polyline"
         )
     }
@@ -212,11 +219,11 @@ class OsmNogoPolygonTest {
     fun setUp() {
         polygon = OsmNogoPolygon(true)
         for (i in lons.indices) {
-            polygon!!.addVertex(toOsmLon(lons[i], OFFSET_X), toOsmLat(lats[i], OFFSET_Y))
+            polygon!!.addVertex(Position(toOsmLon(lons[i], OFFSET_X), toOsmLat(lats[i], OFFSET_Y)))
         }
         polyline = OsmNogoPolygon(false)
         for (i in lons.indices) {
-            polyline!!.addVertex(toOsmLon(lons[i], OFFSET_X), toOsmLat(lats[i], OFFSET_Y))
+            polyline!!.addVertex(Position(toOsmLon(lons[i], OFFSET_X), toOsmLat(lats[i], OFFSET_Y)))
         }
     }
 

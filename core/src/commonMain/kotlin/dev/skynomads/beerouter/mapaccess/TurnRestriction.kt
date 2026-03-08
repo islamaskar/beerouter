@@ -5,7 +5,7 @@
  */
 package dev.skynomads.beerouter.mapaccess
 
-import dev.skynomads.beerouter.osm.osmIdOf
+import dev.skynomads.beerouter.geo.Position
 
 public data class TurnRestriction(
     public var isPositive: Boolean = false,
@@ -74,15 +74,13 @@ public data class TurnRestriction(
         public fun create(
             isPositive: Boolean,
             exceptions: Short,
-            fromLon: Int,
-            fromLat: Int,
-            toLon: Int,
-            toLat: Int
+            from: Position,
+            to: Position
         ): TurnRestriction = TurnRestriction(
             isPositive = isPositive,
             exceptions = exceptions,
-            fromId = osmIdOf(fromLon, fromLat),
-            toId = osmIdOf(toLon, toLat)
+            fromId = from.id,
+            toId = to.id
         )
     }
 }

@@ -1,7 +1,6 @@
 package dev.skynomads.beerouter.codec
 
-import dev.skynomads.beerouter.osm.osmIdOf
-import dev.skynomads.beerouter.osm.positionOf
+import dev.skynomads.beerouter.geo.Position
 import dev.skynomads.beerouter.util.ByteDataReader
 import dev.skynomads.beerouter.util.IByteArrayUnifier
 
@@ -174,7 +173,7 @@ public class MicroCache2 : MicroCache {
                     val ilattarget = ilat + dlatRemaining
                     if (matcher != null) {
                         val useAsStartWay = wayValidator!!.checkStartWay(wayTags!!.data)
-                        if (!matcher.start(positionOf(ilon, ilat), positionOf(ilontarget, ilattarget), useAsStartWay)) {
+                        if (!matcher.start(Position(ilon, ilat), Position(ilontarget, ilattarget), useAsStartWay)) {
                             matcher = null
                         }
                     }
@@ -195,7 +194,7 @@ public class MicroCache2 : MicroCache {
                             writeVarLengthSigned(elediff)
                         }
 
-                        matcher?.transferNode(positionOf(ilontarget - dlonRemaining, ilattarget - dlatRemaining))
+                        matcher?.transferNode(Position(ilontarget - dlonRemaining, ilattarget - dlatRemaining))
                     }
                     matcher?.end()
                 }
@@ -273,7 +272,7 @@ public class MicroCache2 : MicroCache {
         val lon32 = lonBase + dlon
         val lat32 = latBase + dlat
 
-        return osmIdOf(lon32, lat32)
+        return Position(lon32, lat32).id
     }
 
     public override fun shrinkId(id64: Long): Int {
@@ -293,8 +292,11 @@ public class MicroCache2 : MicroCache {
         return id32
     }
 
-    public override fun isInternal(ilon: Int, ilat: Int): Boolean {
-        return ilon >= lonBase && ilon < lonBase + cellsize && ilat >= latBase && ilat < latBase + cellsize
+    public override fun isInternal(position: Position): Boolean {
+        return position.longitude >= lonBase &&
+            position.longitude < lonBase + cellsize &&
+            position.latitude >= latBase &&
+            position.latitude < latBase + cellsize
     }
 
     public override fun encodeMicroCache(buffer: ByteArray): Int {
@@ -418,7 +420,7 @@ public class MicroCache2 : MicroCache {
                         readFully(description)
                     }
 
-                    val link64 = osmIdOf(ilonlink, ilatlink)
+                    val link64 = Position(ilonlink, ilatlink).id
                     val idx = idMap[link64]
                     val isInternal = idx != null
 

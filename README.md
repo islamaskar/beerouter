@@ -17,29 +17,18 @@ The JVM tests use the segment file `E5_N45.rd5`, downloaded from
 
 ## Basic usage
 
+Artifacts are published to Maven Central as `dev.skynomads.beerouter:beerouter`.
+
 The example below follows the same setup used in
 `core/src/jvmTest/kotlin/dev/skynomads/beerouter/router/RoutingTest.kt`: create a
 `RoutingContext`, optionally configure turn instructions, instantiate `RoutingEngine`, and call
 `doRouting()` with named waypoints.
 
 ```kotlin
-import dev.skynomads.beerouter.mapaccess.DefaultMapAccessFileSystem
-import dev.skynomads.beerouter.geo.Position
-import dev.skynomads.beerouter.router.OsmNodeNamed
-import dev.skynomads.beerouter.router.OsmTrack
-import dev.skynomads.beerouter.router.RoutingContext
-import dev.skynomads.beerouter.router.RoutingEngine
-import dev.skynomads.beerouter.router.TurnInstructionMode
-import kotlinx.coroutines.runBlocking
-import kotlinx.io.buffered
-import kotlinx.io.files.Path
-import kotlinx.io.files.SystemFileSystem
+import org.maplibre.spatialk.geojson.Position
 
 private fun waypoint(name: String, lat: Double, lon: Double): OsmNodeNamed =
-    OsmNodeNamed().apply {
-        this.name = name
-        position = Position(lon, lat)
-    }
+    OsmNodeNamed(Position(lon, lat)).apply { this.name = name }
 
 fun main() = runBlocking {
     val profile = Path("misc/profiles2/trekking.brf")
@@ -88,3 +77,32 @@ Generated with: `be784db87956b17153b3dbdd85e7fcb03dc8c67c`
 
 Beerouter is licensed under the [Mozilla Public License Version 2.0](LICENSE). Its code is derived
 from the BRouter project; see [ATTRIBUTION](ATTRIBUTION).
+
+## Publishing
+
+Beerouter publishes the `core` Kotlin Multiplatform library to Maven Central through the Sonatype
+Central Portal.
+
+1. Create a Central Portal account and generate a publishing token.
+2. Create or reuse a GPG key, then export the ASCII-armored private key with
+   `gpg --list-secret-keys --keyid-format LONG` and make sure `gpg` can use it locally.
+3. Add the Central Portal token credentials to `~/.gradle/gradle.properties` for local releases:
+
+```properties
+mavenCentralUsername=<central-portal-token-username>
+mavenCentralPassword=<central-portal-token-password>
+```
+
+4. Publish a release with `./gradlew :core:publishAndReleaseToMavenCentral`.
+
+Gradle is configured with `useGpgCmd()`, so when signing runs it uses your local `gpg` setup and
+will prompt through GPG pinentry if your key is locked.
+
+On Codeberg CI, pushing a tag that starts with `v` runs `.forgejo/workflows/publish.yml`. Configure
+these repository secrets first:
+
+- `MAVEN_CENTRAL_USERNAME`
+- `MAVEN_CENTRAL_PASSWORD`
+- `MAVEN_GPG_PRIVATE_KEY`
+- `MAVEN_GPG_KEY_ID`
+- `MAVEN_GPG_PASSPHRASE`

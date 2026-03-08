@@ -6,8 +6,7 @@ import dev.skynomads.beerouter.codec.StatCoderContext
 import dev.skynomads.beerouter.codec.TagValueCoder
 import dev.skynomads.beerouter.codec.TagValueValidator
 import dev.skynomads.beerouter.codec.WaypointMatcher
-import dev.skynomads.beerouter.osm.osmIdOf
-import dev.skynomads.beerouter.osm.positionOf
+import dev.skynomads.beerouter.geo.Position
 import dev.skynomads.beerouter.util.ByteDataWriter
 
 /**
@@ -28,7 +27,7 @@ public class DirectWeaver(
 
     init {
         val cellsize = 1000000 / divisor
-        id64Base = osmIdOf(lonIdx * cellsize, latIdx * cellsize)
+        id64Base = Position(lonIdx * cellsize, latIdx * cellsize).id
 
         val wayTagCoder = TagValueCoder(bc, dataBuffers, wayValidator)
         val nodeTagCoder = TagValueCoder(bc, dataBuffers, null)
@@ -83,8 +82,8 @@ public class DirectWeaver(
                         val exceptions = trExceptions
                         trExceptions = 0
                         val isPositive = bc.decodeBit()
-                        val fromId = osmIdOf(ilon + bc.decodeNoisyDiff(10), ilat + bc.decodeNoisyDiff(10))
-                        val toId = osmIdOf(ilon + bc.decodeNoisyDiff(10), ilat + bc.decodeNoisyDiff(10))
+                        val fromId = Position(ilon + bc.decodeNoisyDiff(10), ilat + bc.decodeNoisyDiff(10)).id
+                        val toId = Position(ilon + bc.decodeNoisyDiff(10), ilat + bc.decodeNoisyDiff(10)).id
                         node.addTurnRestriction(
                             TurnRestriction(
                                 isPositive = isPositive,
@@ -103,7 +102,7 @@ public class DirectWeaver(
 
             selev += nodeEleDiff.decodeSignedValue()
             node.clearHollow()
-            node.position = node.position.withAltitude(selev.toShort().takeUnless { it == Short.MIN_VALUE })
+            node.position = node.position.copy(altitude = selev.toShort().takeUnless { it == Short.MIN_VALUE })
             val nodeTags = nodeTagCoder.decodeTagValueSet()
             node.nodeDescription = nodeTags?.data // TODO: unified?
 
@@ -138,7 +137,7 @@ public class DirectWeaver(
                     if (matcher != null) {
                         val useAsStartWay =
                             wayTags == null || wayValidator.checkStartWay(wayTags.data)
-                        if (!matcher.start(positionOf(ilon, ilat), positionOf(ilontarget, ilattarget), useAsStartWay)) {
+                        if (!matcher.start(Position(ilon, ilat), Position(ilontarget, ilattarget), useAsStartWay)) {
                             matcher = null
                         }
                     }
@@ -158,7 +157,7 @@ public class DirectWeaver(
                             writeVarLengthSigned(elediff)
                         }
 
-                        matcher?.transferNode(positionOf(ilontarget - dlonRemaining, ilattarget - dlatRemaining))
+                        matcher?.transferNode(Position(ilontarget - dlonRemaining, ilattarget - dlatRemaining))
                     }
                     matcher?.end()
                 }
@@ -228,7 +227,7 @@ public class DirectWeaver(
                 id32 = id32 shr 2
                 bm = bm shl 1
             }
-            return osmIdOf(dlon, dlat)
+            return Position(dlon, dlat).id
         }
     }
 }

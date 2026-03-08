@@ -2,11 +2,11 @@ package dev.skynomads.beerouter.mapaccess
 
 import dev.skynomads.beerouter.codec.MicroCache
 import dev.skynomads.beerouter.codec.MicroCache2
+import dev.skynomads.beerouter.geo.CheapRuler.distance
 import dev.skynomads.beerouter.geo.Position
-import dev.skynomads.beerouter.osm.osmIdOf
-import dev.skynomads.beerouter.osm.osmPositionOf
-import dev.skynomads.beerouter.util.CheapRuler.distance
+import dev.skynomads.beerouter.geo.toBeerouter
 import dev.skynomads.beerouter.util.IByteArrayUnifier
+import org.maplibre.spatialk.geojson.Position as SpatialKPosition
 import kotlin.math.max
 import kotlin.math.roundToInt
 
@@ -62,6 +62,8 @@ public open class OsmNode : OsmLink, OsmPos {
         _idFromPos = position.id
     }
 
+    public constructor(position: SpatialKPosition) : this(position.toBeerouter())
+
 
     public fun addLink(link: OsmLink, isReverse: Boolean, tn: OsmNode) {
         require(link !== firstlink) { "UUUUPS" }
@@ -109,16 +111,14 @@ public open class OsmNode : OsmLink, OsmPos {
                 TurnRestriction.create(
                     exceptions = mc.readShort(),
                     isPositive = mc.readBoolean(),
-                    fromLon = mc.readInt(),
-                    fromLat = mc.readInt(),
-                    toLon = mc.readInt(),
-                    toLat = mc.readInt()
+                    from = Position(mc.readInt(), mc.readInt()),
+                    to = Position(mc.readInt(), mc.readInt())
                 )
             )
         }
 
         val readSElev = mc.readShort()
-        position = osmPositionOf(position.longitude, position.latitude, readSElev)
+        position = position.copy(altitude = readSElev.takeUnless { it == Short.MIN_VALUE })
         hollow = false
         val nodeDescSize = mc.readVarLengthUnsigned()
         nodeDescription = if (nodeDescSize == 0) null else mc.readUnified(nodeDescSize, abUnifier)
@@ -178,7 +178,7 @@ public open class OsmNode : OsmLink, OsmPos {
             l = l.getNext(this)
         }
         if (tn == null) { // .. not found, then check the hollow nodes
-            tn = hollowNodes.get(osmIdOf(linklon, linklat)) // target node
+            tn = hollowNodes.get(Position(linklon, linklat).id) // target node
             if (tn == null) { // node not yet known, create a new hollow proxy
                 tn = OsmNode(linklon, linklat)
                 tn.setHollow()

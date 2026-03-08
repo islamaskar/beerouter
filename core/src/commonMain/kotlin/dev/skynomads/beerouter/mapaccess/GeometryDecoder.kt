@@ -5,7 +5,7 @@
  */
 package dev.skynomads.beerouter.mapaccess
 
-import dev.skynomads.beerouter.osm.osmPositionOf
+import dev.skynomads.beerouter.geo.Position
 import dev.skynomads.beerouter.osm.toSElev
 import dev.skynomads.beerouter.util.ByteDataReader
 
@@ -41,7 +41,7 @@ public class GeometryDecoder {
             val lon = olon + r.readVarLengthSigned()
             val lat = olat + r.readVarLengthSigned()
             val selev = (oselev + r.readVarLengthSigned()).toShort()
-            trans.position = osmPositionOf(lon, lat, selev)
+            trans.position = Position(lon, lat, selev.takeUnless { it == Short.MIN_VALUE })
             olon = lon
             olat = lat
             oselev = selev.toInt()

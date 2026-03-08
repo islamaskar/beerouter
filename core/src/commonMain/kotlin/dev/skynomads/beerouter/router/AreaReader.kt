@@ -10,7 +10,7 @@ import dev.skynomads.beerouter.mapaccess.OsmLink
 import dev.skynomads.beerouter.mapaccess.OsmNode
 import dev.skynomads.beerouter.mapaccess.OsmNodesMap
 import dev.skynomads.beerouter.mapaccess.PhysicalFile
-import dev.skynomads.beerouter.osm.osmIdOf
+import dev.skynomads.beerouter.geo.Position
 import kotlinx.io.Sink
 import kotlinx.io.Source
 import kotlin.math.abs
@@ -61,61 +61,39 @@ public class AreaReader {
                 lat = latDegree * 1000000
                 var tmplon2 = lon + cellsize * (subLonIdx)
                 var tmplat2 = lat + cellsize * (subLatIdx)
-                dataRect.addVertex(tmplon2, tmplat2)
+                dataRect.addVertex(Position(tmplon2, tmplat2))
 
                 tmplon2 = lon + cellsize * (subLonIdx + 1)
                 tmplat2 = lat + cellsize * (subLatIdx)
-                dataRect.addVertex(tmplon2, tmplat2)
+                dataRect.addVertex(Position(tmplon2, tmplat2))
 
                 tmplon2 = lon + cellsize * (subLonIdx + 1)
                 tmplat2 = lat + cellsize * (subLatIdx + 1)
-                dataRect.addVertex(tmplon2, tmplat2)
+                dataRect.addVertex(Position(tmplon2, tmplat2))
 
                 tmplon2 = lon + cellsize * (subLonIdx)
                 tmplat2 = lat + cellsize * (subLatIdx + 1)
-                dataRect.addVertex(tmplon2, tmplat2)
+                dataRect.addVertex(Position(tmplon2, tmplat2))
 
-                var intersects = checkBorder && dataRect.intersects(
-                    searchRect.points[0].longitude,
-                    searchRect.points[0].latitude,
-                    searchRect.points[2].longitude,
-                    searchRect.points[2].latitude
-                )
-                if (!intersects && checkBorder) intersects = dataRect.intersects(
-                    searchRect.points[1].longitude,
-                    searchRect.points[1].latitude,
-                    searchRect.points[2].longitude,
-                    searchRect.points[3].latitude
-                )
+                var intersects = checkBorder && dataRect.intersects(searchRect.points[0], searchRect.points[2])
+                if (!intersects && checkBorder) intersects = dataRect.intersects(searchRect.points[1], Position(searchRect.points[2].longitude, searchRect.points[3].latitude))
                 if (intersects) {
                     continue
                 }
 
-                intersects = searchRect.intersects(
-                    dataRect.points[0].longitude,
-                    dataRect.points[0].latitude,
-                    dataRect.points[2].longitude,
-                    dataRect.points[2].latitude
-                )
-                if (!intersects) intersects = searchRect.intersects(
-                    dataRect.points[1].longitude,
-                    dataRect.points[1].latitude,
-                    dataRect.points[3].longitude,
-                    dataRect.points[3].latitude
-                )
+                intersects = searchRect.intersects(dataRect.points[0], dataRect.points[2])
+                if (!intersects) intersects = searchRect.intersects(dataRect.points[1], dataRect.points[3])
                 if (!intersects) intersects = containsRect(
                     searchRect,
-                    dataRect.points[0].longitude,
-                    dataRect.points[0].latitude,
-                    dataRect.points[2].longitude,
-                    dataRect.points[2].latitude
+                    dataRect.points[0],
+                    dataRect.points[2]
                 )
 
                 if (!intersects) {
                     continue
                 }
 
-                tiles[osmIdOf(tmplon, tmplat)] = filenameBase
+                tiles[Position(tmplon, tmplat).id] = filenameBase
                 count++
             }
         }
@@ -262,13 +240,11 @@ public class AreaReader {
   */
     public fun containsRect(
         searchRect: OsmNogoPolygon,
-        p1x: Int,
-        p1y: Int,
-        p2x: Int,
-        p2y: Int
+        start: Position,
+        end: Position
     ): Boolean {
-        return searchRect.isWithin(p1x.toLong(), p1y.toLong()) &&
-                searchRect.isWithin(p2x.toLong(), p2y.toLong())
+        return searchRect.isWithin(start.longitude.toLong(), start.latitude.toLong()) &&
+                searchRect.isWithin(end.longitude.toLong(), end.latitude.toLong())
     }
 
     public fun writeAreaInfo(sink: Sink, wp: MatchedWaypoint, ais: MutableList<AreaInfo>) {

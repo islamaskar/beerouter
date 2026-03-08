@@ -51,10 +51,6 @@ public data class Position(
     public val altitudeMeters: Double?
         get() = altitude.toDoubleAltitude()
 
-    public fun withAltitude(altitude: Short?): Position = Position(longitude, latitude, altitude)
-
-    public fun withAltitude(altitude: Double?): Position = Position(longitude, latitude, altitude)
-
     public companion object {
         public val ZERO: Position = Position(longitude = 0, latitude = 0)
 
@@ -69,6 +65,8 @@ public data class Position(
             Position(position.longitude, position.latitude, position.altitude)
     }
 }
+
+public fun org.maplibre.spatialk.geojson.Position.toBeerouter(): Position = Position.from(this)
 
 private fun Double?.toShortAltitude(): Short? =
     if (this == null || this.isNaN()) {

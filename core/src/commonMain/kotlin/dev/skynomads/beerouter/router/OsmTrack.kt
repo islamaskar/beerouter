@@ -142,7 +142,7 @@ public class OsmTrack {
         val c0 = if (ourSize > 0) nodes[ourSize - 1].cost else 0
         for ((index, element) in t.nodes.withIndex()) {
             if (index == 0 && ourSize > 0 && toSElev(nodes[ourSize - 1].position.altitude) == Short.MIN_VALUE) {
-                nodes[ourSize - 1].position = nodes[ourSize - 1].position.withAltitude(element.position.altitude)
+                nodes[ourSize - 1].position = nodes[ourSize - 1].position.copy(altitude = element.position.altitude)
             }
             if (index > 0 || ourSize == 0) {
                 element.time += t0

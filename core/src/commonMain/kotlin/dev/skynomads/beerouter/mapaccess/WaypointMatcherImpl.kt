@@ -1,11 +1,10 @@
 package dev.skynomads.beerouter.mapaccess
 
 import dev.skynomads.beerouter.codec.WaypointMatcher
+import dev.skynomads.beerouter.geo.CheapAngleMeter.getDifferenceFromDirection
+import dev.skynomads.beerouter.geo.CheapAngleMeter.getDirection
+import dev.skynomads.beerouter.geo.CheapRuler.getLonLatToMeterScales
 import dev.skynomads.beerouter.geo.Position
-import dev.skynomads.beerouter.osm.positionOf
-import dev.skynomads.beerouter.util.CheapAngleMeter.Companion.getDifferenceFromDirection
-import dev.skynomads.beerouter.util.CheapAngleMeter.Companion.getDirection
-import dev.skynomads.beerouter.util.CheapRuler.getLonLatToMeterScales
 import kotlin.math.abs
 import kotlin.math.sqrt
 
@@ -137,7 +136,7 @@ public class WaypointMatcherImpl(
                     val ym = y2 - wayfraction * dy
                     val newLon = (xm / dlon2m + waypointPosition.longitude).toInt()
                     val newLat = (ym / dlat2m + waypointPosition.latitude).toInt()
-                    cp.position = positionOf(newLon, newLat)
+                    cp.position = Position(newLon, newLat)
                 } else if (s1 > s2) {
                     cp.position = end
                 } else {

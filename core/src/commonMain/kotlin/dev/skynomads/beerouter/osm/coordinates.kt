@@ -1,6 +1,5 @@
 package dev.skynomads.beerouter.osm
 
-import dev.skynomads.beerouter.geo.Position
 import kotlin.math.roundToInt
 
 private const val COORDINATE_SCALE = 1e-6
@@ -18,21 +17,6 @@ public fun Double.toIntLatitude(): Int = ((this + LATITUDE_OFFSET) / COORDINATE_
 public fun Int.toDoubleLongitude(): Double = (this * COORDINATE_SCALE) - LONGITUDE_OFFSET
 
 public fun Int.toDoubleLatitude(): Double = (this * COORDINATE_SCALE) - LATITUDE_OFFSET
-
-public fun positionOf(longitudeE6: Int, latitudeE6: Int, altitude: Short? = null): Position =
-    Position(longitudeE6, latitudeE6, altitude)
-
-public fun positionOf(longitudeE6: Int, latitudeE6: Int, altitude: Double?): Position =
-    Position(longitudeE6, latitudeE6, altitude)
-
-public fun osmIdOf(longitudeE6: Int, latitudeE6: Int): Long =
-    (longitudeE6.toLong() shl 32) or latitudeE6.toLong()
-
-public fun osmPositionOf(longitudeE6: Int, latitudeE6: Int, sElev: Short): Position =
-    positionOf(longitudeE6, latitudeE6, sElev.takeUnless { it == Short.MIN_VALUE })
-
-public fun osmPositionOf(longitudeE6: Int, latitudeE6: Int, sElev: Short?): Position =
-    positionOf(longitudeE6, latitudeE6, sElev)
 
 public fun toSElev(altitude: Short?): Short = altitude ?: Short.MIN_VALUE
 

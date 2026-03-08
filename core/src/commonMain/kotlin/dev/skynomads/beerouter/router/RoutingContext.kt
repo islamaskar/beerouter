@@ -9,15 +9,13 @@ import dev.skynomads.beerouter.expressions.BExpressionContext
 import dev.skynomads.beerouter.expressions.BExpressionContextNode
 import dev.skynomads.beerouter.expressions.BExpressionContextWay
 import dev.skynomads.beerouter.expressions.BExpressionMetaData
+import dev.skynomads.beerouter.geo.CheapRuler.getLonLatToMeterScales
 import dev.skynomads.beerouter.geo.Position
 import dev.skynomads.beerouter.mapaccess.GeometryDecoder
 import dev.skynomads.beerouter.mapaccess.MapAccessFileSystem
 import dev.skynomads.beerouter.mapaccess.MatchedWaypoint
 import dev.skynomads.beerouter.mapaccess.OsmLink
 import dev.skynomads.beerouter.mapaccess.OsmNode
-import dev.skynomads.beerouter.osm.positionOf
-import dev.skynomads.beerouter.util.CheapAngleMeter
-import dev.skynomads.beerouter.util.CheapRuler.getLonLatToMeterScales
 import dev.skynomads.beerouter.util.readUtf8
 import kotlinx.io.Sink
 import kotlinx.io.Source
@@ -249,8 +247,6 @@ public class RoutingContext(
     public var roundTripPoints: Int? = null
     public var allowSamewayback: Boolean = false
 
-    public var anglemeter: CheapAngleMeter = CheapAngleMeter()
-
     public var nogoCost: Double = 0.0
     public var isEndpoint: Boolean = false
 
@@ -453,12 +449,12 @@ public class RoutingContext(
         isEndpoint = false
     }
 
-    public fun calcDistance(lon1: Int, lat1: Int, lon2: Int, lat2: Int): Int {
-        var lon1 = lon1
-        var lat1 = lat1
-        var lon2 = lon2
-        var lat2 = lat2
-        val lonlat2m = getLonLatToMeterScales((lat1 + lat2) shr 1)
+    public fun calcDistance(start: Position, end: Position): Int {
+        var lon1 = start.longitude
+        var lat1 = start.latitude
+        var lon2 = end.longitude
+        var lat2 = end.latitude
+        val lonlat2m = getLonLatToMeterScales((start.latitude + end.latitude) shr 1)
         val dlon2m = lonlat2m[0]
         val dlat2m = lonlat2m[1]
         var dx = (lon2 - lon1) * dlon2m
@@ -500,14 +496,12 @@ public class RoutingContext(
                             } else {
                                 // nogo weight, compute distance within the circle
                                 nogo.distanceWithinRadius(
-                                    lon1,
-                                    lat1,
-                                    lon2,
-                                    lat2,
+                                    Position(lon1, lat1),
+                                    Position(lon2, lat2),
                                     d
                                 ) * nogo.nogoWeight
                             }
-                        } else if (nogo.intersects(lon1, lat1, lon2, lat2)) {
+                        } else if (nogo.intersects(Position(lon1, lat1), Position(lon2, lat2))) {
                             // nogo is a polyline/polygon, we have to check there is indeed
                             // an intersection in this case (radius check is not enough).
                             if (nogo.nogoWeight.isNaN()) {
@@ -517,10 +511,8 @@ public class RoutingContext(
                                 nogoCost = if (nogo.isClosed) {
                                     // compute distance within the polygon
                                     nogo.distanceWithinPolygon(
-                                        lon1,
-                                        lat1,
-                                        lon2,
-                                        lat2
+                                        Position(lon1, lat1),
+                                        Position(lon2, lat2)
                                     ) * nogo.nogoWeight
                                 } else {
                                     // for a polyline, just add a constant penalty
@@ -536,16 +528,16 @@ public class RoutingContext(
                             wayfraction = -s2 / (d * d)
                             val xm = x2 - wayfraction * dx
                             val ym = y2 - wayfraction * dy
-                            shortestPosition = positionOf(
+                            shortestPosition = Position(
                                 (xm / dlon2m + nogoPosition.longitude).toInt(),
                                 (ym / dlat2m + nogoPosition.latitude).toInt()
                             )
                         } else if (s1 > s2) {
                             wayfraction = 0.0
-                            shortestPosition = positionOf(lon2, lat2)
+                            shortestPosition = Position(lon2, lat2)
                         } else {
                             wayfraction = 1.0
-                            shortestPosition = positionOf(lon1, lat1)
+                            shortestPosition = Position(lon1, lat1)
                         }
 
                         // here it gets nasty: there can be nogo-points in the list
@@ -570,10 +562,6 @@ public class RoutingContext(
         }
         return max(1.0, d.roundToInt().toDouble()).toInt()
     }
-
-    public fun calcDistance(start: Position, end: Position): Int =
-        calcDistance(start.longitude, start.latitude, end.longitude, end.latitude)
-
 
     public fun createPrePath(origin: OsmPath, link: OsmLink): OsmPrePath? {
         val p = pm.createPrePath()

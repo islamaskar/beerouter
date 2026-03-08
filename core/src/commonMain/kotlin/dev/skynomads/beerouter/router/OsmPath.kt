@@ -5,16 +5,16 @@
  */
 package dev.skynomads.beerouter.router
 
+import dev.skynomads.beerouter.geo.CheapAngleMeter.calcAngle
+import dev.skynomads.beerouter.geo.CheapRuler.DEG_TO_RAD
+import dev.skynomads.beerouter.geo.CheapRuler.distance
+import dev.skynomads.beerouter.geo.CheapRuler.getLonLatToMeterScales
 import dev.skynomads.beerouter.geo.Position
 import dev.skynomads.beerouter.mapaccess.OsmLink
 import dev.skynomads.beerouter.mapaccess.OsmLinkHolder
 import dev.skynomads.beerouter.mapaccess.OsmNode
 import dev.skynomads.beerouter.mapaccess.TurnRestriction.Companion.isTurnForbidden
-import dev.skynomads.beerouter.osm.osmIdOf
-import dev.skynomads.beerouter.osm.positionOf
 import dev.skynomads.beerouter.osm.toSElev
-import dev.skynomads.beerouter.util.CheapRuler
-import dev.skynomads.beerouter.util.CheapRuler.getLonLatToMeterScales
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -209,7 +209,7 @@ public abstract class OsmPath : OsmLinkHolder {
 
         var nsection = 0
         while (true) {
-            val currentPosition = positionOf(lon1, lat1)
+            val currentPosition = Position(lon1, lat1)
             originPosition = currentPosition
 
             val lon2: Int
@@ -239,7 +239,7 @@ public abstract class OsmPath : OsmLinkHolder {
                 if (if (rc.inverseDirection)
                         isTurnForbidden(
                             sourceNode!!.firstRestriction,
-                            osmIdOf(lon2, lat2),
+                            Position(lon2, lat2).id,
                             requireNotNull(previousPosition).id,
                             rc.global.bikeMode || rc.global.footMode,
                             rc.global.carMode
@@ -248,7 +248,7 @@ public abstract class OsmPath : OsmLinkHolder {
                         isTurnForbidden(
                             sourceNode!!.firstRestriction,
                             requireNotNull(previousPosition).id,
-                            osmIdOf(lon2, lat2),
+                            Position(lon2, lat2).id,
                             rc.global.bikeMode || rc.global.footMode,
                             rc.global.carMode
                         )
@@ -264,7 +264,7 @@ public abstract class OsmPath : OsmLinkHolder {
                 message = MessageData()
             }
 
-            var dist = rc.calcDistance(lon1, lat1, lon2, lat2)
+            var dist = rc.calcDistance(currentPosition, nextPosition)
 
             var stopAtEndpoint = false
             if (rc.shortestmatch) {
@@ -283,7 +283,7 @@ public abstract class OsmPath : OsmLinkHolder {
                         if (rc.wayfraction > 0.0) {
                             ele1 = interpolateEle(ele1, ele2, 1.0 - rc.wayfraction)
                             originElement = OsmPathElement.create(
-                                positionOf(
+                                Position(
                                     shortestPosition.longitude,
                                     shortestPosition.latitude,
                                     ele1.toDouble() / 4.0
@@ -298,7 +298,7 @@ public abstract class OsmPath : OsmLinkHolder {
                     if (rc.checkPendingEndpoint()) {
                         dist = rc.calcDistance(
                             requireNotNull(rc.shortestPosition),
-                            positionOf(lon2, lat2)
+                            Position(lon2, lat2)
                         )
                         if (rc.shortestmatch) {
                             stopAtEndpoint = true
@@ -314,22 +314,23 @@ public abstract class OsmPath : OsmLinkHolder {
             // apply a start-direction if appropriate (by faking the origin position)
             if (isStartpoint) {
                 if (rc.startDirectionValid) {
-                    val dir = rc.startDirection!! * CheapRuler.DEG_TO_RAD
+                    val dir = rc.startDirection!! * DEG_TO_RAD
                     val lonlat2m = getLonLatToMeterScales(lat1)
-                    previousPosition = positionOf(
+                    previousPosition = Position(
                         lon1 - (1000.0 * sin(dir) / lonlat2m[0]).toInt(),
                         lat1 - (1000.0 * cos(dir) / lonlat2m[1]).toInt()
                     )
                 } else {
-                    previousPosition = positionOf(lon1 - (lon2 - lon1), lat1 - (lat2 - lat1))
+                    previousPosition = Position(lon1 - (lon2 - lon1), lat1 - (lat2 - lat1))
                 }
             }
-            val angle = rc.anglemeter.calcAngle(
+            val angleMeasurement = calcAngle(
                 requireNotNull(previousPosition),
                 currentPosition,
                 nextPosition
             )
-            val cosangle = rc.anglemeter.cosAngle
+            val angle = angleMeasurement.angle
+            val cosangle = angleMeasurement.cosAngle
 
             // *** elevation stuff
             var delta_h = 0.0
@@ -375,7 +376,7 @@ public abstract class OsmPath : OsmLinkHolder {
                 it.energy = this.totalEnergy.toFloat()
                 it.priorityclassifier = priorityclassifier
                 it.classifiermask = classifiermask
-                it.position = positionOf(lon2, lat2, originEle2.toDouble() / 4.0)
+                it.position = Position(lon2, lat2, originEle2.toDouble() / 4.0)
                 it.wayTags = rc.way.getMap(isReverse, description)
             }
 
@@ -383,7 +384,7 @@ public abstract class OsmPath : OsmLinkHolder {
                 if (recordTransferNodes) {
                     val shortestPosition = requireNotNull(rc.shortestPosition)
                     originElement = OsmPathElement.create(
-                        positionOf(
+                        Position(
                             shortestPosition.longitude,
                             shortestPosition.latitude,
                             originEle2.toDouble() / 4.0
@@ -420,7 +421,7 @@ public abstract class OsmPath : OsmLinkHolder {
                     OsmPathElement.create(lon2, lat2, originEle2, originElement)
                 originElement!!.cost = cost
             }
-            previousPosition = positionOf(lon1, lat1)
+            previousPosition = Position(lon1, lat1)
             lon1 = lon2
             lat1 = lat2
             ele1 = ele2

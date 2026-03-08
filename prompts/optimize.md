@@ -4,7 +4,11 @@ code of the core module thoroughly and find ways to optimize performance in sign
 Code readability and simplicity are more important than raw performance. Write clean, functional
 Kotlin code only.
 
-For each improvement, create a commit and attach the benchmark result in the commit's description.
+For each improvement, create a commit and attach the benchmark result in the commit's description,
+stating the performance benefit in percent.
+
+You should aim to achieve at least 1% improvement over the base benchmark. Multiple commits can be
+aggregated to hit this mark. Run the benchmark a second time to verify.
 
 Use any tool at your disposal to find optimizations, e.g. profilers. Install missing tools if
 necessary. You are running in a Ubuntu container with full root access.

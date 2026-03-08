@@ -1,6 +1,11 @@
 package dev.skynomads.beerouter.router
 
 import androidx.collection.MutableLongObjectMap
+import dev.skynomads.beerouter.geo.CheapAngleMeter.calcAngle
+import dev.skynomads.beerouter.geo.CheapAngleMeter.getDifferenceFromDirection
+import dev.skynomads.beerouter.geo.CheapAngleMeter.getDirection
+import dev.skynomads.beerouter.geo.CheapRuler.destination
+import dev.skynomads.beerouter.geo.CheapRuler.distance
 import dev.skynomads.beerouter.geo.Position
 import dev.skynomads.beerouter.mapaccess.MatchedWaypoint
 import dev.skynomads.beerouter.mapaccess.NodesCache
@@ -11,10 +16,6 @@ import dev.skynomads.beerouter.mapaccess.OsmNodesMap
 import dev.skynomads.beerouter.mapaccess.OsmPos
 import dev.skynomads.beerouter.osm.toSElev
 import dev.skynomads.beerouter.router.OsmTrack.OsmPathElementHolder
-import dev.skynomads.beerouter.util.CheapAngleMeter.Companion.getDifferenceFromDirection
-import dev.skynomads.beerouter.util.CheapAngleMeter.Companion.getDirection
-import dev.skynomads.beerouter.util.CheapRuler.destination
-import dev.skynomads.beerouter.util.CheapRuler.distance
 import dev.skynomads.beerouter.util.SortedHeap
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
@@ -201,7 +202,8 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
 
         val n = OsmNodeNamed(listOne[0].crosspoint!!).apply {
             name = wpt1.name
-            position = position.withAltitude(
+            position = position.copy(
+                altitude =
                 (if (minIdx != -1) (minSElev + diff.toInt()).toShort() else Short.MIN_VALUE)
                     .takeUnless { it == Short.MIN_VALUE }
             )
@@ -333,10 +335,10 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
             }
 
             val searchRect = OsmNogoPolygon(true).apply {
-                addVertex(maxlon, maxlat)
-                addVertex(maxlon, minlat)
-                addVertex(minlon, minlat)
-                addVertex(minlon, maxlat)
+                addVertex(Position(maxlon, maxlat))
+                addVertex(Position(maxlon, minlat))
+                addVertex(Position(minlon, minlat))
+                addVertex(Position(minlon, maxlat))
             }
 
             for (a in 0..3) {
@@ -347,22 +349,10 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
 
                 val polygon = OsmNogoPolygon(true)
                 rc.ai!!.polygon = polygon
-                polygon.addVertex(
-                    wp.position.longitude,
-                    wp.position.latitude
-                )
-                polygon.addVertex(
-                    listOne[a].position.longitude,
-                    listOne[a].position.latitude
-                )
-                if (a == 3) polygon.addVertex(
-                    listOne[0].position.longitude,
-                    listOne[0].position.latitude
-                )
-                else polygon.addVertex(
-                    listOne[a + 1].position.longitude,
-                    listOne[a + 1].position.latitude
-                )
+                polygon.addVertex(wp.position)
+                polygon.addVertex(listOne[a].position)
+                if (a == 3) polygon.addVertex(listOne[0].position)
+                else polygon.addVertex(listOne[a + 1].position)
 
                 ais.add(rc.ai!!)
             }
@@ -479,23 +469,23 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
                     if (hasInclineTags) incline = tmpincline
                     selev = (selev + (tmpdist / 100.0 * incline))
                     val encodedElevation = selev.toInt().toShort().takeUnless { it == Short.MIN_VALUE }
-                    tmp.position = tmp.position.withAltitude(encodedElevation)
-                    tmp.message!!.position = tmp.message!!.position.withAltitude(encodedElevation)
+                    tmp.position = tmp.position.copy(altitude = encodedElevation)
+                    tmp.message!!.position = tmp.message!!.position.copy(altitude = encodedElevation)
                     tmpPt = tmp
                 }
                 dist = 0
             } else if (toSElev(n.position.altitude) != Short.MIN_VALUE && lastElev == Short.MIN_VALUE && startIdx == 0) {
                 // fill at start
                 track.nodes.subList(0, idx).forEach {
-                    it.position = it.position.withAltitude(
-                        toSElev(n.position.altitude).takeUnless { selev -> selev == Short.MIN_VALUE }
+                    it.position = it.position.copy(
+                        altitude = toSElev(n.position.altitude).takeUnless { selev -> selev == Short.MIN_VALUE }
                     )
                 }
             } else if (toSElev(n.position.altitude) == Short.MIN_VALUE && idx == track.nodes.size - 1) {
                 // fill at end
                 startIdx = idx
                 track.nodes.subList(startIdx, track.nodes.size).forEach {
-                    it.position = it.position.withAltitude(lastElev.takeUnless { selev -> selev == Short.MIN_VALUE })
+                    it.position = it.position.copy(altitude = lastElev.takeUnless { selev -> selev == Short.MIN_VALUE })
                 }
             } else if (toSElev(n.position.altitude) == Short.MIN_VALUE) {
                 if (lastPt != null) dist += n.calcDistance(lastPt)
@@ -985,7 +975,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
                 val p0 = tt.nodes[ourSize - 2].position
                 val p1 = startWp.crosspoint!!.position
                 val p2 = node.position
-                routingContext.anglemeter.calcAngle(p0, p1, p2)
+                calcAngle(p0, p1, p2)
                 val dist = node.calcDistance(startWp.crosspoint!!)
                 if (dist < routingContext.global.waypointCatchingRange) return false
             }
@@ -1220,7 +1210,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
                     val p0 = t.nodes[i - 2].position
                     val p1 = t.nodes[i - 1].position
                     val p2 = t.nodes[i].position
-                    angle = routingContext.anglemeter.calcAngle(p0, p1, p2)
+                    angle = calcAngle(p0, p1, p2).angle
                     nLast = t.nodes[i - 1]
                     dist = nLast.calcDistance(n)
                 }
@@ -1302,10 +1292,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
      */
     private fun elevationFilter(n: OsmPos): Double {
         if (nodesCache != null) {
-            val r = nodesCache!!.getElevationType(
-                n.position.longitude,
-                n.position.latitude
-            )
+            val r = nodesCache!!.getElevationType(n.position)
             if (r == 1) return -5.0
         }
         return -10.0
@@ -1737,8 +1724,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
         val openBorderList = ArrayList<OsmPath>(4096)
 
         // Pre-compute end position integer coordinates once to avoid repeated double→int conversions in the hot loop
-        val endIlon = endPos?.position?.longitude ?: 0
-        val endIlat = endPos?.position?.latitude ?: 0
+        val endPosition = endPos?.position ?: Position.ZERO
 
         while (true) {
             currentCoroutineContext().ensureActive()
@@ -1993,7 +1979,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
                 }
                 if (bestPath != null) {
                     bestPath.airdistance = if (isFinalLink) 0 else {
-                        max(1, distance(nextNode.position.longitude, nextNode.position.latitude, endIlon, endIlat).roundToInt())
+                        max(1, distance(nextNode.position, endPosition).roundToInt())
                     }
 
                     val inRadius =

@@ -9,6 +9,7 @@ import dev.skynomads.beerouter.codec.DataBuffers
 import dev.skynomads.beerouter.codec.MicroCache
 import dev.skynomads.beerouter.codec.WaypointMatcher
 import dev.skynomads.beerouter.expressions.BExpressionContextWay
+import dev.skynomads.beerouter.geo.Position
 
 public class NodesCache(
     private val mapAccessFileSystem: MapAccessFileSystem,
@@ -130,15 +131,15 @@ public class NodesCache(
         }
     }
 
-    public fun loadSegmentFor(ilon: Int, ilat: Int): Int {
-        val mc = getSegmentFor(ilon, ilat)
+    public fun loadSegmentFor(position: Position): Int {
+        val mc = getSegmentFor(position)
         return mc?.size ?: 0
     }
 
-    public fun getSegmentFor(ilon: Int, ilat: Int): MicroCache? {
+    public fun getSegmentFor(position: Position): MicroCache? {
         try {
-            val lonDegree = ilon / 1000000
-            val latDegree = ilat / 1000000
+            val lonDegree = position.longitude / 1000000
+            val latDegree = position.latitude / 1000000
             var osmf: OsmFile? =
                 if (lonDegree == lastLonDegree && latDegree == lastLatDegree) {
                     lastOsmFile
@@ -152,7 +153,7 @@ public class NodesCache(
                 if (osmf == null) {
                     val fileRow = fileRows[latDegree]
                     val ndegrees = fileRow?.size ?: 0
-                    osmf = fileForSegment(lonDegree, latDegree)
+                    osmf = fileForSegment(Position(lonDegree, latDegree))
                     val newFileRow = arrayOfNulls<OsmFile>(ndegrees + 1)
                     for (i in 0..<ndegrees) {
                         newFileRow[i] = fileRow!![i]
@@ -172,13 +173,12 @@ public class NodesCache(
                 return null
             }
 
-            var segment = osmf.getMicroCache(ilon, ilat)
+            var segment = osmf.getMicroCache(position)
             // needed for a second chance
             if (segment == null || (waypointMatcher != null && (waypointMatcher as WaypointMatcherImpl).useDynamicRange)) {
                 checkEnableCacheCleaning()
                 segment = osmf.createMicroCache(
-                    ilon,
-                    ilat,
+                    position,
                     dataBuffers,
                     ctxWay,
                     waypointMatcher,
@@ -209,7 +209,7 @@ public class NodesCache(
         if (!node.isHollow) return true
 
         val nodeId = node.idFromPos
-        val segment = getSegmentFor(nodeId.longitudeFromId(), nodeId.latitudeFromId())
+        val segment = getSegmentFor(Position(nodeId.longitudeFromId(), nodeId.latitudeFromId()))
         if (segment == null) {
             return false
         }
@@ -340,13 +340,13 @@ public class NodesCache(
     ) {
         firstFileAccessFailed = false
         firstFileAccessName = null
-        loadSegmentFor(n.position.longitude, n.position.latitude)
+        loadSegmentFor(n.position)
         require(!firstFileAccessFailed) { "datafile $firstFileAccessName not found" }
         var scale = 1
         while (scale < maxscale) {
             for (idxLat in -scale..scale) for (idxLon in -scale..scale) {
                 if (idxLon != 0 || idxLat != 0) {
-                    loadSegmentFor(n.position.longitude + d * idxLon, n.position.latitude + d * idxLat)
+                    loadSegmentFor(Position(n.position.longitude + d * idxLon, n.position.latitude + d * idxLat))
                 }
             }
             if (bUseDynamicRange && waypointMatcher!!.hasMatch(n.position)) break
@@ -354,7 +354,9 @@ public class NodesCache(
         }
     }
 
-    private fun fileForSegment(lonDegree: Int, latDegree: Int): OsmFile {
+    private fun fileForSegment(tileDegree: Position): OsmFile {
+        val lonDegree = tileDegree.longitude
+        val latDegree = tileDegree.latitude
         val lonMod5 = lonDegree % 5
         val latMod5 = latDegree % 5
 
@@ -399,9 +401,9 @@ public class NodesCache(
         }
     }
 
-    public fun getElevationType(ilon: Int, ilat: Int): Int {
-        val lonDegree = ilon / 1000000
-        val latDegree = ilat / 1000000
+    public fun getElevationType(position: Position): Int {
+        val lonDegree = position.longitude / 1000000
+        val latDegree = position.latitude / 1000000
         return fileGrid[latDegree][lonDegree]?.elevationType?.toInt() ?: 3
     }
 

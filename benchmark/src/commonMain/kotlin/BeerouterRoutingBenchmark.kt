@@ -1,6 +1,5 @@
 package dev.skynomads.beerouter.benchmark
 
-import dev.skynomads.beerouter.geo.Position
 import dev.skynomads.beerouter.mapaccess.DefaultMapAccessFileSystem
 import dev.skynomads.beerouter.router.OsmNodeNamed
 import dev.skynomads.beerouter.router.RoutingContext
@@ -17,6 +16,7 @@ import kotlinx.io.buffered
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
 import kotlinx.io.files.SystemTemporaryDirectory
+import org.maplibre.spatialk.geojson.Position
 
 @State(Scope.Benchmark)
 @Warmup(iterations = 1)
@@ -68,10 +68,7 @@ open class BeerouterRoutingBenchmark {
     }
 
     private fun createWaypoint(name: String, lat: Double, lon: Double): OsmNodeNamed =
-        OsmNodeNamed().apply {
-            this.name = name
-            position = Position(lon, lat)
-        }
+        OsmNodeNamed(Position(lon, lat)).apply { this.name = name }
 
     private fun findRequiredPath(vararg candidates: String): Path {
         for (candidate in candidates) {

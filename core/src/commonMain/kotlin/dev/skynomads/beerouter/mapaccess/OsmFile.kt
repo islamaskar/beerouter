@@ -11,6 +11,7 @@ import dev.skynomads.beerouter.codec.MicroCache2
 import dev.skynomads.beerouter.codec.StatCoderContext
 import dev.skynomads.beerouter.codec.TagValueValidator
 import dev.skynomads.beerouter.codec.WaypointMatcher
+import dev.skynomads.beerouter.geo.Position
 import dev.skynomads.beerouter.util.ByteDataReader
 import dev.skynomads.beerouter.util.Crc32.crc
 import kotlinx.io.IOException
@@ -77,23 +78,22 @@ public class OsmFile(
         return microCaches != null
     }
 
-    public fun getMicroCache(ilon: Int, ilat: Int): MicroCache? {
-        val lonIdx = ilon / cellsize
-        val latIdx = ilat / cellsize
+    public fun getMicroCache(position: Position): MicroCache? {
+        val lonIdx = position.longitude / cellsize
+        val latIdx = position.latitude / cellsize
         val subIdx = (latIdx - divisor * latDegree) * divisor + (lonIdx - divisor * lonDegree)
         return microCaches!![subIdx]
     }
 
     public fun createMicroCache(
-        ilon: Int,
-        ilat: Int,
+        position: Position,
         dataBuffers: DataBuffers,
         wayValidator: TagValueValidator?,
         waypointMatcher: WaypointMatcher?,
         hollowNodes: OsmNodesMap?
     ): MicroCache {
-        val lonIdx = ilon / cellsize
-        val latIdx = ilat / cellsize
+        val lonIdx = position.longitude / cellsize
+        val latIdx = position.latitude / cellsize
         val segment = createMicroCacheForCell(
             lonIdx, latIdx, dataBuffers, wayValidator, waypointMatcher, hollowNodes
         )

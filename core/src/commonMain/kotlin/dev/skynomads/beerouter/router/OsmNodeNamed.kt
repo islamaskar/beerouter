@@ -7,10 +7,11 @@ package dev.skynomads.beerouter.router
 
 import dev.skynomads.beerouter.mapaccess.MatchedWaypoint
 import dev.skynomads.beerouter.mapaccess.OsmNode
+import dev.skynomads.beerouter.geo.CheapRuler.distance
+import dev.skynomads.beerouter.geo.CheapRuler.getLonLatToMeterScales
 import dev.skynomads.beerouter.geo.Position
-import dev.skynomads.beerouter.osm.positionOf
-import dev.skynomads.beerouter.util.CheapRuler.distance
-import dev.skynomads.beerouter.util.CheapRuler.getLonLatToMeterScales
+import dev.skynomads.beerouter.geo.toBeerouter
+import org.maplibre.spatialk.geojson.Position as SpatialKPosition
 import kotlin.math.sqrt
 
 public open class OsmNodeNamed : OsmNode {
@@ -26,26 +27,26 @@ public open class OsmNodeNamed : OsmNode {
 
     public constructor(n: OsmNode) : super(n.position)
 
+    public constructor(position: SpatialKPosition) : super(position)
+
     override fun toString(): String =
         if (nogoWeight.isNaN()) "${position.longitude},${position.latitude},$name"
         else "${position.longitude},${position.latitude},$name,$nogoWeight"
 
     public fun distanceWithinRadius(
-        lon1: Int,
-        lat1: Int,
-        lon2: Int,
-        lat2: Int,
+        start: Position,
+        end: Position,
         totalSegmentLength: Double
     ): Double {
         val center = position
-        var currentLon1 = lon1
-        var currentLat1 = lat1
-        var currentLon2 = lon2
-        var currentLat2 = lat2
+        var currentLon1 = start.longitude
+        var currentLat1 = start.latitude
+        var currentLon2 = end.longitude
+        var currentLat2 = end.latitude
         val lonlat2m = getLonLatToMeterScales((currentLat1 + currentLat2) shr 1)
 
-        var isFirstPointWithinCircle = distance(currentLon1, currentLat1, center.longitude, center.latitude) < radius
-        var isLastPointWithinCircle = distance(currentLon2, currentLat2, center.longitude, center.latitude) < radius
+        var isFirstPointWithinCircle = distance(Position(currentLon1, currentLat1), center) < radius
+        var isLastPointWithinCircle = distance(Position(currentLon2, currentLat2), center) < radius
         // First point is within the circle
         if (isFirstPointWithinCircle) {
             // Last point is within the circle
@@ -75,7 +76,7 @@ public open class OsmNodeNamed : OsmNode {
                     + (currentLat2 - currentLat1) * (center.latitude - currentLat1) * lonlat2m[1] * lonlat2m[1]
                     ) / totalSegmentLength)
         // Distance between the initial point and the center of the circle.
-        val initialToCenter = distance(center.longitude, center.latitude, currentLon1, currentLat1)
+        val initialToCenter = distance(center, Position(currentLon1, currentLat1))
         // Half length of the segment within the circle
         val halfDistanceWithin = sqrt(
             radius * radius - (initialToCenter * initialToCenter -
@@ -91,16 +92,10 @@ public open class OsmNodeNamed : OsmNode {
     }
 
     public fun distanceWithinRadius(
-        start: Position,
-        end: Position,
+        start: SpatialKPosition,
+        end: SpatialKPosition,
         totalSegmentLength: Double
-    ): Double = distanceWithinRadius(
-        start.longitude,
-        start.latitude,
-        end.longitude,
-        end.latitude,
-        totalSegmentLength
-    )
+    ): Double = distanceWithinRadius(start.toBeerouter(), end.toBeerouter(), totalSegmentLength)
 
     public companion object {
         public fun decodeNogo(s: String): OsmNodeNamed {
@@ -116,7 +111,7 @@ public open class OsmNodeNamed : OsmNode {
                 this.name = name
                 this.nogoWeight = nogoWeight
                 isNogo = true
-                position = positionOf(lon, lat)
+                position = Position(lon, lat)
             }
         }
     }

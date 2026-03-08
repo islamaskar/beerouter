@@ -7,7 +7,9 @@ package dev.skynomads.beerouter.mapaccess
 
 import androidx.collection.MutableLongObjectMap
 import dev.skynomads.beerouter.geo.Position
+import dev.skynomads.beerouter.geo.toBeerouter
 import dev.skynomads.beerouter.util.ByteArrayUnifier
+import org.maplibre.spatialk.geojson.Position as SpatialKPosition
 
 public class OsmNodesMap {
     public enum class CleanupMode {
@@ -232,6 +234,8 @@ public class OsmNodesMap {
     public fun get(id: Long): OsmNode? = hmap[id]
 
     public fun get(position: Position): OsmNode? = hmap[position.id]
+
+    public fun get(position: SpatialKPosition): OsmNode? = get(position.toBeerouter())
 
 
     public fun remove(node: OsmNode) {

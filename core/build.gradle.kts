@@ -1,10 +1,16 @@
+import org.gradle.api.Project
+import org.gradle.plugins.signing.SigningExtension
+
+fun Project.trimmedGradleProperty(name: String): String? =
+    providers.gradleProperty(name).orNull?.trim()?.takeIf { it.isNotEmpty() }
+
 plugins {
     kotlin("multiplatform")
     id("org.jetbrains.kotlinx.benchmark") version "0.4.15"
     id("maven-publish")
+    id("signing")
+    id("com.vanniktech.maven.publish") version "0.36.0"
 }
-
-group = "dev.skynomads.beerouter"
 
 repositories {
     google()
@@ -77,5 +83,80 @@ tasks.register<Test>("routingParityMiniTest") {
     classpath = jvmTestTask.classpath
     filter {
         includeTestsMatching("dev.skynomads.beerouter.router.RoutingTest.routingParityMiniTest")
+    }
+}
+
+mavenPublishing {
+    val requestedTasks = gradle.startParameter.taskNames
+    val hasInMemorySigningKey = project.trimmedGradleProperty("signingInMemoryKey") != null
+    val isNonLocalPublish = requestedTasks.any {
+        val taskName = it.substringAfterLast(':')
+        taskName.equals("publish", ignoreCase = true) ||
+            (taskName.contains("publish", ignoreCase = true) &&
+                !taskName.contains("mavenlocal", ignoreCase = true))
+    }
+
+    publishToMavenCentral(automaticRelease = true)
+    if (isNonLocalPublish || hasInMemorySigningKey) {
+        signAllPublications()
+    }
+
+    pom {
+        name.set("Beerouter")
+        description.set("Offline OpenStreetMap routing engine as a Kotlin Multiplatform library.")
+        inceptionYear.set("2025")
+        url.set("https://codeberg.org/jgillich/beerouter")
+
+        licenses {
+            license {
+                name.set("Mozilla Public License Version 2.0")
+                url.set("https://www.mozilla.org/en-US/MPL/2.0/")
+                distribution.set("repo")
+            }
+        }
+
+        developers {
+            developer {
+                id.set("jgillich")
+                name.set("Jakob Gillich")
+                url.set("https://codeberg.org/jgillich")
+            }
+        }
+
+        scm {
+            url.set("https://codeberg.org/jgillich/beerouter")
+            connection.set("scm:git:https://codeberg.org/jgillich/beerouter.git")
+            developerConnection.set("scm:git:ssh://git@codeberg.org/jgillich/beerouter.git")
+        }
+    }
+}
+
+extensions.configure<SigningExtension> {
+    val inMemoryKey = project.trimmedGradleProperty("signingInMemoryKey")
+    if (inMemoryKey != null) {
+        useInMemoryPgpKeys(
+            project.trimmedGradleProperty("signingInMemoryKeyId"),
+            inMemoryKey,
+            project.trimmedGradleProperty("signingInMemoryKeyPassword"),
+        )
+    } else {
+        // Gradle's gpg signatory reads signing.gnupg.* project properties verbatim.
+        // Normalize them here so blank values from user gradle.properties do not turn
+        // into a malformed executable like `gpg     `.
+        project.extensions.extraProperties["signing.gnupg.executable"] =
+            project.trimmedGradleProperty("signing.gnupg.executable") ?: "gpg"
+        project.trimmedGradleProperty("signing.gnupg.keyName")?.let {
+            project.extensions.extraProperties["signing.gnupg.keyName"] = it
+        }
+        project.trimmedGradleProperty("signing.gnupg.passphrase")?.let {
+            project.extensions.extraProperties["signing.gnupg.passphrase"] = it
+        }
+        project.trimmedGradleProperty("signing.gnupg.homeDir")?.let {
+            project.extensions.extraProperties["signing.gnupg.homeDir"] = it
+        }
+        project.trimmedGradleProperty("signing.gnupg.optionsFile")?.let {
+            project.extensions.extraProperties["signing.gnupg.optionsFile"] = it
+        }
+        useGpgCmd()
     }
 }

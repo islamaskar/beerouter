@@ -8,9 +8,11 @@
  */
 package dev.skynomads.beerouter.router
 
+import dev.skynomads.beerouter.geo.CheapRuler.distance
+import dev.skynomads.beerouter.geo.CheapRuler.getLonLatToMeterScales
 import dev.skynomads.beerouter.geo.Position
-import dev.skynomads.beerouter.util.CheapRuler.distance
-import dev.skynomads.beerouter.util.CheapRuler.getLonLatToMeterScales
+import dev.skynomads.beerouter.geo.toBeerouter
+import org.maplibre.spatialk.geojson.Position as SpatialKPosition
 import kotlin.math.min
 import kotlin.math.sqrt
 
@@ -22,8 +24,12 @@ public class OsmNogoPolygon(public val isClosed: Boolean) : OsmNodeNamed() {
         this.name = ""
     }
 
-    public fun addVertex(lon: Int, lat: Int) {
-        points.add(Position(lon, lat))
+    public fun addVertex(position: Position) {
+        points.add(position)
+    }
+
+    public fun addVertex(position: SpatialKPosition) {
+        points.add(position.toBeerouter())
     }
 
     /**
@@ -141,15 +147,13 @@ public class OsmNogoPolygon(public val isClosed: Boolean) : OsmNodeNamed() {
      * @param lat1 latitude of start point
      * @return true if segment or any of it's points are 'inside' of polygon
      */
-    public fun intersects(lon0: Int, lat0: Int, lon1: Int, lat1: Int): Boolean {
-        val p0 = Position(lon0, lat0)
-        val p1 = Position(lon1, lat1)
+    public fun intersects(start: Position, end: Position): Boolean {
         val iLast = points.size - 1
         var p2 = points[if (isClosed) iLast else 0]
         for (i in (if (isClosed) 0 else 1)..iLast) {
             val p3 = points[i]
             // does it intersect with at least one of the polygon's segments?
-            if (intersect2D_2Segments(p0, p1, p2, p3) > 0) {
+            if (intersect2D_2Segments(start, end, p2, p3) > 0) {
                 return true
             }
             p2 = p3
@@ -232,15 +236,15 @@ public class OsmNogoPolygon(public val isClosed: Boolean) : OsmNodeNamed() {
      * @return The length, in meters, of the portion of the segment which is
      * included in the polygon.
      */
-    public fun distanceWithinPolygon(lon1: Int, lat1: Int, lon2: Int, lat2: Int): Double {
+    public fun distanceWithinPolygon(start: Position, end: Position): Double {
         var distance = 0.0
 
         // Extremities of the segments
-        val p1 = Position(lon1, lat1)
-        val p2 = Position(lon2, lat2)
+        val p1 = start
+        val p2 = end
 
         var previousIntersectionOnSegment: Position? = null
-        if (isWithin(lon1.toLong(), lat1.toLong())) {
+        if (isWithin(start.longitude.toLong(), start.latitude.toLong())) {
             // Start point of the segment is within the polygon, this is the first
             // "intersection".
             previousIntersectionOnSegment = p1
@@ -259,12 +263,12 @@ public class OsmNogoPolygon(public val isClosed: Boolean) : OsmNodeNamed() {
                 // Intersects with a (closed) polygon edge on a single point
                 // Distance is zero when crossing a polyline.
                 // Let's find this intersection point
-                val xdiffSegment = lon1 - lon2
+                val xdiffSegment = start.longitude - end.longitude
                 val xdiffEdge = edgePoint1.longitude - edgePoint2.longitude
-                val ydiffSegment = lat1 - lat2
+                val ydiffSegment = start.latitude - end.latitude
                 val ydiffEdge = edgePoint1.latitude - edgePoint2.latitude
                 val div = xdiffSegment * ydiffEdge - xdiffEdge * ydiffSegment
-                val dSegment = lon1.toLong() * lat2.toLong() - lon2.toLong() * lat1.toLong()
+                val dSegment = start.longitude.toLong() * end.latitude.toLong() - end.longitude.toLong() * start.latitude.toLong()
                 val dEdge =
                     edgePoint1.longitude.toLong() * edgePoint2.latitude.toLong() - edgePoint2.longitude.toLong() * edgePoint1.latitude.toLong()
                 // Coordinates of the intersection
@@ -280,22 +284,19 @@ public class OsmNogoPolygon(public val isClosed: Boolean) : OsmNodeNamed() {
                 ) {
                     // There was a previous match within the polygon and this part of the
                     // segment is within the polygon.
-                    distance += distance(
-                        previousIntersectionOnSegment.longitude, previousIntersectionOnSegment.latitude,
-                        intersection.longitude, intersection.latitude
-                    )
+                    distance += distance(previousIntersectionOnSegment, intersection)
                 }
                 previousIntersectionOnSegment = intersection
             } else if (intersectsEdge == 2) {
                 // Segment and edge overlaps
                 // FIXME: Could probably be done in a smarter way
                 distance += min(
-                    distance(p1.longitude, p1.latitude, p2.longitude, p2.latitude),
+                    distance(p1, p2),
                     min(
-                        distance(edgePoint1.longitude, edgePoint1.latitude, edgePoint2.longitude, edgePoint2.latitude),
+                        distance(edgePoint1, edgePoint2),
                         min(
-                            distance(p1.longitude, p1.latitude, edgePoint2.longitude, edgePoint2.latitude),
-                            distance(edgePoint1.longitude, edgePoint1.latitude, p2.longitude, p2.latitude)
+                            distance(p1, edgePoint2),
+                            distance(edgePoint1, p2)
                         )
                     )
                 )
@@ -305,14 +306,9 @@ public class OsmNogoPolygon(public val isClosed: Boolean) : OsmNodeNamed() {
             j = i++
         }
 
-        if (previousIntersectionOnSegment != null
-            && isWithin(lon2.toLong(), lat2.toLong())
-        ) {
+        if (previousIntersectionOnSegment != null && isWithin(end.longitude.toLong(), end.latitude.toLong())) {
             // Last point is within the polygon, add the remaining missing distance.
-            distance += distance(
-                previousIntersectionOnSegment.longitude, previousIntersectionOnSegment.latitude,
-                lon2, lat2
-            )
+            distance += distance(previousIntersectionOnSegment, end)
         }
         return distance
     }

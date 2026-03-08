@@ -1,11 +1,12 @@
 package dev.skynomads.beerouter.router
 
+import dev.skynomads.beerouter.geo.CheapRuler.distance
 import dev.skynomads.beerouter.geo.Position
+import dev.skynomads.beerouter.geo.toBeerouter
 import dev.skynomads.beerouter.mapaccess.OsmPos
-import dev.skynomads.beerouter.osm.osmPositionOf
-import dev.skynomads.beerouter.util.CheapRuler.distance
 import kotlinx.io.Sink
 import kotlinx.io.Source
+import org.maplibre.spatialk.geojson.Position as SpatialKPosition
 import kotlin.math.max
 import kotlin.math.roundToInt
 
@@ -71,17 +72,21 @@ public class OsmPathElement protected constructor() : OsmPos {
                 this.origin = origin
             }
 
+        public fun create(position: SpatialKPosition, origin: OsmPathElement?): OsmPathElement =
+            create(position.toBeerouter(), origin)
+
         public fun create(
             ilon: Int,
             ilat: Int,
             selev: Short,
             origin: OsmPathElement?
-        ): OsmPathElement = create(osmPositionOf(ilon, ilat, selev), origin)
+        ): OsmPathElement = create(Position(ilon, ilat, selev.takeUnless { it == Short.MIN_VALUE }), origin)
 
         public fun readFromStream(source: Source): OsmPathElement {
             val lat = source.readInt()
             val lon = source.readInt()
-            val position = osmPositionOf(lon, lat, source.readShort())
+            val encodedAltitude = source.readShort()
+            val position = Position(lon, lat, encodedAltitude.takeUnless { it == Short.MIN_VALUE })
             return OsmPathElement().apply {
                 this.position = position
                 _idFromPos = position.id
