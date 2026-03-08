@@ -4,13 +4,13 @@ import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.sqrt
 
-internal object CheapRuler {
+public object CheapRuler {
     private const val ILATLNG_TO_LATLNG: Double = 1e-6
     private const val KILOMETERS_TO_METERS: Int = 1000
     private const val SCALE_CACHE_LENGTH = 1800
     private const val SCALE_CACHE_INCREMENT = 100000
 
-    const val DEG_TO_RAD: Double = kotlin.math.PI / 180.0
+    public const val DEG_TO_RAD: Double = kotlin.math.PI / 180.0
 
     private val scaleCache: Array<DoubleArray> = Array(SCALE_CACHE_LENGTH) { i ->
         calcKxKyFromILat(i * SCALE_CACHE_INCREMENT + SCALE_CACHE_INCREMENT / 2)
@@ -29,10 +29,11 @@ internal object CheapRuler {
             (111.13209 - 0.56605 * cos2 + 0.0012 * cos4) * ILATLNG_TO_LATLNG * KILOMETERS_TO_METERS,
         )
     }
-    fun getLonLatToMeterScales(ilat: Int): DoubleArray =
+
+    public fun getLonLatToMeterScales(ilat: Int): DoubleArray =
         scaleCache[(ilat / SCALE_CACHE_INCREMENT).coerceIn(0, scaleCache.lastIndex)]
 
-    fun distance(p1: Position, p2: Position): Double =
+    public fun distance(p1: Position, p2: Position): Double =
         run {
             val kxky = getLonLatToMeterScales((p1.latitude + p2.latitude) shr 1)
             val dlon = (p1.longitude - p2.longitude) * kxky[0]
@@ -40,7 +41,7 @@ internal object CheapRuler {
             sqrt(dlat * dlat + dlon * dlon)
         }
 
-    fun destination(origin: Position, distance: Double, angle: Double): Position {
+    public fun destination(origin: Position, distance: Double, angle: Double): Position {
         val lonlat2m = getLonLatToMeterScales(origin.latitude)
         val lon2m = lonlat2m[0]
         val lat2m = lonlat2m[1]

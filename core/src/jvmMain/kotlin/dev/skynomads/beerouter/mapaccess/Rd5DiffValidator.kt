@@ -24,7 +24,9 @@ public object Rd5DiffValidator {
         for (fn in filesNew) {
             val name = fileName(fn)
             if (!name.endsWith(".rd5")) continue
-            if ((SystemFileSystem.metadataOrNull(fn)?.size ?: 0L) < 1024 * 1024) continue // expecting no diff for small files
+            if ((SystemFileSystem.metadataOrNull(fn)?.size
+                    ?: 0L) < 1024 * 1024
+            ) continue // expecting no diff for small files
 
             val basename = name.dropLast(4)
             val fo = resolve(oldDir, name)
@@ -39,7 +41,7 @@ public object Rd5DiffValidator {
             val diffFile = resolve(specificNewDiffs, "$md5.df5")
             val fcmp = resolve(oldDir, "${name}_tmp")
 
-            Rd5DiffTool.recoverFromDelta(fo, diffFile, fcmp, Rd5DiffTool())
+            Rd5DiffTool.recoverFromDelta(fo, diffFile, fcmp)
             val md5Cmp = Rd5DiffManager.getMD5(fcmp)
 
             if (md5Cmp != md5New) {
@@ -50,5 +52,6 @@ public object Rd5DiffValidator {
 
     private fun resolve(base: Path, child: String): Path = Path(base, child)
 
-    private fun fileName(path: Path): String = path.toString().substringAfterLast('/').substringAfterLast('\\')
+    private fun fileName(path: Path): String =
+        path.toString().substringAfterLast('/').substringAfterLast('\\')
 }
