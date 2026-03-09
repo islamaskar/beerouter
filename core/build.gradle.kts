@@ -78,14 +78,14 @@ tasks.withType<Test> {
 val routingTestGeneratedSegmentsDir = rootProject.layout.buildDirectory.dir("routing-test/tuebingen-regbez/segments4")
 
 tasks.named<Test>("jvmTest") {
-    dependsOn(":mapcreator:generateRoutingTestRd5")
+    dependsOn(":generator:generateRoutingTestRd5")
     systemProperty("beerouter.generatedSegmentDir", routingTestGeneratedSegmentsDir.get().asFile.absolutePath)
 }
 
 tasks.register<Test>("routingParityMiniTest") {
     description = "Runs the fast BRouter parity smoke test for pre-commit checks"
     group = "verification"
-    dependsOn(":mapcreator:generateRoutingTestRd5")
+    dependsOn(":generator:generateRoutingTestRd5")
     val jvmTestTask = tasks.named<Test>("jvmTest").get()
     testClassesDirs = jvmTestTask.testClassesDirs
     classpath = jvmTestTask.classpath

@@ -1,9 +1,9 @@
 package dev.skynomads.beerouter.router
 
 import dev.skynomads.beerouter.geo.Position
-import dev.skynomads.beerouter.mapaccess.DefaultMapSource
-import dev.skynomads.beerouter.mapaccess.PoiFinder
-import dev.skynomads.beerouter.mapaccess.PoiQuery
+import dev.skynomads.beerouter.map.DefaultMapSource
+import dev.skynomads.beerouter.map.PoiFinder
+import dev.skynomads.beerouter.map.PoiQuery
 import kotlinx.io.buffered
 import kotlinx.io.files.SystemFileSystem
 import kotlinx.io.readString

@@ -6,9 +6,9 @@
 package dev.skynomads.beerouter.router
 
 import androidx.collection.MutableLongObjectMap
-import dev.skynomads.beerouter.mapaccess.MatchedWaypoint
-import dev.skynomads.beerouter.mapaccess.MatchedWaypoint.Companion.readFromStream
-import dev.skynomads.beerouter.mapaccess.OsmPos
+import dev.skynomads.beerouter.map.MatchedWaypoint
+import dev.skynomads.beerouter.map.MatchedWaypoint.Companion.readFromStream
+import dev.skynomads.beerouter.map.OsmPos
 import dev.skynomads.beerouter.osm.toSElev
 import kotlinx.io.EOFException
 import kotlinx.io.Sink

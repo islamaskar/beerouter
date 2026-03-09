@@ -5,7 +5,7 @@
  */
 package dev.skynomads.beerouter.router
 
-import dev.skynomads.beerouter.mapaccess.OsmLinkHolder
+import dev.skynomads.beerouter.map.OsmLinkHolder
 import kotlin.math.exp
 import kotlin.math.max
 import kotlin.math.min

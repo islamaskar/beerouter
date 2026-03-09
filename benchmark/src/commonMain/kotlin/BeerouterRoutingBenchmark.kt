@@ -1,6 +1,6 @@
 package dev.skynomads.beerouter.benchmark
 
-import dev.skynomads.beerouter.mapaccess.DefaultMapSource
+import dev.skynomads.beerouter.map.DefaultMapSource
 import dev.skynomads.beerouter.router.OsmNodeNamed
 import dev.skynomads.beerouter.router.RoutingContext
 import dev.skynomads.beerouter.router.RoutingEngine

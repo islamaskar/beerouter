@@ -6,7 +6,7 @@
 package dev.skynomads.beerouter.router
 
 import dev.skynomads.beerouter.geo.Position
-import dev.skynomads.beerouter.mapaccess.OsmNode
+import dev.skynomads.beerouter.map.OsmNode
 
 internal class SearchBoundary(n: OsmNode, private val radius: Int, val direction: Int) {
     private enum class Direction(public val id: Int) {

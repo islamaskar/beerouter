@@ -2,14 +2,14 @@ package dev.skynomads.beerouter.router
 
 import dev.skynomads.beerouter.codec.DataBuffers
 import dev.skynomads.beerouter.expressions.BExpressionContextWay
-import dev.skynomads.beerouter.mapaccess.MatchedWaypoint
-import dev.skynomads.beerouter.mapaccess.MatchedWaypoint.Companion.readFromStream
-import dev.skynomads.beerouter.mapaccess.NodesCache
-import dev.skynomads.beerouter.mapaccess.OsmFile
-import dev.skynomads.beerouter.mapaccess.OsmLink
-import dev.skynomads.beerouter.mapaccess.OsmNode
-import dev.skynomads.beerouter.mapaccess.OsmNodesMap
-import dev.skynomads.beerouter.mapaccess.PhysicalFile
+import dev.skynomads.beerouter.map.MatchedWaypoint
+import dev.skynomads.beerouter.map.MatchedWaypoint.Companion.readFromStream
+import dev.skynomads.beerouter.map.NodesCache
+import dev.skynomads.beerouter.map.OsmFile
+import dev.skynomads.beerouter.map.OsmLink
+import dev.skynomads.beerouter.map.OsmNode
+import dev.skynomads.beerouter.map.OsmNodesMap
+import dev.skynomads.beerouter.map.PhysicalFile
 import dev.skynomads.beerouter.geo.Position
 import kotlinx.io.Sink
 import kotlinx.io.Source

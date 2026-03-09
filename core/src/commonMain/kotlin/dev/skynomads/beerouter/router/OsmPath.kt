@@ -9,10 +9,10 @@ import dev.skynomads.beerouter.geo.CheapAngleMeter.turnAngle
 import dev.skynomads.beerouter.geo.CheapRuler.DEG_TO_RAD
 import dev.skynomads.beerouter.geo.Position
 import dev.skynomads.beerouter.geo.coordinateScaleAt
-import dev.skynomads.beerouter.mapaccess.OsmLink
-import dev.skynomads.beerouter.mapaccess.OsmLinkHolder
-import dev.skynomads.beerouter.mapaccess.OsmNode
-import dev.skynomads.beerouter.mapaccess.TurnRestriction.Companion.isTurnForbidden
+import dev.skynomads.beerouter.map.OsmLink
+import dev.skynomads.beerouter.map.OsmLinkHolder
+import dev.skynomads.beerouter.map.OsmNode
+import dev.skynomads.beerouter.map.TurnRestriction.Companion.isTurnForbidden
 import dev.skynomads.beerouter.osm.toSElev
 import kotlin.math.cos
 import kotlin.math.sin

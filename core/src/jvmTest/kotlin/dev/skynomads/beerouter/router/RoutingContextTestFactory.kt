@@ -1,6 +1,6 @@
 package dev.skynomads.beerouter.router
 
-import dev.skynomads.beerouter.mapaccess.DefaultMapSource
+import dev.skynomads.beerouter.map.DefaultMapSource
 import kotlinx.io.buffered
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem

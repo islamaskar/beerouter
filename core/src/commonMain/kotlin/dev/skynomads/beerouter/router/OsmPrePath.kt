@@ -5,8 +5,8 @@
  */
 package dev.skynomads.beerouter.router
 
-import dev.skynomads.beerouter.mapaccess.OsmLink
-import dev.skynomads.beerouter.mapaccess.OsmNode
+import dev.skynomads.beerouter.map.OsmLink
+import dev.skynomads.beerouter.map.OsmNode
 
 public abstract class OsmPrePath {
     protected var sourceNode: OsmNode? = null

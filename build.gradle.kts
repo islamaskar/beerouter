@@ -21,13 +21,13 @@ subprojects {
 }
 
 tasks.register("downloadPlanetOsmPbf") {
-    group = "mapcreator"
-    description = "Download or update the latest OSM planet PBF through the :mapcreator task."
-    dependsOn(":mapcreator:downloadPlanetOsmPbf")
+    group = "generator"
+    description = "Download or update the latest OSM planet PBF through the :generator task."
+    dependsOn(":generator:downloadPlanetOsmPbf")
 }
 
 tasks.register("generatePlanetRd5") {
-    group = "mapcreator"
-    description = "Generate BRouter-compatible rd5 files for a planet PBF through the :mapcreator task."
-    dependsOn(":mapcreator:generatePlanetRd5")
+    group = "generator"
+    description = "Generate BRouter-compatible rd5 files for a planet PBF through the :generator task."
+    dependsOn(":generator:generatePlanetRd5")
 }

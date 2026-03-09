@@ -3,7 +3,7 @@ package dev.skynomads.beerouter.router
 import dev.skynomads.beerouter.geo.CheapRuler.distance
 import dev.skynomads.beerouter.geo.Position
 import dev.skynomads.beerouter.geo.toBeerouter
-import dev.skynomads.beerouter.mapaccess.OsmPos
+import dev.skynomads.beerouter.map.OsmPos
 import kotlinx.io.Sink
 import kotlinx.io.Source
 import org.maplibre.spatialk.geojson.Position as SpatialKPosition

@@ -17,26 +17,26 @@ The JVM tests use the segment file `E5_N45.rd5`, downloaded from
 
 ## Generating rd5 files
 
-Beerouter can generate `.rd5` segment files with the `mapcreator` Gradle tasks.
+Beerouter can generate `.rd5` segment files with the `generator` Gradle tasks.
 
 ### Full planet
 
 ```bash
-./gradlew :mapcreator:generatePlanetRd5
+./gradlew :generator:generatePlanetRd5
 ```
 
 By default this downloads `planet-latest.osm.pbf` from `planet.openstreetmap.org` and writes output
-under `mapcreator/build/planet/`.
+under `generator/build/planet/`.
 
 ### Single country or region
 
 ```bash
-./gradlew :mapcreator:generateCountryRd5 -Pmapcreator.country=europe/germany
+./gradlew :generator:generateCountryRd5 -Pgenerator.country=europe/germany
 ```
 
 This downloads a Geofabrik extract and runs the same rd5 generation pipeline against it.
 
-`mapcreator.country` is the Geofabrik extract path. Examples:
+`generator.country` is the Geofabrik extract path. Examples:
 
 - `europe/germany`
 - `europe/france`
@@ -55,16 +55,16 @@ tourism=information
 Then pass it to either generator task:
 
 ```bash
-./gradlew :mapcreator:generateCountryRd5 \
-  -Pmapcreator.country=europe/germany \
-  -Pmapcreator.poiConfig=/path/to/pois.conf
+./gradlew :generator:generateCountryRd5 \
+  -Pgenerator.country=europe/germany \
+  -Pgenerator.poiConfig=/path/to/pois.conf
 ```
 
 or:
 
 ```bash
-./gradlew :mapcreator:generatePlanetRd5 \
-  -Pmapcreator.poiConfig=/path/to/pois.conf
+./gradlew :generator:generatePlanetRd5 \
+  -Pgenerator.poiConfig=/path/to/pois.conf
 ```
 
 POI-enabled builds generate a lookup file that includes those POI tags and copy it into the output
@@ -79,13 +79,13 @@ Important:
 
 Both generation tasks support these optional properties:
 
-- `-Pmapcreator.outputDir=/path/to/segments4`
-- `-Pmapcreator.workDir=/path/to/work`
-- `-Pmapcreator.profileDir=/path/to/profiles2`
-- `-Pmapcreator.poiConfig=/path/to/pois.conf`
-- `-Pmapcreator.srtmDir=/path/to/srtm_bef`
-- `-Pmapcreator.srtmFallbackDir=/path/to/fallback_srtm_bef`
-- `-Pmapcreator.dbTagInfo=/path/to/db-tags.txt`
+- `-Pgenerator.outputDir=/path/to/segments4`
+- `-Pgenerator.workDir=/path/to/work`
+- `-Pgenerator.profileDir=/path/to/profiles2`
+- `-Pgenerator.poiConfig=/path/to/pois.conf`
+- `-Pgenerator.srtmDir=/path/to/srtm_bef`
+- `-Pgenerator.srtmFallbackDir=/path/to/fallback_srtm_bef`
+- `-Pgenerator.dbTagInfo=/path/to/db-tags.txt`
 
 ## Basic usage
 

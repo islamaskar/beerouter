@@ -11,11 +11,11 @@ import dev.skynomads.beerouter.expressions.BExpressionContextWay
 import dev.skynomads.beerouter.expressions.BExpressionMetaData
 import dev.skynomads.beerouter.geo.Position
 import dev.skynomads.beerouter.geo.coordinateScaleAt
-import dev.skynomads.beerouter.mapaccess.GeometryDecoder
-import dev.skynomads.beerouter.mapaccess.MapSource
-import dev.skynomads.beerouter.mapaccess.MatchedWaypoint
-import dev.skynomads.beerouter.mapaccess.OsmLink
-import dev.skynomads.beerouter.mapaccess.OsmNode
+import dev.skynomads.beerouter.map.GeometryDecoder
+import dev.skynomads.beerouter.map.MapSource
+import dev.skynomads.beerouter.map.MatchedWaypoint
+import dev.skynomads.beerouter.map.OsmLink
+import dev.skynomads.beerouter.map.OsmNode
 import kotlinx.io.Sink
 import kotlinx.io.Source
 import kotlin.math.abs
