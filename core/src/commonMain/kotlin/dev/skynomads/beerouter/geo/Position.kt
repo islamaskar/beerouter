@@ -35,13 +35,6 @@ public data class Position(
         altitude = altitude.toShortAltitude(),
     )
 
-    public fun toSpatialK(): org.maplibre.spatialk.geojson.Position =
-        org.maplibre.spatialk.geojson.Position(
-            longitude = longitude * COORDINATE_SCALE - LONGITUDE_OFFSET,
-            latitude = latitude * COORDINATE_SCALE - LATITUDE_OFFSET,
-            altitude = altitudeMeters,
-        )
-
     public val longitudeDegree: Double
         get() = longitude * COORDINATE_SCALE - LONGITUDE_OFFSET
 
@@ -60,13 +53,8 @@ public data class Position(
                 latitude = latitude,
                 altitude = altitude,
             )
-
-        public fun from(position: org.maplibre.spatialk.geojson.Position): Position =
-            Position(position.longitude, position.latitude, position.altitude)
     }
 }
-
-public fun org.maplibre.spatialk.geojson.Position.toBeerouter(): Position = Position.from(this)
 
 private fun Double?.toShortAltitude(): Short? =
     if (this == null || this.isNaN()) {

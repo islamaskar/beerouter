@@ -11,8 +11,6 @@ package dev.skynomads.beerouter.router
 import dev.skynomads.beerouter.geo.CheapRuler.distance
 import dev.skynomads.beerouter.geo.Position
 import dev.skynomads.beerouter.geo.coordinateScaleAt
-import dev.skynomads.beerouter.geo.toBeerouter
-import org.maplibre.spatialk.geojson.Position as SpatialKPosition
 import kotlin.math.min
 import kotlin.math.sqrt
 
@@ -26,10 +24,6 @@ public class OsmNogoPolygon(public val isClosed: Boolean) : OsmNodeNamed() {
 
     public fun addVertex(position: Position) {
         points.add(position)
-    }
-
-    public fun addVertex(position: SpatialKPosition) {
-        points.add(position.toBeerouter())
     }
 
     /**

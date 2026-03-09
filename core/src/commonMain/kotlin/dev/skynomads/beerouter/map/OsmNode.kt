@@ -4,9 +4,7 @@ import dev.skynomads.beerouter.codec.MicroCache
 import dev.skynomads.beerouter.codec.MicroCache2
 import dev.skynomads.beerouter.geo.CheapRuler.distance
 import dev.skynomads.beerouter.geo.Position
-import dev.skynomads.beerouter.geo.toBeerouter
 import dev.skynomads.beerouter.util.IByteArrayUnifier
-import org.maplibre.spatialk.geojson.Position as SpatialKPosition
 import kotlin.math.max
 import kotlin.math.roundToInt
 
@@ -62,7 +60,6 @@ public open class OsmNode : OsmLink, OsmPos {
         _idFromPos = position.id
     }
 
-    public constructor(position: SpatialKPosition) : this(position.toBeerouter())
 
 
     public fun addLink(link: OsmLink, isReverse: Boolean, tn: OsmNode) {

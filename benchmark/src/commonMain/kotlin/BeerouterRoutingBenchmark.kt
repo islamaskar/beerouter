@@ -17,7 +17,7 @@ import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
 import kotlinx.io.files.SystemTemporaryDirectory
 import kotlinx.io.readString
-import org.maplibre.spatialk.geojson.Position
+import dev.skynomads.beerouter.geo.Position
 
 @State(Scope.Benchmark)
 @Warmup(iterations = 1)

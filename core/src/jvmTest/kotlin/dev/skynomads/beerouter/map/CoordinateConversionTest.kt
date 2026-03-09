@@ -7,7 +7,6 @@ import dev.skynomads.beerouter.osm.toIntLatitude
 import dev.skynomads.beerouter.osm.toIntLongitude
 import dev.skynomads.beerouter.osm.toAltitude
 import dev.skynomads.beerouter.osm.toSElev
-import org.maplibre.spatialk.geojson.Position as SpatialKPosition
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -203,14 +202,6 @@ class CoordinateConversionTest {
         assertEquals(null, Position(12.0, 34.0).altitudeMeters)
     }
 
-    @Test
-    fun testSpatialKPositionWorksWithPublicNodeConstructor() {
-        val node = OsmNode(SpatialKPosition(longitude = 12.345678, latitude = 54.321098, altitude = 123.25))
-
-        assertEquals(12.345678, node.position.longitudeDegree, 1e-6)
-        assertEquals(54.321098, node.position.latitudeDegree, 1e-6)
-        assertEquals(123.25, node.position.altitudeMeters)
-    }
 
     @Test
     fun testAltitudeBoundaryDoesNotCollideWithUnsetSentinel() {
