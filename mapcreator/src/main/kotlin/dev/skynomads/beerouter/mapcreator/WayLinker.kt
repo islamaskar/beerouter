@@ -208,8 +208,16 @@ public class WayLinker : MapCreatorBase(), Runnable {
                     di.close()
                 }
             }
-            nodesList = ArrayList<OsmNodeP>(nodesMap.size).also { values ->
-                nodesMap.forEachValue { values.add(it) }
+            val sortedNodeIds = LongArray(nodesMap.size)
+            var nodeIndex = 0
+            nodesMap.forEachKey { nid ->
+                sortedNodeIds[nodeIndex++] = nid
+            }
+            sortedNodeIds.sort()
+            nodesList = ArrayList<OsmNodeP>(sortedNodeIds.size).also { values ->
+                for (nid in sortedNodeIds) {
+                    values.add(requireNotNull(nodesMap.get(nid)) { "missing node $nid after sorting" })
+                }
             }
         }
         return true
