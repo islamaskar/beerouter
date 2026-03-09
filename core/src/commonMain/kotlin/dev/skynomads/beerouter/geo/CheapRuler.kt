@@ -4,9 +4,9 @@ import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.sqrt
 
-internal data class CoordinateScale(
-    val longitudeToMeters: Double,
-    val latitudeToMeters: Double,
+public data class CoordinateScale(
+    public val longitudeToMeters: Double,
+    public val latitudeToMeters: Double,
 )
 
 private const val ILATLNG_TO_LATLNG: Double = 1e-6
@@ -48,7 +48,7 @@ internal val kxCache: DoubleArray
 internal val kyCache: DoubleArray
     get() = scaleCache.ky
 
-internal fun coordinateScaleAt(ilat: Int): CoordinateScale {
+public fun coordinateScaleAt(ilat: Int): CoordinateScale {
     val idx = cacheIndex(ilat)
     return CoordinateScale(kxCache[idx], kyCache[idx])
 }
