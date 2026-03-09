@@ -6,8 +6,9 @@ RUN apt update && apt install default-jdk ripgrep \
     -y
 
 RUN curl -fsSL https://claude.ai/install.sh | bash && \
-    npm install -g @just-every/code \
-    npm i -g @openai/codex
+    npm install -g @just-every/code && \
+    npm i -g @openai/codex && \
+    npm install -g @google/gemini-cli
 
 RUN curl -fsSL https://github.com/pingdotgg/t3code/releases/download/v0.0.4/T3-Code-0.0.4-x86_64.AppImage \
     -o /tmp/t3code.AppImage && \
