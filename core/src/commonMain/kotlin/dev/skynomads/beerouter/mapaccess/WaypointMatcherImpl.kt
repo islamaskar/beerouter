@@ -1,10 +1,10 @@
 package dev.skynomads.beerouter.mapaccess
 
 import dev.skynomads.beerouter.codec.WaypointMatcher
-import dev.skynomads.beerouter.geo.CheapAngleMeter.getDifferenceFromDirection
-import dev.skynomads.beerouter.geo.CheapAngleMeter.getDirection
-import dev.skynomads.beerouter.geo.CheapRuler.getLonLatToMeterScales
+import dev.skynomads.beerouter.geo.CheapAngleMeter.bearingDifference
+import dev.skynomads.beerouter.geo.CheapAngleMeter.bearing
 import dev.skynomads.beerouter.geo.Position
+import dev.skynomads.beerouter.geo.coordinateScaleAt
 import kotlin.math.abs
 import kotlin.math.sqrt
 
@@ -32,7 +32,8 @@ public class WaypointMatcherImpl(
     private var maxDistance: Double
     public var useDynamicRange: Boolean = false
 
-    private val comparator: Comparator<MatchedWaypoint> = compareBy({ it.radius }, { it.directionDiff })
+    private val comparator: Comparator<MatchedWaypoint> =
+        compareBy({ it.radius }, { it.directionDiff })
 
     init {
         require(waypoints.isNotEmpty()) { "waypoints must not be empty" }
@@ -49,7 +50,7 @@ public class WaypointMatcherImpl(
         for (mwp in waypoints) {
             mwp.radius = effectiveMaxDistance
             if (last != null && mwp.directionToNext == -1.0) {
-                last.directionToNext = getDirection(
+                last.directionToNext = bearing(
                     requireNotNull(last.waypoint).position,
                     requireNotNull(mwp.waypoint).position
                 )
@@ -62,7 +63,7 @@ public class WaypointMatcherImpl(
         lastWaypoint.directionToNext = if (previousIndex < 0) {
             -1.0
         } else {
-            getDirection(
+            bearing(
                 requireNotNull(lastWaypoint.waypoint).position,
                 requireNotNull(waypoints[previousIndex].waypoint).position
             )
@@ -72,9 +73,9 @@ public class WaypointMatcherImpl(
     private fun checkSegment(start: Position, end: Position) {
         // todo: bounding-box pre-filter
 
-        val lonlat2m = getLonLatToMeterScales((start.latitude + end.latitude) shr 1)
-        val dlon2m = lonlat2m[0]
-        val dlat2m = lonlat2m[1]
+        val scale = coordinateScaleAt((start.latitude + end.latitude) shr 1)
+        val dlon2m = scale.longitudeToMeters
+        val dlat2m = scale.latitudeToMeters
 
         val dx = (end.longitude - start.longitude) * dlon2m
         val dy = (end.latitude - start.latitude) * dlat2m
@@ -170,8 +171,8 @@ public class WaypointMatcherImpl(
         if (anyUpdate) {
             for (mwp in waypoints) {
                 if (mwp.hasUpdate) {
-                    var angle = getDirection(startPosition, targetPosition)
-                    var diff = getDifferenceFromDirection(mwp.directionToNext, angle)
+                    var angle = bearing(startPosition, targetPosition)
+                    var diff = bearingDifference(mwp.directionToNext, angle)
 
                     mwp.hasUpdate = false
 
@@ -191,8 +192,8 @@ public class WaypointMatcherImpl(
                     updateWayList(mwp.wayNearest, mw)
 
                     // revers
-                    angle = getDirection(targetPosition, startPosition)
-                    diff = getDifferenceFromDirection(mwp.directionToNext, angle)
+                    angle = bearing(targetPosition, startPosition)
+                    diff = bearingDifference(mwp.directionToNext, angle)
                     mw = MatchedWaypoint()
                     mw.waypoint = OsmNode().also { it.position = waypointPos }
                     mw.crosspoint = OsmNode().also { it.position = crosspointPos }

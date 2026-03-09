@@ -4,55 +4,70 @@ import kotlin.math.cos
 import kotlin.math.sin
 import kotlin.math.sqrt
 
-public object CheapRuler {
-    private const val ILATLNG_TO_LATLNG: Double = 1e-6
-    private const val KILOMETERS_TO_METERS: Int = 1000
-    private const val SCALE_CACHE_LENGTH = 1800
-    private const val SCALE_CACHE_INCREMENT = 100000
+internal data class CoordinateScale(
+    val longitudeToMeters: Double,
+    val latitudeToMeters: Double,
+)
 
-    public const val DEG_TO_RAD: Double = kotlin.math.PI / 180.0
+private const val ILATLNG_TO_LATLNG: Double = 1e-6
+private const val ILATLNG_TO_METERS: Double = ILATLNG_TO_LATLNG * 1000.0
+private const val SCALE_CACHE_LENGTH = 1800
+private const val SCALE_CACHE_LAST = SCALE_CACHE_LENGTH - 1
+private const val SCALE_CACHE_INCREMENT = 100000
 
-    private val scaleCache: Array<DoubleArray> = Array(SCALE_CACHE_LENGTH) { i ->
-        calcKxKyFromILat(i * SCALE_CACHE_INCREMENT + SCALE_CACHE_INCREMENT / 2)
-    }
+private data class ScaleCache(
+    val kx: DoubleArray,
+    val ky: DoubleArray,
+)
 
-    private fun calcKxKyFromILat(ilat: Int): DoubleArray {
-        val lat = DEG_TO_RAD * (ilat * ILATLNG_TO_LATLNG - 90)
+internal fun cacheIndex(ilat: Int): Int =
+    (ilat / SCALE_CACHE_INCREMENT).coerceIn(0, SCALE_CACHE_LAST)
+
+private fun createScaleCache(): ScaleCache {
+    val kxCache = DoubleArray(SCALE_CACHE_LENGTH)
+    val kyCache = DoubleArray(SCALE_CACHE_LENGTH)
+    for (i in 0 until SCALE_CACHE_LENGTH) {
+        val ilat = i * SCALE_CACHE_INCREMENT + SCALE_CACHE_INCREMENT / 2
+        val lat = CheapRuler.DEG_TO_RAD * (ilat * ILATLNG_TO_LATLNG - 90)
         val cos = cos(lat)
         val cos2 = 2 * cos * cos - 1
         val cos3 = 2 * cos * cos2 - cos
         val cos4 = 2 * cos * cos3 - cos2
         val cos5 = 2 * cos * cos4 - cos3
+        kxCache[i] = (111.41513 * cos - 0.09455 * cos3 + 0.00012 * cos5) * ILATLNG_TO_METERS
+        kyCache[i] = (111.13209 - 0.56605 * cos2 + 0.0012 * cos4) * ILATLNG_TO_METERS
+    }
+    return ScaleCache(kxCache, kyCache)
+}
 
-        return doubleArrayOf(
-            (111.41513 * cos - 0.09455 * cos3 + 0.00012 * cos5) * ILATLNG_TO_LATLNG * KILOMETERS_TO_METERS,
-            (111.13209 - 0.56605 * cos2 + 0.0012 * cos4) * ILATLNG_TO_LATLNG * KILOMETERS_TO_METERS,
-        )
+private val scaleCache: ScaleCache by lazy(::createScaleCache)
+
+internal val kxCache: DoubleArray
+    get() = scaleCache.kx
+
+internal val kyCache: DoubleArray
+    get() = scaleCache.ky
+
+internal fun coordinateScaleAt(ilat: Int): CoordinateScale {
+    val idx = cacheIndex(ilat)
+    return CoordinateScale(kxCache[idx], kyCache[idx])
+}
+
+public object CheapRuler {
+    public const val DEG_TO_RAD: Double = kotlin.math.PI / 180.0
+
+    public fun distance(p1: Position, p2: Position): Double {
+        val idx = cacheIndex((p1.latitude + p2.latitude) shr 1)
+        val dlon = (p1.longitude - p2.longitude) * kxCache[idx]
+        val dlat = (p1.latitude - p2.latitude) * kyCache[idx]
+        return sqrt(dlat * dlat + dlon * dlon)
     }
 
-    public fun getLonLatToMeterScales(ilat: Int): DoubleArray =
-        scaleCache[(ilat / SCALE_CACHE_INCREMENT).coerceIn(0, scaleCache.lastIndex)]
-
-    public fun distance(p1: Position, p2: Position): Double =
-        run {
-            val kxky = getLonLatToMeterScales((p1.latitude + p2.latitude) shr 1)
-            val dlon = (p1.longitude - p2.longitude) * kxky[0]
-            val dlat = (p1.latitude - p2.latitude) * kxky[1]
-            sqrt(dlat * dlat + dlon * dlon)
-        }
-
     public fun destination(origin: Position, distance: Double, angle: Double): Position {
-        val lonlat2m = getLonLatToMeterScales(origin.latitude)
-        val lon2m = lonlat2m[0]
-        val lat2m = lonlat2m[1]
-        val adjustedAngle = 90.0 - angle
-        val radAngle = adjustedAngle * kotlin.math.PI / 180.0
-        val st = sin(radAngle)
-        val ct = cos(radAngle)
-
-        val longitude = (0.5 + origin.longitude + ct * distance / lon2m).toInt()
-        val latitude = (0.5 + origin.latitude + st * distance / lat2m).toInt()
-
+        val idx = cacheIndex(origin.latitude)
+        val radAngle = (90.0 - angle) * DEG_TO_RAD
+        val longitude = (0.5 + origin.longitude + cos(radAngle) * distance / kxCache[idx]).toInt()
+        val latitude = (0.5 + origin.latitude + sin(radAngle) * distance / kyCache[idx]).toInt()
         return Position(longitude, latitude)
     }
 }

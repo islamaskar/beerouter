@@ -1,12 +1,12 @@
 package dev.skynomads.beerouter.util
 
-import dev.skynomads.beerouter.geo.CheapAngleMeter.calcAngle
-import dev.skynomads.beerouter.geo.CheapAngleMeter.getAngle
-import dev.skynomads.beerouter.geo.CheapAngleMeter.getDifferenceFromDirection
-import dev.skynomads.beerouter.geo.CheapAngleMeter.getDirection
+import dev.skynomads.beerouter.geo.CheapAngleMeter.turnAngle
+import dev.skynomads.beerouter.geo.CheapAngleMeter.rawBearing
+import dev.skynomads.beerouter.geo.CheapAngleMeter.bearingDifference
+import dev.skynomads.beerouter.geo.CheapAngleMeter.bearing
 import dev.skynomads.beerouter.geo.CheapAngleMeter.normalizeAngle
-import dev.skynomads.beerouter.geo.CheapRuler.getLonLatToMeterScales
 import dev.skynomads.beerouter.geo.Position
+import dev.skynomads.beerouter.geo.coordinateScaleAt
 import dev.skynomads.beerouter.osm.toIntLatitude
 import dev.skynomads.beerouter.osm.toIntLongitude
 import kotlin.math.PI
@@ -17,7 +17,7 @@ import kotlin.test.assertEquals
 
 class CheapAngleMeterTest {
     @Test
-    fun testCalcAngle() {
+    fun testTurnAngle() {
         // Segment ends
         var lon0: Int
         var lat0: Int
@@ -34,7 +34,7 @@ class CheapAngleMeterTest {
         lat2 = 48.818043.toIntLatitude()
         assertEquals(
             -10.0,
-            calcAngle(Position(lon0, lat0), Position(lon1, lat1), Position(lon2, lat2)).angle,
+            turnAngle(Position(lon0, lat0), Position(lon1, lat1), Position(lon2, lat2)).angle,
             0.05 * 10.0
         )
 
@@ -46,7 +46,7 @@ class CheapAngleMeterTest {
         lat2 = lat0
         assertEquals(
             180.0,
-            calcAngle(Position(lon0, lat0), Position(lon1, lat1), Position(lon2, lat2)).angle,
+            turnAngle(Position(lon0, lat0), Position(lon1, lat1), Position(lon2, lat2)).angle,
             0.05 * 180.0
         )
 
@@ -58,7 +58,7 @@ class CheapAngleMeterTest {
         lat2 = 48.817799.toIntLatitude()
         assertEquals(
             100.0,
-            calcAngle(Position(lon0, lat0), Position(lon1, lat1), Position(lon2, lat2)).angle,
+            turnAngle(Position(lon0, lat0), Position(lon1, lat1), Position(lon2, lat2)).angle,
             0.1 * 100.0
         )
 
@@ -70,19 +70,19 @@ class CheapAngleMeterTest {
         lat2 = 48.818264.toIntLatitude()
         assertEquals(
             -100.0,
-            calcAngle(Position(lon0, lat0), Position(lon1, lat1), Position(lon2, lat2)).angle,
+            turnAngle(Position(lon0, lat0), Position(lon1, lat1), Position(lon2, lat2)).angle,
             0.1 * 100.0
         )
     }
 
     @Test
-    fun testCalcAngle2() {
+    fun testTurnAngle2() {
         val lon1 = 8500000
         val lat1 = 49500000
 
-        val lonlat2m = getLonLatToMeterScales(lat1)
-        val lon2m = lonlat2m[0]
-        val lat2m = lonlat2m[1]
+        val scale = coordinateScaleAt(lat1)
+        val lon2m = scale.longitudeToMeters
+        val lat2m = scale.latitudeToMeters
 
         var afrom = -175.0
         while (afrom < 180.0) {
@@ -103,7 +103,7 @@ class CheapAngleMeterTest {
                 var a1 = afrom - ato
                 if (a1 > 180.0) a1 -= 360.0
                 if (a1 < -180.0) a1 += 360.0
-                val angleMeasurement = calcAngle(
+                val angleMeasurement = turnAngle(
                     Position(lon0, lat0),
                     Position(lon1, lat1),
                     Position(lon2, lat2)
@@ -120,7 +120,7 @@ class CheapAngleMeterTest {
     }
 
     @Test
-    fun testGetAngle() {
+    fun testRawBearing() {
         var lon1: Int
         var lat1: Int
         var lon2: Int
@@ -131,44 +131,44 @@ class CheapAngleMeterTest {
         lon2 = 10.0.toIntLongitude()
         lat2 = 60.0.toIntLatitude()
 
-        var angle = getAngle(Position(lon1, lat1), Position(lon2, lat2))
+        var angle = rawBearing(Position(lon1, lat1), Position(lon2, lat2))
         assertEquals(0.0, angle, 0.0)
 
         lon2 = 10.0.toIntLongitude()
         lat2 = 40.0.toIntLatitude()
-        angle = getAngle(Position(lon1, lat1), Position(lon2, lat2))
+        angle = rawBearing(Position(lon1, lat1), Position(lon2, lat2))
         assertEquals(180.0, angle, 0.0)
 
         lon2 = 0.0.toIntLongitude()
         lat2 = 50.0.toIntLatitude()
-        angle = getAngle(Position(lon1, lat1), Position(lon2, lat2))
+        angle = rawBearing(Position(lon1, lat1), Position(lon2, lat2))
         assertEquals(-90.0, angle, 0.0)
 
         lon2 = 20.0.toIntLongitude()
         lat2 = 50.0.toIntLatitude()
-        angle = getAngle(Position(lon1, lat1), Position(lon2, lat2))
+        angle = rawBearing(Position(lon1, lat1), Position(lon2, lat2))
         assertEquals(90.0, angle, 0.0)
 
         lon2 = 20.0.toIntLongitude()
         lat2 = 60.0.toIntLatitude()
-        angle = getAngle(Position(lon1, lat1), Position(lon2, lat2))
+        angle = rawBearing(Position(lon1, lat1), Position(lon2, lat2))
         assertEquals(45.0, angle, 0.0)
 
         lon2 = 0.0.toIntLongitude()
         lat2 = 60.0.toIntLatitude()
-        angle = getAngle(Position(lon1, lat1), Position(lon2, lat2))
+        angle = rawBearing(Position(lon1, lat1), Position(lon2, lat2))
         assertEquals(-45.0, angle, 0.0)
 
         lon1 = 1
         lat1 = 1
         lon2 = 2
         lat2 = 2
-        angle = getAngle(Position(lon1, lat1), Position(lon2, lat2))
+        angle = rawBearing(Position(lon1, lat1), Position(lon2, lat2))
         assertEquals(45.0, angle, 0.0)
     }
 
     @Test
-    fun testGetDirection() {
+    fun testBearing() {
         var lon1: Int
         var lat1: Int
         var lon2: Int
@@ -179,39 +179,39 @@ class CheapAngleMeterTest {
         lon2 = 10.0.toIntLongitude()
         lat2 = 60.0.toIntLatitude()
 
-        var angle = getDirection(Position(lon1, lat1), Position(lon2, lat2))
+        var angle = bearing(Position(lon1, lat1), Position(lon2, lat2))
         assertEquals(0.0, angle, 0.0)
 
         lon2 = 10.0.toIntLongitude()
         lat2 = 40.0.toIntLatitude()
-        angle = getDirection(Position(lon1, lat1), Position(lon2, lat2))
+        angle = bearing(Position(lon1, lat1), Position(lon2, lat2))
         assertEquals(180.0, angle, 0.0)
 
         lon2 = 0.0.toIntLongitude()
         lat2 = 50.0.toIntLatitude()
-        angle = getDirection(Position(lon1, lat1), Position(lon2, lat2))
+        angle = bearing(Position(lon1, lat1), Position(lon2, lat2))
         assertEquals(270.0, angle, 0.0)
 
         lon2 = 20.0.toIntLongitude()
         lat2 = 50.0.toIntLatitude()
-        angle = getDirection(Position(lon1, lat1), Position(lon2, lat2))
+        angle = bearing(Position(lon1, lat1), Position(lon2, lat2))
         assertEquals(90.0, angle, 0.0)
 
         lon2 = 20.0.toIntLongitude()
         lat2 = 60.0.toIntLatitude()
-        angle = getDirection(Position(lon1, lat1), Position(lon2, lat2))
+        angle = bearing(Position(lon1, lat1), Position(lon2, lat2))
         assertEquals(45.0, angle, 0.0)
 
         lon2 = 0.0.toIntLongitude()
         lat2 = 60.0.toIntLatitude()
-        angle = getDirection(Position(lon1, lat1), Position(lon2, lat2))
+        angle = bearing(Position(lon1, lat1), Position(lon2, lat2))
         assertEquals(315.0, angle, 0.0)
 
         lon1 = 1
         lat1 = 1
         lon2 = 2
         lat2 = 2
-        angle = getDirection(Position(lon1, lat1), Position(lon2, lat2))
+        angle = bearing(Position(lon1, lat1), Position(lon2, lat2))
         assertEquals(45.0, angle, 0.0)
     }
 
@@ -234,12 +234,12 @@ class CheapAngleMeterTest {
     }
 
     @Test
-    fun testCalcAngle6() {
+    fun testTurnAngle6() {
         var a1 = 90.0
         var a2 = 180.0
         assertEquals(
             90.0,
-            getDifferenceFromDirection(a1, a2),
+            bearingDifference(a1, a2),
             0.0
         )
 
@@ -247,7 +247,7 @@ class CheapAngleMeterTest {
         a2 = 90.0
         assertEquals(
             90.0,
-            getDifferenceFromDirection(a1, a2),
+            bearingDifference(a1, a2),
             0.0
         )
 
@@ -255,7 +255,7 @@ class CheapAngleMeterTest {
         a2 = 355.0
         assertEquals(
             10.0,
-            getDifferenceFromDirection(a1, a2),
+            bearingDifference(a1, a2),
             0.0
         )
 
@@ -263,7 +263,7 @@ class CheapAngleMeterTest {
         a2 = 5.0
         assertEquals(
             10.0,
-            getDifferenceFromDirection(a1, a2),
+            bearingDifference(a1, a2),
             0.0
         )
 
@@ -271,7 +271,7 @@ class CheapAngleMeterTest {
         a2 = 270.0
         assertEquals(
             180.0,
-            getDifferenceFromDirection(a1, a2),
+            bearingDifference(a1, a2),
             0.0
         )
 
@@ -279,7 +279,7 @@ class CheapAngleMeterTest {
         a2 = 90.0
         assertEquals(
             180.0,
-            getDifferenceFromDirection(a1, a2),
+            bearingDifference(a1, a2),
             0.0
         )
     }

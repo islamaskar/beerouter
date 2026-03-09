@@ -9,8 +9,8 @@
 package dev.skynomads.beerouter.router
 
 import dev.skynomads.beerouter.geo.CheapRuler.distance
-import dev.skynomads.beerouter.geo.CheapRuler.getLonLatToMeterScales
 import dev.skynomads.beerouter.geo.Position
+import dev.skynomads.beerouter.geo.coordinateScaleAt
 import dev.skynomads.beerouter.geo.toBeerouter
 import org.maplibre.spatialk.geojson.Position as SpatialKPosition
 import kotlin.math.min
@@ -79,9 +79,9 @@ public class OsmNogoPolygon(public val isClosed: Boolean) : OsmNodeNamed() {
         var cx = (cxmax + cxmin) / 2 // center of circle
         var cy = (cymax + cymin) / 2
 
-        var lonlat2m = getLonLatToMeterScales(cy) // conversion-factors at the center of circle
-        var dlon2m = lonlat2m[0]
-        var dlat2m = lonlat2m[1]
+        var scale = coordinateScaleAt(cy) // conversion-factors at the center of circle
+        var dlon2m = scale.longitudeToMeters
+        var dlat2m = scale.latitudeToMeters
 
         var rad = 0.0 // radius
 
@@ -118,9 +118,9 @@ public class OsmNogoPolygon(public val isClosed: Boolean) : OsmNodeNamed() {
             cy += (dd * (p.latitude - cy) + 0.5).toInt()
 
             // get new factors at shifted centerpoint
-            lonlat2m = getLonLatToMeterScales(cy)
-            dlon2m = lonlat2m[0]
-            dlat2m = lonlat2m[1]
+            scale = coordinateScaleAt(cy)
+            dlon2m = scale.longitudeToMeters
+            dlat2m = scale.latitudeToMeters
 
             val x1 = (cx - p.longitude) * dlon2m
             val y1 = (cy - p.latitude) * dlat2m

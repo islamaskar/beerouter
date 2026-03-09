@@ -9,8 +9,8 @@ import dev.skynomads.beerouter.expressions.BExpressionContext
 import dev.skynomads.beerouter.expressions.BExpressionContextNode
 import dev.skynomads.beerouter.expressions.BExpressionContextWay
 import dev.skynomads.beerouter.expressions.BExpressionMetaData
-import dev.skynomads.beerouter.geo.CheapRuler.getLonLatToMeterScales
 import dev.skynomads.beerouter.geo.Position
+import dev.skynomads.beerouter.geo.coordinateScaleAt
 import dev.skynomads.beerouter.mapaccess.GeometryDecoder
 import dev.skynomads.beerouter.mapaccess.MapAccessFileSystem
 import dev.skynomads.beerouter.mapaccess.MatchedWaypoint
@@ -454,9 +454,9 @@ public class RoutingContext(
         var lat1 = start.latitude
         var lon2 = end.longitude
         var lat2 = end.latitude
-        val lonlat2m = getLonLatToMeterScales((start.latitude + end.latitude) shr 1)
-        val dlon2m = lonlat2m[0]
-        val dlat2m = lonlat2m[1]
+        val scale = coordinateScaleAt((start.latitude + end.latitude) shr 1)
+        val dlon2m = scale.longitudeToMeters
+        val dlat2m = scale.latitudeToMeters
         var dx = (lon2 - lon1) * dlon2m
         var dy = (lat2 - lat1) * dlat2m
         var d = sqrt(dy * dy + dx * dx)

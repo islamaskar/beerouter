@@ -5,7 +5,7 @@
  */
 package dev.skynomads.beerouter.router
 
-import dev.skynomads.beerouter.geo.CheapAngleMeter.calcAngle
+import dev.skynomads.beerouter.geo.CheapAngleMeter.turnAngle
 
 internal class KinematicPrePath : OsmPrePath() {
     var angle: Double = 0.0
@@ -41,7 +41,7 @@ internal class KinematicPrePath : OsmPrePath() {
         }
         val targetPosition = transferNode?.position ?: currentTargetNode.position
 
-        angle = calcAngle(previousPosition, sourcePosition, targetPosition).angle
+        angle = turnAngle(previousPosition, sourcePosition, targetPosition).angle
         priorityclassifier = rc.way.priorityClassifier.toInt()
         classifiermask = rc.way.classifierMask.toInt()
     }

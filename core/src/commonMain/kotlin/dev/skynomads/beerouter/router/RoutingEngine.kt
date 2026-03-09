@@ -1,9 +1,9 @@
 package dev.skynomads.beerouter.router
 
 import androidx.collection.MutableLongObjectMap
-import dev.skynomads.beerouter.geo.CheapAngleMeter.calcAngle
-import dev.skynomads.beerouter.geo.CheapAngleMeter.getDifferenceFromDirection
-import dev.skynomads.beerouter.geo.CheapAngleMeter.getDirection
+import dev.skynomads.beerouter.geo.CheapAngleMeter.turnAngle
+import dev.skynomads.beerouter.geo.CheapAngleMeter.bearingDifference
+import dev.skynomads.beerouter.geo.CheapAngleMeter.bearing
 import dev.skynomads.beerouter.geo.CheapRuler.destination
 import dev.skynomads.beerouter.geo.CheapRuler.distance
 import dev.skynomads.beerouter.geo.Position
@@ -204,8 +204,8 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
             name = wpt1.name
             position = position.copy(
                 altitude =
-                (if (minIdx != -1) (minSElev + diff.toInt()).toShort() else Short.MIN_VALUE)
-                    .takeUnless { it == Short.MIN_VALUE }
+                    (if (minIdx != -1) (minSElev + diff.toInt()).toShort() else Short.MIN_VALUE)
+                        .takeUnless { it == Short.MIN_VALUE }
             )
             nodeDescription = start1.firstlink?.descriptionBitmap
         }
@@ -321,7 +321,8 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
 
             val start1 = re.nodesCache!!.getStartNode(listStart[0].node1!!.idFromPos)
 
-            val elev = start1?.position?.altitudeMeters ?: 0.0 // listOne.get(0).crosspoint.getElev();
+            val elev =
+                start1?.position?.altitudeMeters ?: 0.0 // listOne.get(0).crosspoint.getElev();
 
             var maxlon = Int.MIN_VALUE
             var minlon = Int.MAX_VALUE
@@ -468,9 +469,11 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
                     distRest -= tmpdist
                     if (hasInclineTags) incline = tmpincline
                     selev = (selev + (tmpdist / 100.0 * incline))
-                    val encodedElevation = selev.toInt().toShort().takeUnless { it == Short.MIN_VALUE }
+                    val encodedElevation =
+                        selev.toInt().toShort().takeUnless { it == Short.MIN_VALUE }
                     tmp.position = tmp.position.copy(altitude = encodedElevation)
-                    tmp.message!!.position = tmp.message!!.position.copy(altitude = encodedElevation)
+                    tmp.message!!.position =
+                        tmp.message!!.position.copy(altitude = encodedElevation)
                     tmpPt = tmp
                 }
                 dist = 0
@@ -485,7 +488,8 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
                 // fill at end
                 startIdx = idx
                 track.nodes.subList(startIdx, track.nodes.size).forEach {
-                    it.position = it.position.copy(altitude = lastElev.takeUnless { selev -> selev == Short.MIN_VALUE })
+                    it.position =
+                        it.position.copy(altitude = lastElev.takeUnless { selev -> selev == Short.MIN_VALUE })
                 }
             } else if (toSElev(n.position.altitude) == Short.MIN_VALUE) {
                 if (lastPt != null) dist += n.calcDistance(lastPt)
@@ -975,7 +979,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
                 val p0 = tt.nodes[ourSize - 2].position
                 val p1 = startWp.crosspoint!!.position
                 val p2 = node.position
-                calcAngle(p0, p1, p2)
+                turnAngle(p0, p1, p2)
                 val dist = node.calcDistance(startWp.crosspoint!!)
                 if (dist < routingContext.global.waypointCatchingRange) return false
             }
@@ -1018,10 +1022,10 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
                     tmpStart = t.nodes[0]
                 } else {
                     val dirback =
-                        getDirection(tmpStart!!.position, tmpback.position)
+                        bearing(tmpStart!!.position, tmpback.position)
                     val dirfore =
-                        getDirection(tmpStart.position, tmpfore.position)
-                    val dirdiff = getDifferenceFromDirection(dirback, dirfore)
+                        bearing(tmpStart.position, tmpfore.position)
+                    val dirdiff = bearingDifference(dirback, dirfore)
                     // walking wrong direction
                     if (dirdiff > 60 && !bBackRoundAbout && !bForeRoundAbout) break
                 }
@@ -1210,7 +1214,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
                     val p0 = t.nodes[i - 2].position
                     val p1 = t.nodes[i - 1].position
                     val p2 = t.nodes[i].position
-                    angle = calcAngle(p0, p1, p2).angle
+                    angle = turnAngle(p0, p1, p2).angle
                     nLast = t.nodes[i - 1]
                     dist = nLast.calcDistance(n)
                 }
@@ -1636,7 +1640,8 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
             guideTrack != null && TurnInstructionMode.supportsGuideTrackDetours(routingContext.global.turnInstructionMode)
 
         val currentGuideTrack = guideTrack
-        var maxTotalCost = if (currentGuideTrack != null) currentGuideTrack.cost + 5000 else 1000000000
+        var maxTotalCost =
+            if (currentGuideTrack != null) currentGuideTrack.cost + 5000 else 1000000000
         var firstMatchCost = 1000000000
 
         if (costCuttingTrack != null && costCuttingTrack.cost > 0) {
@@ -1966,7 +1971,9 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
                             currentGuideTrack != null
                         )
                         if (testPath.cost >= 0 && (bestPath == null || testPath.cost < bestPath.cost) &&
-                            (requireNotNull(testPath.sourceNode).idFromPos != requireNotNull(testPath.targetNode).idFromPos)
+                            (requireNotNull(testPath.sourceNode).idFromPos != requireNotNull(
+                                testPath.targetNode
+                            ).idFromPos)
                         ) {
                             bestPath = testPath
                         }

@@ -6,7 +6,7 @@ package dev.skynomads.beerouter.router
 import dev.skynomads.beerouter.router.OsmNogoPolygon.Companion.isOnLine
 import dev.skynomads.beerouter.geo.Position
 import dev.skynomads.beerouter.geo.CheapRuler.distance
-import dev.skynomads.beerouter.geo.CheapRuler.getLonLatToMeterScales
+import dev.skynomads.beerouter.geo.coordinateScaleAt
 import kotlin.math.sqrt
 import kotlin.test.BeforeTest
 import kotlin.test.Test
@@ -21,9 +21,9 @@ class OsmNogoPolygonTest {
 
         val polygonLon = polygon!!.position.longitude
         val polygonLat = polygon!!.position.latitude
-        val lonlat2m = getLonLatToMeterScales(polygonLat)
-        val dlon2m = lonlat2m[0]
-        val dlat2m = lonlat2m[1]
+        val scale = coordinateScaleAt(polygonLat)
+        val dlon2m = scale.longitudeToMeters
+        val dlat2m = scale.latitudeToMeters
 
         var r: Double = polygon!!.radius
         for (i in lons.indices) {

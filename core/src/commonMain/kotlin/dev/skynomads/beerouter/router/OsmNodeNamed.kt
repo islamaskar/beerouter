@@ -8,8 +8,8 @@ package dev.skynomads.beerouter.router
 import dev.skynomads.beerouter.mapaccess.MatchedWaypoint
 import dev.skynomads.beerouter.mapaccess.OsmNode
 import dev.skynomads.beerouter.geo.CheapRuler.distance
-import dev.skynomads.beerouter.geo.CheapRuler.getLonLatToMeterScales
 import dev.skynomads.beerouter.geo.Position
+import dev.skynomads.beerouter.geo.coordinateScaleAt
 import dev.skynomads.beerouter.geo.toBeerouter
 import org.maplibre.spatialk.geojson.Position as SpatialKPosition
 import kotlin.math.sqrt
@@ -43,7 +43,7 @@ public open class OsmNodeNamed : OsmNode {
         var currentLat1 = start.latitude
         var currentLon2 = end.longitude
         var currentLat2 = end.latitude
-        val lonlat2m = getLonLatToMeterScales((currentLat1 + currentLat2) shr 1)
+        val scale = coordinateScaleAt((currentLat1 + currentLat2) shr 1)
 
         var isFirstPointWithinCircle = distance(Position(currentLon1, currentLat1), center) < radius
         var isLastPointWithinCircle = distance(Position(currentLon2, currentLat2), center) < radius
@@ -72,8 +72,8 @@ public open class OsmNodeNamed : OsmNode {
         // Distance between the initial point and projection of center of
         // the circle on the current segment.
         val initialToProject: Double =
-            (((currentLon2 - currentLon1) * (center.longitude - currentLon1) * lonlat2m[0] * lonlat2m[0]
-                    + (currentLat2 - currentLat1) * (center.latitude - currentLat1) * lonlat2m[1] * lonlat2m[1]
+            (((currentLon2 - currentLon1) * (center.longitude - currentLon1) * scale.longitudeToMeters * scale.longitudeToMeters
+                    + (currentLat2 - currentLat1) * (center.latitude - currentLat1) * scale.latitudeToMeters * scale.latitudeToMeters
                     ) / totalSegmentLength)
         // Distance between the initial point and the center of the circle.
         val initialToCenter = distance(center, Position(currentLon1, currentLat1))

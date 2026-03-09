@@ -5,11 +5,10 @@
  */
 package dev.skynomads.beerouter.router
 
-import dev.skynomads.beerouter.geo.CheapAngleMeter.calcAngle
+import dev.skynomads.beerouter.geo.CheapAngleMeter.turnAngle
 import dev.skynomads.beerouter.geo.CheapRuler.DEG_TO_RAD
-import dev.skynomads.beerouter.geo.CheapRuler.distance
-import dev.skynomads.beerouter.geo.CheapRuler.getLonLatToMeterScales
 import dev.skynomads.beerouter.geo.Position
+import dev.skynomads.beerouter.geo.coordinateScaleAt
 import dev.skynomads.beerouter.mapaccess.OsmLink
 import dev.skynomads.beerouter.mapaccess.OsmLinkHolder
 import dev.skynomads.beerouter.mapaccess.OsmNode
@@ -315,16 +314,16 @@ public abstract class OsmPath : OsmLinkHolder {
             if (isStartpoint) {
                 if (rc.startDirectionValid) {
                     val dir = rc.startDirection!! * DEG_TO_RAD
-                    val lonlat2m = getLonLatToMeterScales(lat1)
+                    val scale = coordinateScaleAt(lat1)
                     previousPosition = Position(
-                        lon1 - (1000.0 * sin(dir) / lonlat2m[0]).toInt(),
-                        lat1 - (1000.0 * cos(dir) / lonlat2m[1]).toInt()
+                        lon1 - (1000.0 * sin(dir) / scale.longitudeToMeters).toInt(),
+                        lat1 - (1000.0 * cos(dir) / scale.latitudeToMeters).toInt()
                     )
                 } else {
                     previousPosition = Position(lon1 - (lon2 - lon1), lat1 - (lat2 - lat1))
                 }
             }
-            val angleMeasurement = calcAngle(
+            val angleMeasurement = turnAngle(
                 requireNotNull(previousPosition),
                 currentPosition,
                 nextPosition
