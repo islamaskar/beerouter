@@ -125,6 +125,9 @@ public class MicroCache2 : MicroCache {
             writeShort(selev.toShort().toInt())
             val nodeTags = nodeTagCoder.decodeTagValueSet()
             writeVarBytes(nodeTags?.data)
+            if (nodeTags != null) {
+                validBits[n shr 5] = validBits[n shr 5] or (1 shl n)
+            }
 
             val links = bc.decodeNoisyNumber(1)
             //            if (MicroCache.debug) println("***   decoding node " + ilon + "/" + ilat + " with links=" + links)

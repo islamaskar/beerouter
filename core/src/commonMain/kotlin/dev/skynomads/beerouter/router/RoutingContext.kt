@@ -12,7 +12,7 @@ import dev.skynomads.beerouter.expressions.BExpressionMetaData
 import dev.skynomads.beerouter.geo.Position
 import dev.skynomads.beerouter.geo.coordinateScaleAt
 import dev.skynomads.beerouter.mapaccess.GeometryDecoder
-import dev.skynomads.beerouter.mapaccess.MapAccessFileSystem
+import dev.skynomads.beerouter.mapaccess.MapSource
 import dev.skynomads.beerouter.mapaccess.MatchedWaypoint
 import dev.skynomads.beerouter.mapaccess.OsmLink
 import dev.skynomads.beerouter.mapaccess.OsmNode
@@ -26,12 +26,12 @@ import kotlin.math.sqrt
 public class RoutingContext(
     private val profileContent: String,
     private val lookupContent: String,
-    public val mapAccessFileSystem: MapAccessFileSystem
+    public val mapSource: MapSource
 ) {
     public constructor(template: RoutingContext) : this(
         profileContent = template.profileContent,
         lookupContent = template.lookupContent,
-        mapAccessFileSystem = template.mapAccessFileSystem
+        mapSource = template.mapSource
     ) {
         rawTrackSourceFactory = template.rawTrackSourceFactory
         rawAreaSourceFactory = template.rawAreaSourceFactory

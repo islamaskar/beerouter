@@ -152,7 +152,9 @@ public class WayLinker : MapCreatorBase(), Runnable {
 
     override fun run() {
         try {
-            WayIterator(this, true, !isSlave).processDir(wayTilesIn, ".wt5")
+            // Both worker threads read from the same directory with different size ordering.
+            // Do not delete input tiles during iteration or one thread can race the other.
+            WayIterator(this, false, !isSlave).processDir(wayTilesIn, ".wt5")
         } catch (e: Exception) {
             throw RuntimeException(e)
         } finally {
@@ -219,12 +221,17 @@ public class WayLinker : MapCreatorBase(), Runnable {
                     values.add(requireNotNull(nodesMap.get(nid)) { "missing node $nid after sorting" })
                 }
             }
+            return true
         }
-        return true
+        return false
     }
 
     override fun nextNode(data: NodeData) {
-        val node = if (data.description == null) OsmNodeP() else OsmNodePT(data.description)
+        val node = if (data.description == null) {
+            OsmNodeP()
+        } else {
+            OsmNodePT(data.description, data.retainWithoutLinks)
+        }
         node.ilon = data.ilon
         node.ilat = data.ilat
         node.selev = data.selev
@@ -320,7 +327,7 @@ public class WayLinker : MapCreatorBase(), Runnable {
         val maxLat = minLat + 5_000_000
 
         for (node in localNodesList) {
-            if (node.getFirstLink() == null || node.isTransferNode()) continue
+            if ((node.getFirstLink() == null && !node.retainWithoutLinks()) || node.isTransferNode()) continue
             node.checkDuplicateTargets()
         }
 
@@ -328,7 +335,7 @@ public class WayLinker : MapCreatorBase(), Runnable {
         val nLatSegs = (maxLat - minLat) / 1_000_000
         val seglists: Array<MutableList<OsmNodeP>?> = arrayOfNulls(nLonSegs * nLatSegs)
         for (node in localNodesList) {
-            if (node.getFirstLink() == null || node.isTransferNode()) continue
+            if ((node.getFirstLink() == null && !node.retainWithoutLinks()) || node.isTransferNode()) continue
             if (node.ilon < minLon || node.ilon >= maxLon || node.ilat < minLat || node.ilat >= maxLat) continue
             val lonIdx = (node.ilon - minLon) / 1_000_000
             val latIdx = (node.ilat - minLat) / 1_000_000

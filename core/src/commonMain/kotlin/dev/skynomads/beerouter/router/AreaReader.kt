@@ -103,7 +103,7 @@ public class AreaReader {
         val maxmem = rc.memoryclass * 1024L * 1024L // in MB
         val nodesCache =
             NodesCache(
-                rc.mapAccessFileSystem,
+                rc.mapSource,
                 expctxWay,
                 rc.global.forceSecondaryData,
                 maxmem,
@@ -124,7 +124,7 @@ public class AreaReader {
                     currentDataBuffers = DataBuffers()
                     currentPhysicalFile = PhysicalFile(
                         fileName,
-                        rc.mapAccessFileSystem,
+                        rc.mapSource,
                         currentDataBuffers,
                         -1,
                         -1

@@ -39,6 +39,9 @@ tasks.withType<Test> {
 }
 
 val mainSourceSet = the<SourceSetContainer>()["main"]
+val routingTestExtract = "europe/germany/baden-wuerttemberg/tuebingen-regbez-latest"
+val routingTestExtractPath = normalizedExtractPath(routingTestExtract)
+val routingTestExtractSlug = geofabrikExtractSlug(routingTestExtractPath)
 
 fun resolveConfiguredFile(path: String): File {
     val candidate = File(path)
@@ -49,6 +52,56 @@ fun configuredFileProperty(name: String, defaultPath: String): File =
     resolveConfiguredFile(providers.gradleProperty(name).orNull ?: defaultPath)
 
 fun configuredStringProperty(name: String): String? = providers.gradleProperty(name).orNull
+
+fun normalizedExtractPath(rawExtract: String): String =
+    rawExtract
+        .trim()
+        .removePrefix("/")
+        .removeSuffix("/")
+        .removeSuffix(".osm.pbf")
+        .removeSuffix(".html")
+        .removeSuffix("-latest")
+
+fun geofabrikExtractPathProperty(name: String): String {
+    val rawValue = configuredStringProperty(name)
+        ?: error("Missing required Gradle property -P$name=<geofabrik-path>, for example -P$name=europe/germany")
+    val extractPath = normalizedExtractPath(rawValue)
+    require(extractPath.isNotEmpty() && !extractPath.contains("..")) {
+        "Invalid Geofabrik extract path for $name: $rawValue"
+    }
+    return extractPath
+}
+
+fun geofabrikExtractSlug(extractPath: String): String = extractPath.substringAfterLast('/')
+
+fun httpDownloadIfNeeded(targetFile: File, sourceUri: URI) {
+    targetFile.parentFile.mkdirs()
+    val connection = sourceUri.toURL().openConnection()
+    if (targetFile.exists()) {
+        connection.ifModifiedSince = targetFile.lastModified()
+    }
+    if (connection is HttpURLConnection) {
+        connection.instanceFollowRedirects = true
+    }
+    connection.connect()
+
+    if (connection is HttpURLConnection && connection.responseCode == HttpURLConnection.HTTP_NOT_MODIFIED) {
+        logger.lifecycle("Source file is current: ${targetFile.absolutePath}")
+        return
+    }
+
+    val tempFile = File(targetFile.parentFile, "${targetFile.name}.download")
+    connection.getInputStream().use { input ->
+        tempFile.outputStream().use { output ->
+            input.copyTo(output)
+        }
+    }
+    Files.move(tempFile.toPath(), targetFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
+    if (connection.lastModified > 0L) {
+        targetFile.setLastModified(connection.lastModified)
+    }
+    logger.lifecycle("Downloaded ${sourceUri} to ${targetFile.absolutePath}")
+}
 
 fun findExecutable(name: String): File? {
     val pathEntries = System.getenv("PATH")
@@ -116,31 +169,42 @@ tasks.register("downloadPlanetOsmPbf") {
             return@doLast
         }
 
-        val connection = planetUri.toURL().openConnection()
-        if (planetFile.exists()) {
-            connection.ifModifiedSince = planetFile.lastModified()
-        }
-        if (connection is HttpURLConnection) {
-            connection.instanceFollowRedirects = true
-        }
-        connection.connect()
+        httpDownloadIfNeeded(planetFile, planetUri)
+    }
+}
 
-        if (connection is HttpURLConnection && connection.responseCode == HttpURLConnection.HTTP_NOT_MODIFIED) {
-            logger.lifecycle("Planet file is current: ${planetFile.absolutePath}")
-            return@doLast
-        }
+tasks.register("downloadCountryOsmPbf") {
+    group = "mapcreator"
+    description = "Download a Geofabrik country extract as <extract>-latest.osm.pbf."
 
-        val tempFile = File(planetFile.parentFile, "${planetFile.name}.download")
-        connection.getInputStream().use { input ->
-            tempFile.outputStream().use { output ->
-                input.copyTo(output)
-            }
-        }
-        Files.move(tempFile.toPath(), planetFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
-        if (connection.lastModified > 0L) {
-            planetFile.setLastModified(connection.lastModified)
-        }
-        logger.lifecycle("Downloaded planet file to ${planetFile.absolutePath}")
+    doLast {
+        val extractPath = geofabrikExtractPathProperty("mapcreator.country")
+        val extractSlug = geofabrikExtractSlug(extractPath)
+        val countryFile = configuredFileProperty(
+            "mapcreator.countryFile",
+            layout.buildDirectory.file("country/$extractSlug/${extractSlug}-latest.osm.pbf").get().asFile.absolutePath,
+        )
+        val countryUri = URI(
+            configuredStringProperty("mapcreator.countryUrl")
+                ?: "https://download.geofabrik.de/$extractPath-latest.osm.pbf",
+        )
+        httpDownloadIfNeeded(countryFile, countryUri)
+    }
+}
+
+tasks.register("downloadRoutingTestCountryOsmPbf") {
+    group = "mapcreator"
+    description = "Download the fixed Geofabrik extract used by routing parity tests."
+
+    val defaultCountryFile = rootProject.layout.buildDirectory.file(
+        "routing-test/$routingTestExtractSlug/${routingTestExtractSlug}-latest.osm.pbf",
+    )
+    outputs.file(defaultCountryFile)
+
+    doLast {
+        val countryFile = resolveConfiguredFile(defaultCountryFile.get().asFile.absolutePath)
+        val countryUri = URI("https://download.geofabrik.de/$routingTestExtractPath-latest.osm.pbf")
+        httpDownloadIfNeeded(countryFile, countryUri)
     }
 }
 
@@ -183,6 +247,7 @@ tasks.register<JavaExec>("generatePlanetRd5") {
         val srtmDir = configuredStringProperty("mapcreator.srtmDir")?.let(::resolveConfiguredFile)
         val srtmFallbackDir = configuredStringProperty("mapcreator.srtmFallbackDir")?.let(::resolveConfiguredFile)
         val dbTagInfo = configuredStringProperty("mapcreator.dbTagInfo").orEmpty()
+        val poiConfig = configuredStringProperty("mapcreator.poiConfig")?.let(::resolveConfiguredFile)
 
         args = listOf(
             planetFile.absolutePath,
@@ -192,6 +257,7 @@ tasks.register<JavaExec>("generatePlanetRd5") {
             srtmDir?.absolutePath.orEmpty(),
             srtmFallbackDir?.absolutePath.orEmpty(),
             dbTagInfo,
+            poiConfig?.absolutePath.orEmpty(),
         )
 
         logger.lifecycle(
@@ -202,5 +268,107 @@ tasks.register<JavaExec>("generatePlanetRd5") {
                 "No SRTM directory configured. This matches upstream BRouter behavior: rd5 generation will succeed without elevation data.",
             )
         }
+    }
+}
+
+tasks.register<JavaExec>("generateCountryRd5") {
+    group = "mapcreator"
+    description = "Download a Geofabrik country extract and generate rd5 files for that single extract."
+
+    dependsOn("classes", "downloadCountryOsmPbf")
+
+    classpath = mainSourceSet.runtimeClasspath
+    mainClass.set("dev.skynomads.beerouter.mapcreator.PlanetRd5Generator")
+
+    systemProperty("avoidMapPolling", "true")
+    systemProperty(
+        "deletetmpfiles",
+        providers.gradleProperty("mapcreator.deleteTmpFiles").orElse("true").get(),
+    )
+
+    doFirst {
+        val extractPath = geofabrikExtractPathProperty("mapcreator.country")
+        val extractSlug = geofabrikExtractSlug(extractPath)
+        val countryFile = configuredFileProperty(
+            "mapcreator.countryFile",
+            layout.buildDirectory.file("country/$extractSlug/${extractSlug}-latest.osm.pbf").get().asFile.absolutePath,
+        )
+        val workDir = configuredFileProperty(
+            "mapcreator.workDir",
+            layout.buildDirectory.dir("country/$extractSlug/work").get().asFile.absolutePath,
+        )
+        val outputDir = configuredFileProperty(
+            "mapcreator.outputDir",
+            layout.buildDirectory.dir("country/$extractSlug/segments4").get().asFile.absolutePath,
+        )
+        val profileDir = configuredFileProperty(
+            "mapcreator.profileDir",
+            rootProject.file("misc/profiles2").absolutePath,
+        )
+        val srtmDir = configuredStringProperty("mapcreator.srtmDir")?.let(::resolveConfiguredFile)
+        val srtmFallbackDir = configuredStringProperty("mapcreator.srtmFallbackDir")?.let(::resolveConfiguredFile)
+        val dbTagInfo = configuredStringProperty("mapcreator.dbTagInfo").orEmpty()
+        val poiConfig = configuredStringProperty("mapcreator.poiConfig")?.let(::resolveConfiguredFile)
+
+        args = listOf(
+            countryFile.absolutePath,
+            workDir.absolutePath,
+            outputDir.absolutePath,
+            profileDir.absolutePath,
+            srtmDir?.absolutePath.orEmpty(),
+            srtmFallbackDir?.absolutePath.orEmpty(),
+            dbTagInfo,
+            poiConfig?.absolutePath.orEmpty(),
+        )
+
+        logger.lifecycle(
+            "Generating country rd5 with extract=$extractPath, source=${countryFile.absolutePath}, workDir=${workDir.absolutePath}, outputDir=${outputDir.absolutePath}",
+        )
+        if (srtmDir == null) {
+            logger.lifecycle(
+                "No SRTM directory configured. This matches upstream BRouter behavior: rd5 generation will succeed without elevation data.",
+            )
+        }
+    }
+}
+
+tasks.register<JavaExec>("generateRoutingTestRd5") {
+    group = "mapcreator"
+    description = "Generate the fixed Beerouter rd5 extract used by routing parity tests."
+
+    dependsOn("classes", "downloadRoutingTestCountryOsmPbf")
+
+    classpath = mainSourceSet.runtimeClasspath
+    mainClass.set("dev.skynomads.beerouter.mapcreator.PlanetRd5Generator")
+
+    val defaultCountryFile = rootProject.layout.buildDirectory.file(
+        "routing-test/$routingTestExtractSlug/${routingTestExtractSlug}-latest.osm.pbf",
+    )
+    val defaultWorkDir = rootProject.layout.buildDirectory.dir("routing-test/$routingTestExtractSlug/work")
+    val defaultOutputDir = rootProject.layout.buildDirectory.dir("routing-test/$routingTestExtractSlug/segments4")
+    val defaultPoiConfig = rootProject.file("pois.conf")
+
+    inputs.file(defaultCountryFile)
+    inputs.file(defaultPoiConfig)
+    outputs.dir(defaultOutputDir)
+
+    systemProperty("avoidMapPolling", "true")
+    systemProperty("deletetmpfiles", "true")
+
+    doFirst {
+        val profileDir = rootProject.file("misc/profiles2")
+        args = listOf(
+            defaultCountryFile.get().asFile.absolutePath,
+            defaultWorkDir.get().asFile.absolutePath,
+            defaultOutputDir.get().asFile.absolutePath,
+            profileDir.absolutePath,
+            "",
+            "",
+            "",
+            defaultPoiConfig.absolutePath,
+        )
+        logger.lifecycle(
+            "Generating routing test rd5 from Geofabrik extract $routingTestExtractPath into ${defaultOutputDir.get().asFile.absolutePath} with POIs from ${defaultPoiConfig.absolutePath}",
+        )
     }
 }

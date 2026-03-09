@@ -41,6 +41,7 @@ public open class OsmNodeP : OsmLinkP() {
 
     public open fun getNodeDecsription(): ByteArray? = null
     public open fun getFirstRestriction(): RestrictionData? = null
+    public open fun retainWithoutLinks(): Boolean = false
 
     public fun writeNodeData(mc: MicroCache) {
         val valid = when (mc) {
@@ -189,7 +190,7 @@ public open class OsmNodeP : OsmLinkP() {
             mc.writeModeAndDesc(true, null)
             mc.injectSize(sizeoffset)
         }
-        return hasLinks
+        return hasLinks || retainWithoutLinks()
     }
 
     public fun toString2(): String = "${ilon - 180000000}_${ilat - 90000000}_${selev / 4}"

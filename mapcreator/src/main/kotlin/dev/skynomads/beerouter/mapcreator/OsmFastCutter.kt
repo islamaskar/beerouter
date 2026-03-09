@@ -17,16 +17,27 @@ public object OsmFastCutter : MapCreatorBase() {
         profileCheck: File,
         mapFile: File?,
         dbTagInfo: String?,
+        poiGenerationConfig: PoiGenerationConfig = PoiGenerationConfig.EMPTY,
     ) {
         var cutter = OsmCutter()
         if (dbTagInfo != null) {
             if (dbTagInfo.lowercase().startsWith("jdbc")) cutter.setDbTagDatabase(dbTagInfo) else cutter.setDbTagFilename(dbTagInfo)
         }
+        cutter.setNodeTagRetentionPolicy(
+            NodeTagRetentionPolicy.fromProfiles(
+                lookupFile = lookupFile,
+                profileFiles = listOf(profileAll, profileReport, profileCheck),
+                poiConfig = poiGenerationConfig,
+            ),
+        )
         cutter.wayCutter = WayCutter().also { it.init(wayDir) }
         cutter.restrictionCutter = RestrictionCutter().also {
             it.init(File(requireNotNull(nodeDir.parentFile), "restrictions"), cutter.wayCutter!!)
         }
-        val nodeFilter = NodeFilter().also { it.init() }
+        val nodeFilter = NodeFilter().also {
+            it.init()
+            it.retainDescribedNodes = !poiGenerationConfig.isEmpty
+        }
         cutter.nodeFilter = nodeFilter
         cutter.process(lookupFile, nodeDir, null, relFile, null, profileAll, requireNotNull(mapFile))
         cutter.wayCutter!!.finish()

@@ -15,6 +15,78 @@ A routing request needs three things:
 The JVM tests use the segment file `E5_N45.rd5`, downloaded from
 `https://brouter.de/brouter/segments4/`.
 
+## Generating rd5 files
+
+Beerouter can generate `.rd5` segment files with the `mapcreator` Gradle tasks.
+
+### Full planet
+
+```bash
+./gradlew :mapcreator:generatePlanetRd5
+```
+
+By default this downloads `planet-latest.osm.pbf` from `planet.openstreetmap.org` and writes output
+under `mapcreator/build/planet/`.
+
+### Single country or region
+
+```bash
+./gradlew :mapcreator:generateCountryRd5 -Pmapcreator.country=europe/germany
+```
+
+This downloads a Geofabrik extract and runs the same rd5 generation pipeline against it.
+
+`mapcreator.country` is the Geofabrik extract path. Examples:
+
+- `europe/germany`
+- `europe/france`
+- `north-america/us/california`
+
+### Including POIs
+
+POIs are configured with a simple text file of exact `key=value` matches:
+
+```text
+amenity=toilets
+amenity=drinking_water
+tourism=information
+```
+
+Then pass it to either generator task:
+
+```bash
+./gradlew :mapcreator:generateCountryRd5 \
+  -Pmapcreator.country=europe/germany \
+  -Pmapcreator.poiConfig=/path/to/pois.conf
+```
+
+or:
+
+```bash
+./gradlew :mapcreator:generatePlanetRd5 \
+  -Pmapcreator.poiConfig=/path/to/pois.conf
+```
+
+POI-enabled builds generate a lookup file that includes those POI tags and copy it into the output
+directory as `lookups.dat`.
+
+Important:
+
+- use the generated `lookups.dat` from the rd5 output directory when reading those rd5 files
+- do not mix POI-enabled rd5 files with the base `misc/profiles2/lookups.dat`
+
+### Useful properties
+
+Both generation tasks support these optional properties:
+
+- `-Pmapcreator.outputDir=/path/to/segments4`
+- `-Pmapcreator.workDir=/path/to/work`
+- `-Pmapcreator.profileDir=/path/to/profiles2`
+- `-Pmapcreator.poiConfig=/path/to/pois.conf`
+- `-Pmapcreator.srtmDir=/path/to/srtm_bef`
+- `-Pmapcreator.srtmFallbackDir=/path/to/fallback_srtm_bef`
+- `-Pmapcreator.dbTagInfo=/path/to/db-tags.txt`
+
 ## Basic usage
 
 Artifacts are published to Maven Central as `dev.skynomads.beerouter:beerouter`.
@@ -41,7 +113,7 @@ fun main() = runBlocking {
     val routingContext = RoutingContext(
         profileContent = profileContent,
         lookupContent = lookupContent,
-        mapAccessFileSystem = DefaultMapAccessFileSystem(segmentDir)
+        mapSource = DefaultMapSource(segmentDir)
     ).apply {
         global.turnInstructionMode = TurnInstructionMode.LOCUS
     }

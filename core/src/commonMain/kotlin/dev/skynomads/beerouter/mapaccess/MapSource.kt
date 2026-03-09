@@ -10,12 +10,12 @@ public interface RandomAccessReader {
     public fun close()
 }
 
-public interface MapAccessFileSystem {
+public interface MapSource {
     public fun exists(fileName: String): Boolean
     public fun open(fileName: String): RandomAccessReader
 }
 
-public class DefaultMapAccessFileSystem(private val segmentDir: Path) : MapAccessFileSystem {
+public class DefaultMapSource(private val segmentDir: Path) : MapSource {
     private fun resolve(fileName: String): Path = Path(segmentDir, fileName)
 
     override fun exists(fileName: String): Boolean = SystemFileSystem.exists(resolve(fileName))

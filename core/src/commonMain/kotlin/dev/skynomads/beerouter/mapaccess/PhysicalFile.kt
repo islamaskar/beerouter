@@ -12,12 +12,12 @@ import kotlinx.io.IOException
 
 public class PhysicalFile(
     public val fileName: String,
-    fileSystem: MapAccessFileSystem,
+    mapSource: MapSource,
     dataBuffers: DataBuffers,
     lookupVersion: Int,
     lookupMinorVersion: Int
 ) {
-    public val ra: RandomAccessReader = fileSystem.open(fileName)
+    public val ra: RandomAccessReader = mapSource.open(fileName)
     public val fileIndex: LongArray = LongArray(25)
     public var fileHeaderCrcs: IntArray = IntArray(0)
 
@@ -38,6 +38,11 @@ public class PhysicalFile(
             if (i == 0 && lookupVersion != -1 && readVersion.toInt() != lookupVersion) {
                 throw IOException(
                     "lookup version mismatch (old rd5?) lookups.dat=$lookupVersion $fileName=$readVersion"
+                )
+            }
+            if (i == 1 && lookupMinorVersion != -1 && readVersion.toInt() != lookupMinorVersion) {
+                throw IOException(
+                    "lookup minor version mismatch lookups.dat=$lookupMinorVersion $fileName=$readVersion"
                 )
             }
             fileIndex[i] = lv and 0xffffffffffffL
@@ -80,10 +85,10 @@ public class PhysicalFile(
     public companion object {
         public fun checkVersionIntegrity(
             fileName: String,
-            fileSystem: MapAccessFileSystem
+            mapSource: MapSource
         ): Int {
             return try {
-                fileSystem.open(fileName).use { raf ->
+                mapSource.open(fileName).use { raf ->
                     val iobuffer = ByteArray(200)
                     raf.readFully(iobuffer, 0, 200)
                     val dis = ByteDataReader(iobuffer)
@@ -102,10 +107,10 @@ public class PhysicalFile(
          */
         public fun checkFileIntegrity(
             fileName: String,
-            fileSystem: MapAccessFileSystem
+            mapSource: MapSource
         ): String? {
             val dataBuffers = DataBuffers()
-            val pf = PhysicalFile(fileName, fileSystem, dataBuffers, -1, -1)
+            val pf = PhysicalFile(fileName, mapSource, dataBuffers, -1, -1)
             try {
                 val div = pf.divisor
                 for (lonDegree in 0..4) {

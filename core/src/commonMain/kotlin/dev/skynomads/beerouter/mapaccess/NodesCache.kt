@@ -12,7 +12,7 @@ import dev.skynomads.beerouter.expressions.BExpressionContextWay
 import dev.skynomads.beerouter.geo.Position
 
 public class NodesCache(
-    private val mapAccessFileSystem: MapAccessFileSystem,
+    private val mapSource: MapSource,
     private val ctxWay: BExpressionContextWay,
     forceSecondaryData: Boolean,
     maxmem: Long,
@@ -372,11 +372,11 @@ public class NodesCache(
         val ra: PhysicalFile? = fileCache.getOrPut(filenameBase) {
             if (!forceSecondaryData) {
                 val fileName = "$filenameBase.rd5"
-                if (mapAccessFileSystem.exists(fileName)) {
+                if (mapSource.exists(fileName)) {
                     currentFileName = "$filenameBase.rd5"
                     return@getOrPut PhysicalFile(
                         fileName,
-                        mapAccessFileSystem,
+                        mapSource,
                         dataBuffers,
                         lookupVersion,
                         lookupMinorVersion

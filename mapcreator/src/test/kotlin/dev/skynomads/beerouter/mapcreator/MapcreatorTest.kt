@@ -1,13 +1,24 @@
 package dev.skynomads.beerouter.mapcreator
 
+import dev.skynomads.beerouter.mapaccess.MapSource
+import dev.skynomads.beerouter.mapaccess.PoiFinder
+import dev.skynomads.beerouter.mapaccess.PoiQuery
+import dev.skynomads.beerouter.mapaccess.RandomAccessReader
+import dev.skynomads.beerouter.geo.Position
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import java.io.File
+import java.io.RandomAccessFile
 import java.net.URI
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
 import kotlin.io.path.createTempDirectory
+import javax.xml.stream.XMLInputFactory
+import java.util.zip.GZIPInputStream
 
 public class MapcreatorTest {
     @Test
@@ -17,9 +28,10 @@ public class MapcreatorTest {
         val mapFile = testResourceFile("/dreieich.pbf")
         val workingDir = requireNotNull(mapFile.parentFile)
         val profileDir = findProfileDir()
-        val tmpdir = createTempDirectory(workingDir.toPath(), "mapcreator-test-").toFile()
+        val tmpdir = createTempDirectory("mapcreator-test-").toFile()
 
-        val segments = generateBeerouterSegments(tmpdir, mapFile, workingDir, profileDir)
+        val generation = generateBeerouterSegments(tmpdir, mapFile, workingDir, profileDir)
+        val segments = generation.segments
 
         assertTrue(requireNotNull(segments.listFiles()).isNotEmpty(), "segments directory should not be empty")
     }
@@ -31,9 +43,9 @@ public class MapcreatorTest {
         val mapFile = testResourceFile("/dreieich.pbf")
         val workingDir = requireNotNull(mapFile.parentFile)
         val profileDir = findProfileDir()
-        val tmpdir = createTempDirectory(workingDir.toPath(), "mapcreator-parity-").toFile()
+        val tmpdir = createTempDirectory("mapcreator-parity-").toFile()
 
-        val beerouterSegments = generateBeerouterSegments(File(tmpdir, "beerouter"), mapFile, workingDir, profileDir)
+        val beerouterSegments = generateBeerouterSegments(File(tmpdir, "beerouter"), mapFile, workingDir, profileDir).segments
         val brouterSegments = UpstreamBrouterReference.generateSegments(
             baseDir = File(tmpdir, "brouter"),
             mapFile = mapFile,
@@ -44,19 +56,152 @@ public class MapcreatorTest {
         assertSegmentDirectoriesEquivalent(beerouterSegments, brouterSegments)
     }
 
+    @Test
+    public fun poiFinderReturnsConfiguredToilets() {
+        System.setProperty("avoidMapPolling", "true")
+
+        val mapFile = testResourceFile("/dreieich.pbf")
+        val osmFile = testResourceFile("/dreieich.osm.gz")
+        val workingDir = requireNotNull(mapFile.parentFile)
+        val profileDir = findProfileDir()
+        val tmpdir = createTempDirectory("mapcreator-poi-").toFile()
+
+        val generation = generateBeerouterSegments(
+            tmpdir = tmpdir,
+            mapFile = mapFile,
+            workingDir = workingDir,
+            profileDir = profileDir,
+            poiConfigContent = "amenity=toilets\n",
+        )
+        val expectedPois = parseExpectedPois(osmFile, "amenity", "toilets")
+        assertTrue(expectedPois.isNotEmpty(), "expected toilets in dreieich fixture")
+
+        val bbox = expectedPois.boundingBox()
+        val finder = PoiFinder(
+            mapSource = TestMapSource(generation.segments),
+            lookupContent = generation.lookupFile.readText(),
+        )
+
+        val results = finder.find(
+            PoiQuery(
+                minLon = bbox.minLon,
+                minLat = bbox.minLat,
+                maxLon = bbox.maxLon,
+                maxLat = bbox.maxLat,
+                requiredTags = mapOf("amenity" to setOf("toilets")),
+            ),
+        )
+        finder.close()
+
+        assertEquals(expectedPois.map(ExpectedPoi::positionId).sorted(), results.map { it.nodeId }.sorted())
+        assertTrue(results.all { it.tags["amenity"] == "toilets" })
+    }
+
+    @Test
+    public fun poiFinderDeduplicatesAcrossRd5Boundaries() {
+        System.setProperty("avoidMapPolling", "true")
+
+        val mapFile = testResourceFile("/dreieich.pbf")
+        val osmFile = testResourceFile("/dreieich.osm.gz")
+        val workingDir = requireNotNull(mapFile.parentFile)
+        val profileDir = findProfileDir()
+        val tmpdir = createTempDirectory("mapcreator-poi-dedupe-").toFile()
+
+        val generation = generateBeerouterSegments(
+            tmpdir = tmpdir,
+            mapFile = mapFile,
+            workingDir = workingDir,
+            profileDir = profileDir,
+            poiConfigContent = "amenity=toilets\n",
+        )
+        val expectedPois = parseExpectedPois(osmFile, "amenity", "toilets")
+        val bbox = expectedPois.boundingBox()
+        val sourceFile = rd5FileNameForDegrees(
+            lonDegree = expectedPois.first().longitude / 1_000_000,
+            latDegree = expectedPois.first().latitude / 1_000_000,
+        )
+        val duplicateFile = File(generation.segments, "E10_N40.rd5")
+        val duplicatedFileName = "E10_N45.rd5"
+        Files.copy(
+            File(generation.segments, sourceFile).toPath(),
+            File(generation.segments, duplicatedFileName).toPath(),
+            StandardCopyOption.REPLACE_EXISTING,
+        )
+
+        val finder = PoiFinder(
+            mapSource = TestMapSource(generation.segments),
+            lookupContent = generation.lookupFile.readText(),
+        )
+        val results = finder.find(
+            PoiQuery(
+                minLon = bbox.minLon,
+                minLat = bbox.minLat,
+                maxLon = 190_000_000,
+                maxLat = bbox.maxLat,
+                requiredTags = mapOf("amenity" to setOf("toilets")),
+            ),
+        )
+        finder.close()
+
+        assertEquals(expectedPois.size, results.size)
+        assertEquals(expectedPois.map(ExpectedPoi::positionId).sorted(), results.map { it.nodeId }.sorted())
+    }
+
+    @Test
+    public fun poiFinderRejectsLookupMismatch() {
+        System.setProperty("avoidMapPolling", "true")
+
+        val mapFile = testResourceFile("/dreieich.pbf")
+        val workingDir = requireNotNull(mapFile.parentFile)
+        val profileDir = findProfileDir()
+        val tmpdir = createTempDirectory("mapcreator-poi-lookup-mismatch-").toFile()
+
+        val generation = generateBeerouterSegments(
+            tmpdir = tmpdir,
+            mapFile = mapFile,
+            workingDir = workingDir,
+            profileDir = profileDir,
+            poiConfigContent = "amenity=toilets\n",
+        )
+        val finder = PoiFinder(
+            mapSource = TestMapSource(generation.segments),
+            lookupContent = File(profileDir, "lookups.dat").readText(),
+        )
+        val bbox = parseExpectedPois(testResourceFile("/dreieich.osm.gz"), "amenity", "toilets").boundingBox()
+
+        val error = assertFailsWith<Exception> {
+            finder.find(
+                PoiQuery(
+                    minLon = bbox.minLon,
+                    minLat = bbox.minLat,
+                    maxLon = bbox.maxLon,
+                    maxLat = bbox.maxLat,
+                    requiredTags = mapOf("amenity" to setOf("toilets")),
+                    limit = 1,
+                ),
+            )
+        }
+        assertTrue(error.message?.contains("lookup minor version mismatch") == true)
+        finder.close()
+    }
+
     private fun generateBeerouterSegments(
         tmpdir: File,
         mapFile: File,
         workingDir: File,
         profileDir: File,
-    ): File {
+        poiConfigContent: String? = null,
+    ): GeneratedSegments {
         tmpdir.mkdirs()
 
         val nodes = File(tmpdir, "nodetiles").apply { mkdir() }
         val ways = File(tmpdir, "waytiles").apply { mkdir() }
         val nodes55 = File(tmpdir, "nodes55").apply { mkdir() }
         val ways55 = File(tmpdir, "waytiles55").apply { mkdir() }
-        val lookupFile = File(profileDir, "lookups.dat")
+        val baseLookupFile = File(profileDir, "lookups.dat")
+        val poiGenerationConfig = poiConfigContent?.let(PoiConfigParser::parse) ?: PoiGenerationConfig.EMPTY
+        val generatedLookup = GeneratedLookups.generate(baseLookupFile.readText(), poiGenerationConfig)
+        val lookupFile = File(tmpdir, "generated-lookups.dat").apply { writeText(generatedLookup.lookupContent) }
         val relFile = File(tmpdir, "cycleways.dat")
         val resFile = File(tmpdir, "restrictions.dat")
         val profileAll = File(profileDir, "all.brf")
@@ -78,6 +223,7 @@ public class MapcreatorTest {
             profileCheck,
             mapFile,
             null,
+            poiGenerationConfig,
         )
 
         val unodes55 = File(tmpdir, "unodes55").apply { mkdir() }
@@ -86,7 +232,66 @@ public class MapcreatorTest {
 
         val segments = File(tmpdir, "segments").apply { mkdir() }
         WayLinker().process(unodes55, ways55, bordernodes, resFile, lookupFile, profileAll, segments, "rd5")
-        return segments
+        return GeneratedSegments(segments, lookupFile)
+    }
+
+    private fun parseExpectedPois(osmFile: File, key: String, value: String): List<ExpectedPoi> {
+        val xmlFactory = XMLInputFactory.newFactory()
+        GZIPInputStream(osmFile.inputStream()).use { gzip ->
+            val reader = xmlFactory.createXMLStreamReader(gzip)
+            val pois = mutableListOf<ExpectedPoi>()
+            var currentNodeId: Long? = null
+            var currentLon: Int? = null
+            var currentLat: Int? = null
+            var matches = false
+            while (reader.hasNext()) {
+                when (reader.next()) {
+                    javax.xml.stream.XMLStreamConstants.START_ELEMENT -> {
+                        when (reader.localName) {
+                            "node" -> {
+                                currentNodeId = reader.getAttributeValue(null, "id").toLong()
+                                val position = Position(
+                                    reader.getAttributeValue(null, "lon").toDouble(),
+                                    reader.getAttributeValue(null, "lat").toDouble(),
+                                )
+                                currentLon = position.longitude
+                                currentLat = position.latitude
+                                matches = false
+                            }
+
+                            "tag" -> {
+                                if (currentNodeId != null &&
+                                    reader.getAttributeValue(null, "k") == key &&
+                                    reader.getAttributeValue(null, "v") == value
+                                ) {
+                                    matches = true
+                                }
+                            }
+                        }
+                    }
+
+                    javax.xml.stream.XMLStreamConstants.END_ELEMENT -> {
+                        if (reader.localName == "node") {
+                            if (matches) {
+                                pois += ExpectedPoi(
+                                    osmNodeId = requireNotNull(currentNodeId),
+                                    positionId = (requireNotNull(currentLon).toLong() shl 32) or
+                                        (requireNotNull(currentLat).toLong() and 0xffffffffL),
+                                    longitude = requireNotNull(currentLon),
+                                    latitude = requireNotNull(currentLat),
+                                )
+                            }
+                            currentNodeId = null
+                            currentLon = null
+                            currentLat = null
+                            matches = false
+                        }
+                    }
+                }
+            }
+            reader.close()
+            return pois
+        }
     }
 
     private fun assertSegmentDirectoriesEquivalent(
@@ -191,5 +396,67 @@ public class MapcreatorTest {
         )
         return candidates.firstOrNull(File::isDirectory)
             ?: error("could not find misc/profiles2 from ${System.getProperty("user.dir")}")
+    }
+
+    private fun rd5FileNameForDegrees(lonDegree: Int, latDegree: Int): String {
+        val lonMod5 = lonDegree % 5
+        val latMod5 = latDegree % 5
+        val lon = lonDegree - 180 - lonMod5
+        val lat = latDegree - 90 - latMod5
+        val slon = if (lon < 0) "W${-lon}" else "E$lon"
+        val slat = if (lat < 0) "S${-lat}" else "N$lat"
+        return "${slon}_${slat}.rd5"
+    }
+
+    private data class GeneratedSegments(
+        val segments: File,
+        val lookupFile: File,
+    )
+
+    private data class ExpectedPoi(
+        val osmNodeId: Long,
+        val positionId: Long,
+        val longitude: Int,
+        val latitude: Int,
+    )
+
+    private data class PoiBoundingBox(
+        val minLon: Int,
+        val minLat: Int,
+        val maxLon: Int,
+        val maxLat: Int,
+    )
+
+    private fun List<ExpectedPoi>.boundingBox(): PoiBoundingBox {
+        return PoiBoundingBox(
+            minLon = minOf(ExpectedPoi::longitude) - 1_000,
+            minLat = minOf(ExpectedPoi::latitude) - 1_000,
+            maxLon = maxOf(ExpectedPoi::longitude) + 1_000,
+            maxLat = maxOf(ExpectedPoi::latitude) + 1_000,
+        )
+    }
+
+    private class TestMapSource(private val segmentDir: File) : MapSource {
+        override fun exists(fileName: String): Boolean = File(segmentDir, fileName).isFile
+
+        override fun open(fileName: String): RandomAccessReader = TestRandomAccessReader(File(segmentDir, fileName))
+    }
+
+    private class TestRandomAccessReader(file: File) : RandomAccessReader {
+        private val delegate = RandomAccessFile(file, "r")
+
+        override fun seek(position: Long) {
+            delegate.seek(position)
+        }
+
+        override fun readFully(buffer: ByteArray, offset: Int, length: Int) {
+            delegate.readFully(buffer, offset, length)
+        }
+
+        override fun length(): Long = delegate.length()
+
+        override fun close() {
+            delegate.close()
+        }
     }
 }

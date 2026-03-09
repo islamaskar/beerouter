@@ -10,6 +10,7 @@ public class NodeFilter : MapCreatorBase() {
     private lateinit var nodesOutStream: DiffCoderDataOutputStream
     private lateinit var nodeTilesOut: File
     public lateinit var nodebitmap: MutableLongIntMap
+    public var retainDescribedNodes: Boolean = false
 
     public fun init() {
         nodebitmap = MutableLongIntMap()
@@ -39,7 +40,8 @@ public class NodeFilter : MapCreatorBase() {
         }
     }
 
-    public fun isRelevant(node: NodeData): Boolean = nodebitmap.getOrDefault(node.nid, -1) == 0
+    public fun isRelevant(node: NodeData): Boolean =
+        nodebitmap.getOrDefault(node.nid, -1) == 0 || (retainDescribedNodes && node.description != null)
 
     override fun nodeFileEnd(nodefile: File?) {
         nodesOutStream.close()

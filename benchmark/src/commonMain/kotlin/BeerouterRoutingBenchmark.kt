@@ -1,6 +1,6 @@
 package dev.skynomads.beerouter.benchmark
 
-import dev.skynomads.beerouter.mapaccess.DefaultMapAccessFileSystem
+import dev.skynomads.beerouter.mapaccess.DefaultMapSource
 import dev.skynomads.beerouter.router.OsmNodeNamed
 import dev.skynomads.beerouter.router.RoutingContext
 import dev.skynomads.beerouter.router.RoutingEngine
@@ -54,7 +54,7 @@ open class BeerouterRoutingBenchmark {
                 RoutingContext(
                     profileContent = profileSource.readString(),
                     lookupContent = lookupSource.readString(),
-                    mapAccessFileSystem = DefaultMapAccessFileSystem(segmentDir)
+                    mapSource = DefaultMapSource(segmentDir)
                 ).apply {
                     global.turnInstructionMode = TurnInstructionMode.LOCUS
                 }

@@ -26,6 +26,7 @@ public class OsmCutter : MapCreatorBase() {
     private var dbPseudoTagProvider: DatabasePseudoTagProvider? = null
     private lateinit var expctxWay: BExpressionContextWay
     private lateinit var expctxNode: BExpressionContextNode
+    private var nodeTagRetentionPolicy: NodeTagRetentionPolicy = NodeTagRetentionPolicy.DEFAULT
 
     public fun process(
         lookupFile: File,
@@ -72,15 +73,23 @@ public class OsmCutter : MapCreatorBase() {
         dbPseudoTagProvider = DatabasePseudoTagProvider(null, jdbcurl)
     }
 
+    internal fun setNodeTagRetentionPolicy(nodeTagRetentionPolicy: NodeTagRetentionPolicy) {
+        this.nodeTagRetentionPolicy = nodeTagRetentionPolicy
+    }
+
     override fun nextNode(data: NodeData) {
         nodesParsed++
         checkStats()
-        if (data.getTagsOrNull() != null) {
+        val tags = data.getTagsOrNull()
+        if (tags != null) {
+            val poiMatches = nodeTagRetentionPolicy.poiConfig.matchingRules(tags)
+            val retainedTags = nodeTagRetentionPolicy.retainedTags(tags)
             val lookupData = expctxNode.createNewLookupData()!!
-            for ((key, value) in data.getTagsOrNull()!!) {
+            for ((key, value) in retainedTags) {
                 expctxNode.addLookupValue(key, value, lookupData)
             }
             data.description = expctxNode.encode(lookupData)
+            data.retainWithoutLinks = poiMatches.isNotEmpty()
         }
         val tileIndex = getTileIndex(data.ilon, data.ilat)
         if (tileIndex >= 0) {

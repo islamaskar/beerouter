@@ -1506,7 +1506,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
         val maxmem = routingContext.memoryclass * 1024L * 1024L // in MB
 
         nodesCache = NodesCache(
-            routingContext.mapAccessFileSystem,
+            routingContext.mapSource,
             routingContext.way,
             routingContext.global.forceSecondaryData,
             maxmem,

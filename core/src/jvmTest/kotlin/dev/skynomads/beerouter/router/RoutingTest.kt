@@ -17,6 +17,11 @@ class RoutingTest {
         val waypoints: List<OsmNodeNamed>
     )
 
+    private data class SegmentFixture(
+        val name: String,
+        val segmentDir: kotlinx.io.files.Path
+    )
+
     fun createWaypoint(name: String, lat: Double, lon: Double): OsmNodeNamed {
         val n = OsmNodeNamed()
         n.name = name
@@ -27,10 +32,15 @@ class RoutingTest {
     @BeforeTest
     fun before() {
         ensureTestSegmentFile()
+        ensureGeneratedTestSegmentDir()
     }
 
     @Test
     fun routingParityMiniTest() {
+        val fixtures = listOf(
+            SegmentFixture("brouter-rd5", requireNotNull(testSegmentFile.parent)),
+            SegmentFixture("beerouter-generated-rd5", generatedTestSegmentDir),
+        )
         val scenarios = listOf(
             RouteScenario(
                 name = "mini-trekking-tuebingen-rottenburg",
@@ -50,7 +60,12 @@ class RoutingTest {
             )
         )
 
-        assertScenariosEqualBrouter(scenarios)
+        fixtures.forEach { fixture ->
+            assertScenariosEqualBrouter(
+                scenarios = scenarios,
+                fixture = fixture,
+            )
+        }
     }
 
     @Test
@@ -152,18 +167,21 @@ class RoutingTest {
             ),
         )
 
-        assertScenariosEqualBrouter(scenarios)
+        assertScenariosEqualBrouter(
+            scenarios = scenarios,
+            fixture = SegmentFixture("brouter-rd5", requireNotNull(testSegmentFile.parent)),
+        )
     }
 
-    private fun assertScenariosEqualBrouter(scenarios: List<RouteScenario>) {
+    private fun assertScenariosEqualBrouter(scenarios: List<RouteScenario>, fixture: SegmentFixture) {
         val failures = mutableListOf<String>()
         scenarios.forEach { scenario ->
             try {
-                val btrack = routeBrouter(scenario.waypoints, scenario.profile)
-                val beetrack = runBlocking { routeBeerouter(scenario.waypoints, scenario.profile) }
-                assertTracksEqual(scenario.name, btrack, beetrack)
+                val btrack = routeBrouter(scenario.waypoints, scenario.profile, fixture.segmentDir)
+                val beetrack = runBlocking { routeBeerouter(scenario.waypoints, scenario.profile, fixture.segmentDir) }
+                assertTracksEqual("${fixture.name}/${scenario.name}", btrack, beetrack)
             } catch (t: Throwable) {
-                failures.add("${scenario.name}: ${t.message}")
+                failures.add("${fixture.name}/${scenario.name}: ${t.message}")
             }
         }
         assertTrue(
@@ -237,8 +255,12 @@ class RoutingTest {
         return if (nearby.isEmpty()) "no nearby hints" else "nearby hints=$nearby"
     }
 
-    fun routeBrouter(waypoints: List<OsmNodeNamed>, profileName: String): btools.router.OsmTrack {
-        val profile = profilePath(profileName)
+    fun routeBrouter(
+        waypoints: List<OsmNodeNamed>,
+        profileName: String,
+        segmentDir: kotlinx.io.files.Path,
+    ): btools.router.OsmTrack {
+        val profile = profilePathForSegments(profileName, segmentDir)
         assertTrue(SystemFileSystem.exists(profile), "profile exists $profile")
 
         val rc = btools.router.RoutingContext().apply {
@@ -249,7 +271,7 @@ class RoutingTest {
         val cr = btools.router.RoutingEngine(
             null,
             null,
-            requireNotNull(testSegmentFile.parent).toJavaFile(),
+            segmentDir.toJavaFile(),
             waypoints.map {
                 btools.router.OsmNodeNamed().apply {
                     name = it.name
@@ -267,12 +289,16 @@ class RoutingTest {
         return cr.foundTrack
     }
 
-    suspend fun routeBeerouter(waypoints: List<OsmNodeNamed>, profileName: String): OsmTrack? {
+    suspend fun routeBeerouter(
+        waypoints: List<OsmNodeNamed>,
+        profileName: String,
+        segmentDir: kotlinx.io.files.Path,
+    ): OsmTrack? {
         val profile = profilePath(profileName)
         assertTrue(SystemFileSystem.exists(profile), "profile exists $profile")
 
 
-        val ctx = routingContextFromFiles(profile, requireNotNull(testSegmentFile.parent)).apply {
+        val ctx = routingContextFromFiles(profile, segmentDir).apply {
             global.turnInstructionMode = TurnInstructionMode.LOCUS
         }
 

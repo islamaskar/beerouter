@@ -13,8 +13,8 @@ import java.nio.file.StandardCopyOption
 public object PlanetRd5Generator {
     @JvmStatic
     public fun main(args: Array<String>) {
-        require(args.size == 7) {
-            "usage: PlanetRd5Generator <planet-file> <work-dir> <output-dir> <profile-dir> <srtm-dir> <srtm-fallback-dir> <db-tag-info>"
+        require(args.size in 7..8) {
+            "usage: PlanetRd5Generator <planet-file> <work-dir> <output-dir> <profile-dir> <srtm-dir> <srtm-fallback-dir> <db-tag-info> [poi-config]"
         }
 
         val planetFile = File(args[0])
@@ -24,9 +24,13 @@ public object PlanetRd5Generator {
         val srtmDir = args[4].ifBlank { null }?.let(::File)
         val srtmFallbackDir = args[5].ifBlank { null }?.let(::File)
         val dbTagInfo = args[6].ifBlank { null }
+        val poiConfigFile = args.getOrNull(7)?.ifBlank { null }?.let(::File)
 
         require(planetFile.isFile) { "planet file does not exist: ${planetFile.absolutePath}" }
         require(profileDir.isDirectory) { "profile directory does not exist: ${profileDir.absolutePath}" }
+        require(poiConfigFile == null || poiConfigFile.isFile) {
+            "poi config file does not exist: ${poiConfigFile?.absolutePath}"
+        }
 
         val runDir = File(workDir, "tmp")
         if (runDir.exists()) {
@@ -38,7 +42,10 @@ public object PlanetRd5Generator {
         val ways = File(runDir, "waytiles").apply { mkdirs() }
         val nodes55 = File(runDir, "nodes55").apply { mkdirs() }
         val ways55 = File(runDir, "waytiles55").apply { mkdirs() }
-        val lookupFile = File(profileDir, "lookups.dat")
+        val baseLookupFile = File(profileDir, "lookups.dat")
+        val poiGenerationConfig = poiConfigFile?.let { PoiConfigParser.parse(it.readText()) } ?: PoiGenerationConfig.EMPTY
+        val generatedLookup = GeneratedLookups.generate(baseLookupFile.readText(), poiGenerationConfig)
+        val lookupFile = File(runDir, "generated-lookups.dat").apply { writeText(generatedLookup.lookupContent) }
         val relFile = File(runDir, "cycleways.dat")
         val resFile = File(runDir, "restrictions.dat")
         val profileAll = File(profileDir, "all.brf")
@@ -61,6 +68,7 @@ public object PlanetRd5Generator {
             profileCheck = profileCheck,
             mapFile = planetFile,
             dbTagInfo = dbTagInfo,
+            poiGenerationConfig = poiGenerationConfig,
         )
 
         val unodes55 = File(runDir, "unodes55").apply { mkdirs() }
@@ -113,6 +121,10 @@ public object PlanetRd5Generator {
                 # Add secondary_segment_dir=/path/to/other/segments if needed.
                 """.trimIndent() + "\n",
             )
+        }
+        Files.copy(lookupFile.toPath(), File(outputDir, "lookups.dat").toPath(), StandardCopyOption.REPLACE_EXISTING)
+        poiConfigFile?.let {
+            Files.copy(it.toPath(), File(outputDir, "poi-rules.conf").toPath(), StandardCopyOption.REPLACE_EXISTING)
         }
 
         println("rd5 files written to ${outputDir.absolutePath}")
