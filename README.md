@@ -25,6 +25,7 @@ The example below follows the same setup used in
 `doRouting()` with named waypoints.
 
 ```kotlin
+import kotlinx.io.readString
 import org.maplibre.spatialk.geojson.Position
 
 private fun waypoint(name: String, lat: Double, lon: Double): OsmNodeNamed =
@@ -34,17 +35,14 @@ fun main() = runBlocking {
     val profile = Path("misc/profiles2/trekking.brf")
     val lookups = Path("misc/profiles2/lookups.dat")
     val segmentDir = Path("/path/to/segments4")
+    val profileContent = SystemFileSystem.source(profile).buffered().use { it.readString() }
+    val lookupContent = SystemFileSystem.source(lookups).buffered().use { it.readString() }
 
-    val routingContext = SystemFileSystem.source(profile).buffered().use { profileSource ->
-        SystemFileSystem.source(lookups).buffered().use { lookupSource ->
-            RoutingContext(
-                profileName = "trekking.brf",
-                profileSource = profileSource,
-                lookupSource = lookupSource,
-                mapAccessFileSystem = DefaultMapAccessFileSystem(segmentDir)
-            )
-        }
-    }.apply {
+    val routingContext = RoutingContext(
+        profileContent = profileContent,
+        lookupContent = lookupContent,
+        mapAccessFileSystem = DefaultMapAccessFileSystem(segmentDir)
+    ).apply {
         global.turnInstructionMode = TurnInstructionMode.LOCUS
     }
 

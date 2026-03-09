@@ -1,9 +1,9 @@
 package dev.skynomads.beerouter.expressions
 
-import dev.skynomads.beerouter.util.readUtf8
 import kotlinx.io.buffered
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
+import kotlinx.io.readString
 import kotlin.test.Test
 import kotlin.test.assertTrue
 
@@ -17,8 +17,7 @@ class EncodeDecodeTest {
         val expctxWay = BExpressionContextWay(meta)
         meta.readMetaData(lookupContent)
         expctxWay.parseProfile(
-            SystemFileSystem.source(Path(profileDir, "trekking.brf")).buffered().use(::readUtf8),
-            "trekking.brf",
+            SystemFileSystem.source(Path(profileDir, "trekking.brf")).buffered().use { it.readString() },
             "global"
         )
 

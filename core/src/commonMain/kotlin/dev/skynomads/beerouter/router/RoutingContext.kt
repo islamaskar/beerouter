@@ -16,35 +16,19 @@ import dev.skynomads.beerouter.mapaccess.MapAccessFileSystem
 import dev.skynomads.beerouter.mapaccess.MatchedWaypoint
 import dev.skynomads.beerouter.mapaccess.OsmLink
 import dev.skynomads.beerouter.mapaccess.OsmNode
-import dev.skynomads.beerouter.util.readUtf8
 import kotlinx.io.Sink
 import kotlinx.io.Source
-import kotlinx.io.buffered
 import kotlin.math.abs
 import kotlin.math.max
 import kotlin.math.roundToInt
 import kotlin.math.sqrt
 
 public class RoutingContext(
-    public val profileName: String,
     private val profileContent: String,
     private val lookupContent: String,
     public val mapAccessFileSystem: MapAccessFileSystem
 ) {
-    public constructor(
-        profileName: String,
-        profileSource: Source,
-        lookupSource: Source,
-        mapAccessFileSystem: MapAccessFileSystem
-    ) : this(
-        profileName = profileName,
-        profileContent = profileSource.buffered().use(::readUtf8),
-        lookupContent = lookupSource.buffered().use(::readUtf8),
-        mapAccessFileSystem = mapAccessFileSystem
-    )
-
     public constructor(template: RoutingContext) : this(
-        profileName = template.profileName,
         profileContent = template.profileContent,
         lookupContent = template.lookupContent,
         mapAccessFileSystem = template.mapAccessFileSystem
@@ -216,8 +200,8 @@ public class RoutingContext(
 
         meta.readMetaData(lookupContent)
 
-        way.parseProfile(profileContent, profileName, "global", keyValues)
-        node.parseProfile(profileContent, profileName, "global", keyValues)
+        way.parseProfile(profileContent, "global", keyValues)
+        node.parseProfile(profileContent, "global", keyValues)
 
         setModel(way._modelClass)
         global = Global(way)

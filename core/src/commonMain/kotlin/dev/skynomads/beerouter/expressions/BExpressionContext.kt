@@ -653,7 +653,6 @@ public abstract class BExpressionContext protected constructor(
 
     public fun parseProfile(
         content: String,
-        name: String,
         readOnlyContext: String?,
         keyValues: Map<String, String> = emptyMap()
     ) {
@@ -685,12 +684,12 @@ public abstract class BExpressionContext protected constructor(
                 requireNotNull(variableData)[i] = requireNotNull(readOnlyData)[i]
             }
         } catch (e: IllegalArgumentException) {
-            throw IllegalArgumentException("ParseException $name at line $linenr: ${e.message}")
+            throw IllegalArgumentException("ParseException at line $linenr: ${e.message}")
         } catch (e: Exception) {
             throw RuntimeException(e)
         }
         require(requireNotNull(expressionList).isNotEmpty()) {
-            "$name does not contain expressions for context $context (old version?)"
+            "Profile does not contain expressions for context $context (old version?)"
         }
     }
 

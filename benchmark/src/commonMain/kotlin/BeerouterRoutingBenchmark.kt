@@ -16,6 +16,7 @@ import kotlinx.io.buffered
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
 import kotlinx.io.files.SystemTemporaryDirectory
+import kotlinx.io.readString
 import org.maplibre.spatialk.geojson.Position
 
 @State(Scope.Benchmark)
@@ -51,9 +52,8 @@ open class BeerouterRoutingBenchmark {
         val ctx = SystemFileSystem.source(profile).buffered().use { profileSource ->
             SystemFileSystem.source(lookup).buffered().use { lookupSource ->
                 RoutingContext(
-                    profileName = fileName(profile),
-                    profileSource = profileSource,
-                    lookupSource = lookupSource,
+                    profileContent = profileSource.readString(),
+                    lookupContent = lookupSource.readString(),
                     mapAccessFileSystem = DefaultMapAccessFileSystem(segmentDir)
                 ).apply {
                     global.turnInstructionMode = TurnInstructionMode.LOCUS
@@ -79,9 +79,6 @@ open class BeerouterRoutingBenchmark {
         }
         error("none of the candidate files exist: ${candidates.joinToString()}")
     }
-
-    private fun fileName(path: Path): String = path.name
-
     private companion object {
         private const val SEGMENT_FILE_NAME = "E5_N45.rd5"
     }

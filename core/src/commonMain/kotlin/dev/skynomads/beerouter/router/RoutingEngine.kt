@@ -103,7 +103,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
                 // we are only looking for info
                 if (routingContext.ai != null) return null
 
-                track.name = "brouter_${routingContext.profileName}_$i"
+                track.name = "brouter_$i"
 
                 if (i != min(3, max(0, routingContext.alternativeIdx))) {
                     i++

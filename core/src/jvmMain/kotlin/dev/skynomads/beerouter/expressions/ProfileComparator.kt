@@ -1,9 +1,9 @@
 package dev.skynomads.beerouter.expressions
 
-import dev.skynomads.beerouter.util.readUtf8
 import kotlinx.io.buffered
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
+import kotlinx.io.readString
 import kotlin.random.Random
 
 public object ProfileComparator {
@@ -36,15 +36,15 @@ public object ProfileComparator {
             expctx2.skipConstantExpressionOptimizations = true
         }
 
-        val lookupContent = readUtf8(Path(lookupPath))
-        val profile1Content = readUtf8(Path(profile1Path))
-        val profile2Content = readUtf8(Path(profile2Path))
+        val lookupContent = SystemFileSystem.source(Path(lookupPath)).buffered().use { it.readString() }
+        val profile1Content = SystemFileSystem.source(Path(profile1Path)).buffered().use { it.readString() }
+        val profile2Content = SystemFileSystem.source(Path(profile2Path)).buffered().use { it.readString() }
 
         meta1.readMetaData(lookupContent)
         meta2.readMetaData(lookupContent)
-        expctx1.parseProfile(profile1Content, fileName(profile1Path), "global")
+        expctx1.parseProfile(profile1Content, "global")
         println("usedTags1=" + expctx1.usedTagList())
-        expctx2.parseProfile(profile2Content, fileName(profile2Path), "global")
+        expctx2.parseProfile(profile2Content, "global")
         println("usedTags2=" + expctx2.usedTagList())
 
         println("nodeContext=$nodeContext nodeCount1=${expctx1.expressionNodeCount} nodeCount2=${expctx2.expressionNodeCount}")
@@ -57,9 +57,5 @@ public object ProfileComparator {
             expctx1.assertAllVariablesEqual(expctx2)
         }
     }
-
-    private fun readUtf8(path: Path): String =
-        SystemFileSystem.source(path).buffered().use(::readUtf8)
-
     private fun fileName(path: String): String = Path(path).name
 }

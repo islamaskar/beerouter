@@ -25,8 +25,8 @@ class ConstantOptimizerTest {
 
         meta1.readMetaData(lookupContent)
         meta2.readMetaData(lookupContent)
-        expctx1.parseProfile(profileContent, "profile_test.brf", "global", keyValue)
-        expctx2.parseProfile(profileContent, "profile_test.brf", "global", keyValue)
+        expctx1.parseProfile(profileContent, "global", keyValue)
+        expctx2.parseProfile(profileContent, "global", keyValue)
 
         val d = 0.0001f
         assertEquals(5f, expctx1.getVariableValue("global_inject1", 0f), d)
