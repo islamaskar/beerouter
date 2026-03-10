@@ -5,6 +5,8 @@ import dev.skynomads.beerouter.codec.TagValueValidator
 import dev.skynomads.beerouter.expressions.BExpressionContextNode
 import dev.skynomads.beerouter.expressions.BExpressionMetaData
 import dev.skynomads.beerouter.geo.Position
+import dev.skynomads.beerouter.geo.longitudeFromId
+import dev.skynomads.beerouter.geo.latitudeFromId
 import kotlin.math.max
 import kotlin.math.min
 
@@ -76,8 +78,8 @@ public class PoiFinder(
                         val size = segment.size
                         for (index in 0 until size) {
                             val nodeId = segment.getIdForIndex(index)
-                            val lon = (nodeId shr 32).toInt()
-                            val lat = (nodeId and 0xffffffffL).toInt()
+                            val lon = nodeId.longitudeFromId()
+                            val lat = nodeId.latitudeFromId()
                             
                             if (lon !in query.minLon..query.maxLon ||
                                 lat !in query.minLat..query.maxLat

@@ -29,11 +29,13 @@ public class OsmFile(
     private var microCaches: Array<MicroCache?>? = null
 
     public var filename: String? = null
+        internal set
 
     private var divisor = 0
     private var cellsize = 0
     private var indexsize = 0
     public var elevationType: Byte = 3
+        internal set
 
     init {
         val lonMod5 = lonDegree % 5

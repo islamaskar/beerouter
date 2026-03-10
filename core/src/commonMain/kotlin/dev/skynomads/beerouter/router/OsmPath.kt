@@ -9,6 +9,7 @@ import dev.skynomads.beerouter.geo.CheapAngleMeter.turnAngle
 import dev.skynomads.beerouter.geo.CheapRuler.DEG_TO_RAD
 import dev.skynomads.beerouter.geo.Position
 import dev.skynomads.beerouter.geo.coordinateScaleAt
+import dev.skynomads.beerouter.geo.toPosition
 import dev.skynomads.beerouter.map.OsmLink
 import dev.skynomads.beerouter.map.OsmLinkHolder
 import dev.skynomads.beerouter.map.OsmNode
@@ -495,6 +496,3 @@ public abstract class OsmPath : OsmLinkHolder {
         HAD_DESTINATION_START(8),
     }
 }
-
-private fun Long.toPosition(): Position =
-    Position((this shr 32).toInt(), (this and 0xffffffffL).toInt())

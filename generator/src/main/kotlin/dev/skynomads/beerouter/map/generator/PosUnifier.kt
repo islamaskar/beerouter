@@ -1,6 +1,7 @@
 package dev.skynomads.beerouter.map.generator
 
 import androidx.collection.MutableLongSet
+import dev.skynomads.beerouter.geo.Position
 import dev.skynomads.beerouter.map.generator.DiffCoderDataOutputStream
 import java.io.BufferedInputStream
 import java.io.DataInputStream
@@ -84,7 +85,7 @@ public class PosUnifier : GeneratorBase() {
 
     private fun checkAdd(lon: Int, lat: Int): Boolean {
         val slot = ((lon % 5_000_000) / 100_000) * 50 + ((lat % 5_000_000) / 100_000)
-        val id = (lon.toLong() shl 32) or (lat.toLong() and 0xffffffffL)
+        val id = Position.computeId(lon, lat)
         var set = positionSets[slot]
         if (set == null) {
             set = MutableLongSet()

@@ -226,7 +226,7 @@ public class DirectWeaver(
                 id32 = id32 shr 2
                 bm = bm shl 1
             }
-            return Position(dlon, dlat).id
+            return Position.computeId(dlon, dlat)
         }
     }
 }

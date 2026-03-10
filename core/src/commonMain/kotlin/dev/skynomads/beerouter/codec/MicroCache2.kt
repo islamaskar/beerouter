@@ -1,5 +1,7 @@
 package dev.skynomads.beerouter.codec
 
+import dev.skynomads.beerouter.geo.latitudeFromId
+import dev.skynomads.beerouter.geo.longitudeFromId
 import dev.skynomads.beerouter.geo.Position
 import dev.skynomads.beerouter.util.ByteDataReader
 import dev.skynomads.beerouter.util.IByteArrayUnifier
@@ -66,8 +68,8 @@ public class MicroCache2 : MicroCache {
 
         for (n in 0..<size) {
             val id64 = expandId(faid[n])
-            alon[n] = (id64 shr 32).toInt()
-            alat[n] = (id64 and 0xffffffffL).toInt()
+            alon[n] = id64.longitudeFromId()
+            alat[n] = id64.latitudeFromId()
         }
 
         val netdatasize = bc.decodeNoisyNumber(10)
@@ -491,7 +493,3 @@ public class MicroCache2 : MicroCache {
         }
     }
 }
-
-private fun Long.longitudeFromId(): Int = (this shr 32).toInt()
-
-private fun Long.latitudeFromId(): Int = (this and 0xffffffffL).toInt()

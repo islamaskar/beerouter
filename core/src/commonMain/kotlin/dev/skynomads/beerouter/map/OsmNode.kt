@@ -4,6 +4,8 @@ import dev.skynomads.beerouter.codec.MicroCache
 import dev.skynomads.beerouter.codec.MicroCache2
 import dev.skynomads.beerouter.geo.CheapRuler.distance
 import dev.skynomads.beerouter.geo.Position
+import dev.skynomads.beerouter.geo.latitudeFromId
+import dev.skynomads.beerouter.geo.longitudeFromId
 import dev.skynomads.beerouter.util.IByteArrayUnifier
 import kotlin.math.max
 import kotlin.math.roundToInt
@@ -289,7 +291,3 @@ public open class OsmNode : OsmLink, OsmPos {
     }
 
 }
-
-private fun Long.longitudeFromId(): Int = (this shr 32).toInt()
-
-private fun Long.latitudeFromId(): Int = (this and 0xffffffffL).toInt()

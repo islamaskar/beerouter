@@ -10,6 +10,8 @@ import dev.skynomads.beerouter.codec.MicroCache
 import dev.skynomads.beerouter.codec.WaypointMatcher
 import dev.skynomads.beerouter.expressions.BExpressionContextWay
 import dev.skynomads.beerouter.geo.Position
+import dev.skynomads.beerouter.geo.latitudeFromId
+import dev.skynomads.beerouter.geo.longitudeFromId
 
 public class NodesCache(
     private val mapSource: MapSource,
@@ -411,7 +413,3 @@ public class NodesCache(
         public const val RETRY_RANGE: Int = 250
     }
 }
-
-private fun Long.longitudeFromId(): Int = (this shr 32).toInt()
-
-private fun Long.latitudeFromId(): Int = (this and 0xffffffffL).toInt()

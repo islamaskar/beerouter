@@ -21,7 +21,7 @@ public data class Position(
     public val altitude: Short? = null
 ) {
     /** Unique ID derived from coordinates. Upper 32 bits = longitude, lower 32 bits = latitude. */
-    public val id: Long = (longitude.toLong() shl 32) or (latitude.toLong() and 0xFFFFFFFFL)
+    public val id: Long = computeId(longitude, latitude)
 
     public constructor(longitude: Int, latitude: Int, altitude: Double?) : this(
         longitude = longitude,
@@ -47,6 +47,9 @@ public data class Position(
     public companion object {
         public val ZERO: Position = Position(longitude = 0, latitude = 0)
 
+        public fun computeId(longitude: Int, latitude: Int): Long =
+            (longitude.toLong() shl 32) or (latitude.toLong() and 0xFFFFFFFFL)
+
         public fun from(longitude: Double, latitude: Double, altitude: Double): Position =
             Position(
                 longitude = longitude,
@@ -68,3 +71,9 @@ private fun Double?.toShortAltitude(): Short? =
 
 private fun Short?.toDoubleAltitude(): Double? =
     this?.div(ALTITUDE_SCALE)
+
+public fun Long.longitudeFromId(): Int = (this shr 32).toInt()
+
+public fun Long.latitudeFromId(): Int = (this and 0xffffffffL).toInt()
+
+public fun Long.toPosition(): Position = Position(longitudeFromId(), latitudeFromId())

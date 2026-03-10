@@ -11,6 +11,8 @@ import dev.skynomads.beerouter.map.OsmNode
 import dev.skynomads.beerouter.map.OsmNodesMap
 import dev.skynomads.beerouter.map.PhysicalFile
 import dev.skynomads.beerouter.geo.Position
+import dev.skynomads.beerouter.geo.latitudeFromId
+import dev.skynomads.beerouter.geo.longitudeFromId
 import kotlinx.io.Sink
 import kotlinx.io.Source
 import kotlin.math.abs
@@ -185,28 +187,37 @@ public class AreaReader {
                 val size = segment.size
                 for (i in 0..<size) {
                     val id = segment.getIdForIndex(i)
-                    val node = OsmNode(id)
-                    if (segment.getAndClear(id)) {
-                        node.parseNodeBody(segment, nodesMap, expctxWay)
-                        if (node.firstlink is OsmLink) {
-                            var link = node.firstlink
-                            while (link != null) {
-                                val nextNode = link.getTarget(node)
-                                if (nextNode!!.firstlink == null) {
-                                    link = link.getNext(node)
-                                    continue  // don't care about dead ends
-                                }
-                                if (nextNode.firstlink!!.descriptionBitmap == null) {
-                                    link = link.getNext(node)
-                                    continue
-                                }
+                    val lon = id.longitudeFromId()
+                    val lat = id.latitudeFromId()
 
+                    var possibleMatch = false
+                    for (ai in ais) {
+                        val polygon = requireNotNull(ai.polygon)
+                        if (polygon.radius > 0) {
+                            val dx = (lon - polygon.position.longitude).toDouble()
+                            val dy = (lat - polygon.position.latitude).toDouble()
+                            // rough circle check using 100m per degree approx is too crude,
+                            // but since they are integers we can just use a large enough box or the real distance
+                            if (abs(dx) < 2000 && abs(dy) < 2000) { // 2000 E6 units is ~200m
+                                possibleMatch = true
+                                break
+                            }
+                        } else {
+                            possibleMatch = true // no bounding circle, must check
+                            break
+                        }
+                    }
+                    if (!possibleMatch) continue
+
+                    if (segment.getAndClear(id)) {
+                        val node = OsmNode(id)
+                        node.parseNodeBody(segment, nodesMap, expctxWay)
+                        var link = node.firstlink
+                        while (link != null) {
+                            val nextNode = link.getTarget(node)
+                            if (nextNode!!.firstlink != null && nextNode.firstlink!!.descriptionBitmap != null) {
                                 for (ai in ais) {
-                                    if (ai.polygon!!.isWithin(
-                                            node.position.longitude.toLong(),
-                                            node.position.latitude.toLong()
-                                        )
-                                    ) {
+                                    if (ai.polygon!!.isWithin(lon.toLong(), lat.toLong())) {
                                         ai.checkAreaInfo(
                                             expctxWay,
                                             node.position.altitudeMeters ?: 0.0,
@@ -217,6 +228,7 @@ public class AreaReader {
                                 }
                                 break
                             }
+                            link = link.getNext(node)
                         }
                     }
                 }

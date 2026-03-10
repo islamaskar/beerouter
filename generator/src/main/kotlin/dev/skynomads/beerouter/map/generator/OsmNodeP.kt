@@ -196,7 +196,7 @@ public open class OsmNodeP : OsmLinkP() {
     public fun toString2(): String = "${ilon - 180000000}_${ilat - 90000000}_${selev / 4}"
 
     public val idFromPos: Long
-        get() = (ilon.toLong() shl 32) or (ilat.toLong() and 0xffffffffL)
+        get() = Position.computeId(ilon, ilat)
 
     public fun isBorderNode(): Boolean = (bits.toInt() and BORDER_BIT) != 0
     public fun hasTraffic(): Boolean = (bits.toInt() and TRAFFIC_BIT) != 0

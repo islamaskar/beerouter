@@ -275,8 +275,10 @@ public class GeneratorTest {
                             if (matches) {
                                 pois += ExpectedPoi(
                                     osmNodeId = requireNotNull(currentNodeId),
-                                    positionId = (requireNotNull(currentLon).toLong() shl 32) or
-                                        (requireNotNull(currentLat).toLong() and 0xffffffffL),
+                                    positionId = Position.computeId(
+                                        requireNotNull(currentLon),
+                                        requireNotNull(currentLat)
+                                    ),
                                     longitude = requireNotNull(currentLon),
                                     latitude = requireNotNull(currentLat),
                                 )

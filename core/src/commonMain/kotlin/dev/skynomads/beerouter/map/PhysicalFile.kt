@@ -22,9 +22,12 @@ public class PhysicalFile(
     public var fileHeaderCrcs: IntArray = IntArray(0)
 
     public var creationTime: Long = 0L
+        internal set
 
     public var divisor: Int = 80
+        internal set
     public var elevationType: Byte = 3
+        internal set
 
     init {
         val iobuffer = dataBuffers.iobuffer
