@@ -237,7 +237,7 @@ class RoutingTest {
                 )
                 assertEquals(
                     hint.cruiserCommandString,
-                    actual.cruiserCommandString,
+                    actual.testCommandString(),
                     "$scenario: node[$idx] voice command"
                 )
             }
@@ -250,7 +250,7 @@ class RoutingTest {
 
     private fun describeNearestHints(track: OsmTrack, idx: Int): String {
         val nearby = track.voiceHints
-            .map { it.indexInTrack to it.cruiserCommandString }
+            .map { it.indexInTrack to it.testCommandString() }
             .filter { kotlin.math.abs(it.first - idx) <= 3 }
         return if (nearby.isEmpty()) "no nearby hints" else "nearby hints=$nearby"
     }

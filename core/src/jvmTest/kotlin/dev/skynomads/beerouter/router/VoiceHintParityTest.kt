@@ -20,7 +20,10 @@ class VoiceHintParityTest {
         return n
     }
 
-    private fun routeBrouter(profileName: String, waypoints: List<OsmNodeNamed>): btools.router.OsmTrack {
+    private fun routeBrouter(
+        profileName: String,
+        waypoints: List<OsmNodeNamed>
+    ): btools.router.OsmTrack {
         val profile = profilePath(profileName)
         val rc = btools.router.RoutingContext().apply {
             turnInstructionMode = 2
@@ -43,7 +46,10 @@ class VoiceHintParityTest {
         return cr.foundTrack
     }
 
-    private suspend fun routeBeerouter(profileName: String, waypoints: List<OsmNodeNamed>): OsmTrack? {
+    private suspend fun routeBeerouter(
+        profileName: String,
+        waypoints: List<OsmNodeNamed>
+    ): OsmTrack? {
         val profile = profilePath(profileName)
         val ctx = routingContextFromFiles(profile, requireNotNull(testSegmentFile.parent))
         return RoutingEngine(ctx).doRouting(waypoints)
@@ -66,7 +72,7 @@ class VoiceHintParityTest {
         assertNotNull(actual)
         assertEquals(
             expected.cruiserCommandString,
-            actual.cruiserCommandString,
+            actual.testCommandString(),
             "shortest roundabout mismatch at node $idx"
         )
     }
@@ -89,7 +95,7 @@ class VoiceHintParityTest {
         assertNotNull(actual)
         assertEquals(
             expected.cruiserCommandString,
-            actual.cruiserCommandString,
+            actual.testCommandString(),
             "fastbike turn severity mismatch at node $idx\n" +
                     "brouter=${nodeDebug(btrack, idx)}\n" +
                     "beerouter=${nodeDebug(beetrack, idx)}"
@@ -117,8 +123,12 @@ class VoiceHintParityTest {
             expected.size,
             actual.size,
             "shortest voice hint count mismatch\n" +
-                    "missing=${expected.map { it.first }.toSet() - actual.map { it.first }.toSet()}\n" +
-                    "extra=${actual.map { it.first }.toSet() - expected.map { it.first }.toSet()}\n" +
+                    "missing=${
+                        expected.map { it.first }.toSet() - actual.map { it.first }.toSet()
+                    }\n" +
+                    "extra=${
+                        actual.map { it.first }.toSet() - expected.map { it.first }.toSet()
+                    }\n" +
                     "firstDiff=${firstDiff(expected, actual)}\n" +
                     debugExtraHint(expected, actual, btrack, beetrack) + "\n" +
                     "firstNodeLinkdistDiff=${firstNodeLinkdistDiff(btrack, beetrack)}"
@@ -141,8 +151,12 @@ class VoiceHintParityTest {
             expected.size,
             actual.size,
             "shortest-long voice hint count mismatch\n" +
-                    "missing=${expected.map { it.first }.toSet() - actual.map { it.first }.toSet()}\n" +
-                    "extra=${actual.map { it.first }.toSet() - expected.map { it.first }.toSet()}\n" +
+                    "missing=${
+                        expected.map { it.first }.toSet() - actual.map { it.first }.toSet()
+                    }\n" +
+                    "extra=${
+                        actual.map { it.first }.toSet() - expected.map { it.first }.toSet()
+                    }\n" +
                     "firstDiff=${firstDiff(expected, actual)}\n" +
                     debugExtraHint(expected, actual, btrack, beetrack)
         )
@@ -160,7 +174,16 @@ class VoiceHintParityTest {
 
         val bs = brouterInputSignatures(btrack)
         val asig = beerouterInputSignatures(beetrack)
-        assertEquals(bs[444], asig[444], "shortest input signature mismatch at 444; firstNodePrioDiff=${firstNodePrioDiff(btrack, beetrack)}")
+        assertEquals(
+            bs[444],
+            asig[444],
+            "shortest input signature mismatch at 444; firstNodePrioDiff=${
+                firstNodePrioDiff(
+                    btrack,
+                    beetrack
+                )
+            }"
+        )
         assertEquals(bs[441], asig[441], "shortest input signature mismatch at 441")
     }
 
@@ -171,11 +194,14 @@ class VoiceHintParityTest {
     }
 
     private fun beerouterHints(track: OsmTrack): List<Pair<Int, String>> {
-        return track.voiceHints.map { it.indexInTrack to it.cruiserCommandString }
+        return track.voiceHints.map { it.indexInTrack to it.testCommandString() }
             .sortedBy { it.first }
     }
 
-    private fun firstDiff(expected: List<Pair<Int, String>>, actual: List<Pair<Int, String>>): String {
+    private fun firstDiff(
+        expected: List<Pair<Int, String>>,
+        actual: List<Pair<Int, String>>
+    ): String {
         val max = minOf(expected.size, actual.size)
         for (i in 0 until max) {
             if (expected[i] != actual[i]) {
@@ -206,9 +232,10 @@ class VoiceHintParityTest {
                     }
                     holder = holder.nextHolder
                 }
-                out[idx] = "g=${good?.priorityclassifier}/${good?.classifiermask}/${good?.linkdist};" +
-                        "o=${old?.priorityclassifier}/${old?.classifiermask}/${old?.linkdist};" +
-                        "b=${detourParts.sorted()}"
+                out[idx] =
+                    "g=${good?.priorityclassifier}/${good?.classifiermask}/${good?.linkdist};" +
+                            "o=${old?.priorityclassifier}/${old?.classifiermask}/${old?.linkdist};" +
+                            "b=${detourParts.sorted()}"
             }
             node = origin
         }
@@ -232,12 +259,45 @@ class VoiceHintParityTest {
                 while (holder != null) {
                     val msg = startSectionBrouter(holder.node, origin)
                     if (msg != null) {
-                        detourParts += "${getDeclaredFloat(msg, "turnangle")}/${getDeclaredInt(msg, "priorityclassifier")}/${getDeclaredInt(msg, "classifiermask")}"
+                        detourParts += "${getDeclaredFloat(msg, "turnangle")}/${
+                            getDeclaredInt(
+                                msg,
+                                "priorityclassifier"
+                            )
+                        }/${getDeclaredInt(msg, "classifiermask")}"
                     }
                     holder = holder.nextHolder
                 }
-                out[idx] = "g=${good?.let { getDeclaredInt(it, "priorityclassifier") }}/${good?.let { getDeclaredInt(it, "classifiermask") }}/${good?.let { getDeclaredInt(it, "linkdist") }};" +
-                        "o=${old?.let { getDeclaredInt(it, "priorityclassifier") }}/${old?.let { getDeclaredInt(it, "classifiermask") }}/${old?.let { getDeclaredInt(it, "linkdist") }};" +
+                out[idx] = "g=${
+                    good?.let {
+                        getDeclaredInt(
+                            it,
+                            "priorityclassifier"
+                        )
+                    }
+                }/${
+                    good?.let {
+                        getDeclaredInt(
+                            it,
+                            "classifiermask"
+                        )
+                    }
+                }/${good?.let { getDeclaredInt(it, "linkdist") }};" +
+                        "o=${
+                            old?.let {
+                                getDeclaredInt(
+                                    it,
+                                    "priorityclassifier"
+                                )
+                            }
+                        }/${
+                            old?.let {
+                                getDeclaredInt(
+                                    it,
+                                    "classifiermask"
+                                )
+                            }
+                        }/${old?.let { getDeclaredInt(it, "linkdist") }};" +
                         "b=${detourParts.sorted()}"
             }
             node = origin
@@ -283,16 +343,36 @@ class VoiceHintParityTest {
     ): String {
         val extra = actual.map { it.first }.toSet() - expected.map { it.first }.toSet()
         val idx = extra.minOrNull() ?: return "extraHint=none"
-        return "extraHint[$idx] brouter=${nodeDebug(btrack, idx)} beerouter=${nodeDebug(beetrack, idx)} " +
-                "detours(brouter)=${brouterDetourStartAngles(btrack, idx)} detours(beerouter)=${beerouterDetourStartAngles(beetrack, idx)} " +
-                "originMsg(brouter)=${brouterOriginMsgPrio(btrack, idx)} originMsg(beerouter)=${beerouterOriginMsgPrio(beetrack, idx)} " +
+        return "extraHint[$idx] brouter=${nodeDebug(btrack, idx)} beerouter=${
+            nodeDebug(
+                beetrack,
+                idx
+            )
+        } " +
+                "detours(brouter)=${
+                    brouterDetourStartAngles(
+                        btrack,
+                        idx
+                    )
+                } detours(beerouter)=${beerouterDetourStartAngles(beetrack, idx)} " +
+                "originMsg(brouter)=${
+                    brouterOriginMsgPrio(
+                        btrack,
+                        idx
+                    )
+                } originMsg(beerouter)=${beerouterOriginMsgPrio(beetrack, idx)} " +
                 "firstDistanceDrift=${firstDistanceDrift(btrack, beetrack)}"
     }
 
     private fun brouterOriginMsgPrio(track: btools.router.OsmTrack, idx: Int): String {
         val origin = track.nodes[idx].origin ?: return "null"
         val msg = origin.message ?: return "msg=null"
-        return "prio=${getDeclaredInt(msg, "priorityclassifier")}, turn=${getDeclaredFloat(msg, "turnangle")}"
+        return "prio=${getDeclaredInt(msg, "priorityclassifier")}, turn=${
+            getDeclaredFloat(
+                msg,
+                "turnangle"
+            )
+        }"
     }
 
     private fun beerouterOriginMsgPrio(track: OsmTrack, idx: Int): String {
@@ -314,7 +394,12 @@ class VoiceHintParityTest {
             val ad = ah.distanceToNext
             if (kotlin.math.abs(bd - ad) > 1e-6) {
                 return "i=$i idx=$idx brouter=$bd beerouter=$ad " +
-                        "brouterHint=${nodeDebug(btrack, idx)} beerouterHint=${nodeDebug(beetrack, idx)}"
+                        "brouterHint=${nodeDebug(btrack, idx)} beerouterHint=${
+                            nodeDebug(
+                                beetrack,
+                                idx
+                            )
+                        }"
             }
         }
         return "none"
@@ -407,7 +492,7 @@ class VoiceHintParityTest {
     private fun nodeDebug(track: OsmTrack, idx: Int): String {
         val msg = track.nodes[idx].message
         val hint = track.getVoiceHint(idx)
-        return "hint=${hint?.cruiserCommandString}, angle=${hint?.angle}, lower=${hint?.lowerBadWayAngle}, higher=${hint?.higherBadWayAngle}, maxBadPrio=${hint?.maxBadPrio}, " +
+        return "hint=${hint?.testCommandString()}, angle=${hint?.angle}, lower=${hint?.lowerBadWayAngle}, higher=${hint?.higherBadWayAngle}, maxBadPrio=${hint?.maxBadPrio}, " +
                 "turn=${msg?.turnangle}, prio=${msg?.priorityclassifier}, " +
                 "mask=${msg?.classifiermask}, linkdist=${msg?.linkdist}, hintGoodPrio=${hint?.goodWay?.priorityclassifier}, " +
                 "hintOldPrio=${hint?.oldWay?.priorityclassifier}, hintGoodDist=${hint?.goodWay?.linkdist}, hintOldDist=${hint?.oldWay?.linkdist}, " +
