@@ -176,15 +176,10 @@ internal class VoiceHintProcessor // this.catchingRange = catchingRange;
                     if (badWay.isLinkType) {
                         isBadwayLink = true
                     }
-                    val isBadHighway2Link = !oldWay.isLinkType && badWay.isLinkType
 
-                    if (badPrio > maxPrioAll && !isBadHighway2Link) {
+                    if (badPrio > maxPrioAll) {
                         maxPrioAll = badPrio
                         input.maxBadPrio = max(input.maxBadPrio, badPrio)
-                    }
-
-                    if (badWay.costfactor < 20f && abs(badTurn) < minAbsAngeRaw) {
-                        minAbsAngeRaw = abs(badTurn)
                     }
 
                     if (badPrio < minPrio) {
@@ -205,6 +200,10 @@ internal class VoiceHintProcessor // this.catchingRange = catchingRange;
                         }
 
                         continue  // ways from the back should not trigger a slight turn
+                    }
+
+                    if (badWay.costfactor < 20f && abs(badTurn) < minAbsAngeRaw) {
+                        minAbsAngeRaw = abs(badTurn)
                     }
 
                     if (badPrio > maxPrioCandidates) {
@@ -253,11 +252,12 @@ internal class VoiceHintProcessor // this.catchingRange = catchingRange;
                 (isHighway2Link && !isBadwayLink && abs(turnAngle) < 5f)
 
 
-            // way has same prio, but bad way has smaller angle
+            // way has same prio, but bad way has smaller angle and is not a bad link and prio is near
             // small: https://brouter.de/brouter-test/#map=17/49.40750/8.69257/standard&lonlats=8.692461,49.407997;8.694028,49.408478&profile=car-eco
             // high:  https://brouter.de/brouter-test/#map=14/52.9951/-0.5786/standard&lonlats=-0.59261,52.991576;-0.583606,52.998947&profile=car-eco
             val samePrioSmallBadAngle =
-                (currentPrio == oldPrio) && minAbsAngeRaw != 180f && minAbsAngeRaw < 35f
+                (currentPrio == oldPrio) && (minPrio - maxPrioAll <= 2) && !isBadwayLink &&
+                        minAbsAngeRaw != 180f && minAbsAngeRaw < 35f
 
 
             // way has prio, but has to give way
@@ -432,6 +432,7 @@ internal class VoiceHintProcessor // this.catchingRange = catchingRange;
                                     (goodWay.priorityclassifier != 26))
                             || input.isRoundabout
                             || abs(input.angle) > 21f
+                            || (abs(input.angle) - input.lowerBadWayAngle) < 21f
                         ) {
                             results.add(input)
                             inputLastSaved = input
