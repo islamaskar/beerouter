@@ -42,7 +42,7 @@ public class OsmPathElement protected constructor() : OsmPos {
     public override val idFromPos: Long
         get() = _idFromPos
 
-    public override fun calcDistance(p: OsmPos): Int {
+    public override fun distanceTo(p: OsmPos): Int {
         return max(1, distance(this.position, p.position).roundToInt())
     }
 

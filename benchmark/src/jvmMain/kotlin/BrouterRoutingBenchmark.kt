@@ -3,8 +3,8 @@ package dev.skynomads.beerouter.benchmark
 import btools.router.OsmNodeNamed
 import btools.router.RoutingContext
 import btools.router.RoutingEngine
-import dev.skynomads.beerouter.osm.toIntLatitude
-import dev.skynomads.beerouter.osm.toIntLongitude
+import dev.skynomads.beerouter.geo.toIntLatitude
+import dev.skynomads.beerouter.geo.toIntLongitude
 import kotlinx.benchmark.Benchmark
 import kotlinx.benchmark.Measurement
 import kotlinx.benchmark.Scope

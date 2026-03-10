@@ -212,7 +212,7 @@ public class OsmNodesMap {
             }
             val currentDestination = destination
             if (currentDestination != null && currentMaxCost < 1000000000) {
-                val distance = n.calcDistance(currentDestination)
+                val distance = n.distanceTo(currentDestination)
                 if (distance > currentMaxCost - currentPathCost + 100) {
                     n.vanish()
                 }

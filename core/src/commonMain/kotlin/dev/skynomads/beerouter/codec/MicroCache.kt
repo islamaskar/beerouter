@@ -253,7 +253,7 @@ public open class MicroCache protected constructor(ab: ByteArray = ByteArray(0))
         return null
     }
 
-    public fun calcDelta(mc1: MicroCache, mc2: MicroCache) {
+    public fun buildDelta(mc1: MicroCache, mc2: MicroCache) {
         var idx1 = 0
         var idx2 = 0
 

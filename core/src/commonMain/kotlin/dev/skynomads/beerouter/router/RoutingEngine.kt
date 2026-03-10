@@ -14,7 +14,7 @@ import dev.skynomads.beerouter.map.OsmNode
 import dev.skynomads.beerouter.map.OsmNodePairSet
 import dev.skynomads.beerouter.map.OsmNodesMap
 import dev.skynomads.beerouter.map.OsmPos
-import dev.skynomads.beerouter.osm.toSElev
+import dev.skynomads.beerouter.geo.toSElev
 import dev.skynomads.beerouter.router.OsmTrack.OsmPathElementHolder
 import dev.skynomads.beerouter.util.SortedHeap
 import kotlinx.coroutines.currentCoroutineContext
@@ -182,7 +182,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
         var minIdx = -1
         for (i in t.nodes.indices) {
             val ope = t.nodes[i]
-            val dist = ope.calcDistance(listOne[0].crosspoint!!)
+            val dist = ope.distanceTo(listOne[0].crosspoint!!)
             if (mindist > dist) {
                 mindist = dist
                 minIdx = i
@@ -193,7 +193,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
         } else {
             minIdx + 1
         }
-        val otherdist = t.nodes[otherIdx].calcDistance(listOne[0].crosspoint!!)
+        val otherdist = t.nodes[otherIdx].distanceTo(listOne[0].crosspoint!!)
         val minSElev = toSElev(t.nodes[minIdx].position.altitude).toInt()
         val otherSElev = toSElev(t.nodes[otherIdx].position.altitude).toInt()
         val diffSElev = otherSElev - minSElev
@@ -418,7 +418,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
                 startIdx = idx
                 startPt = lastPt
                 dist = 0
-                if (lastPt != null) dist += n.calcDistance(lastPt)
+                if (lastPt != null) dist += n.distanceTo(lastPt)
             } else if (toSElev(n.position.altitude) != Short.MIN_VALUE && lastElev == Short.MIN_VALUE && startElev != Short.MIN_VALUE) {
                 // end one point behind exit point to get better elevation results
                 if (idx + 1 < track.nodes.size) endElev =
@@ -427,8 +427,8 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
                 endIdx = idx
                 var tmpPt = track.nodes[if (startIdx > 1) startIdx - 2 else startIdx - 1]
                 val diffElev = endElev - startElev
-                dist += tmpPt.calcDistance(startPt!!)
-                dist += n.calcDistance(lastPt!!)
+                dist += tmpPt.distanceTo(startPt!!)
+                dist += n.distanceTo(lastPt!!)
                 var distRest = dist
                 var incline = diffElev / (dist / 100.0)
                 var tmpincline = 0.0
@@ -465,7 +465,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
                         }
 
                     }
-                    val tmpdist = tmp.calcDistance(tmpPt)
+                    val tmpdist = tmp.distanceTo(tmpPt)
                     distRest -= tmpdist
                     if (hasInclineTags) incline = tmpincline
                     selev = (selev + (tmpdist / 100.0 * incline))
@@ -492,7 +492,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
                         it.position.copy(altitude = lastElev.takeUnless { selev -> selev == Short.MIN_VALUE })
                 }
             } else if (toSElev(n.position.altitude) == Short.MIN_VALUE) {
-                if (lastPt != null) dist += n.calcDistance(lastPt)
+                if (lastPt != null) dist += n.distanceTo(lastPt)
             }
             lastElev = toSElev(n.position.altitude)
             lastPt = n
@@ -801,7 +801,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
 
         while (i < indexEnd) {
             val n = t.nodes[i]
-            if (lastN != null) wayDistance += n.calcDistance(lastN)
+            if (lastN != null) wayDistance += n.distanceTo(lastN)
             lastN = n
 
             if (n.positionEquals(ptStart)) {
@@ -980,7 +980,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
                 val p1 = startWp.crosspoint!!.position
                 val p2 = node.position
                 turnAngle(p0, p1, p2)
-                val dist = node.calcDistance(startWp.crosspoint!!)
+                val dist = node.distanceTo(startWp.crosspoint!!)
                 if (dist < routingContext.global.waypointCatchingRange) return false
             }
             val removeBackList = mutableListOf<OsmPathElement?>()
@@ -1073,7 +1073,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
                     bCheckRoundAbout = true
                 }
                 run {
-                    val dist = tmpback.calcDistance(tmpfore)
+                    val dist = tmpback.distanceTo(tmpfore)
                     val detours = tt.getFromDetourMap(tmpback.idFromPos)
                     var h = detours
                     while (h != null) {
@@ -1095,7 +1095,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
                             removeForeList.add(tmpfore)
                             removeVoiceHintList.add(indexback)
                         }
-                        nextDist = t.nodes[indexfore - 1].calcDistance(tmpfore).toDouble()
+                        nextDist = t.nodes[indexfore - 1].distanceTo(tmpfore).toDouble()
                         wayDistance += nextDist
                     }
                     if (dist > 1 || indexback == 1) {
@@ -1207,7 +1207,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
                 1 -> {
                     angle = 0.0
                     nLast = t.nodes[0]
-                    dist = nLast.calcDistance(n)
+                    dist = nLast.distanceTo(n)
                 }
 
                 else -> {
@@ -1216,7 +1216,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
                     val p2 = t.nodes[i].position
                     angle = turnAngle(p0, p1, p2).angle
                     nLast = t.nodes[i - 1]
-                    dist = nLast.calcDistance(n)
+                    dist = nLast.distanceTo(n)
                 }
             }
             n.message!!.linkdist = dist
@@ -1328,7 +1328,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
             val waypoints = mutableListOf<MatchedWaypoint>()
             for (i in unmatchedWaypoints.indices) {
                 val wp = unmatchedWaypoints[i]
-                if (wp.waypoint!!.calcDistance(wp.crosspoint!!) > routingContext.global.waypointCatchingRange) {
+                if (wp.waypoint!!.distanceTo(wp.crosspoint!!) > routingContext.global.waypointCatchingRange) {
                     val nmw = MatchedWaypoint()
                     if (i == 0) {
                         var onn = OsmNodeNamed(wp.waypoint!!).apply { name = "from" }
@@ -1573,7 +1573,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
 
                 wp.radius = 1.5
                 val testPath = routingContext.createPath(startPath, link, null, guideTrack != null)
-                testPath.airdistance = if (endPos == null) 0 else nextNode.calcDistance(endPos)
+                testPath.airdistance = if (endPos == null) 0 else nextNode.distanceTo(endPos)
                 if (wp.radius < minradius) {
                     bestPath = testPath
                     minradius = wp.radius
@@ -2076,7 +2076,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
             compiledNodes.add(element)
 
             if (nextElement != null) {
-                distance += element.calcDistance(nextElement)
+                distance += element.distanceTo(nextElement)
             }
             element = nextElement
         }

@@ -3,8 +3,8 @@ package dev.skynomads.beerouter.router
 import dev.skynomads.beerouter.geo.CheapRuler.destination
 import dev.skynomads.beerouter.geo.CheapRuler.distance
 import dev.skynomads.beerouter.geo.Position
-import dev.skynomads.beerouter.osm.toIntLatitude
-import dev.skynomads.beerouter.osm.toIntLongitude
+import dev.skynomads.beerouter.geo.toIntLatitude
+import dev.skynomads.beerouter.geo.toIntLongitude
 import kotlin.test.Test
 import kotlin.test.assertEquals
 import kotlin.test.assertTrue

@@ -3,7 +3,7 @@ package dev.skynomads.beerouter.map.generator
 import dev.skynomads.beerouter.codec.MicroCache
 import dev.skynomads.beerouter.codec.MicroCache2
 import dev.skynomads.beerouter.geo.Position
-import dev.skynomads.beerouter.osm.toAltitude
+import dev.skynomads.beerouter.geo.toAltitude
 
 public open class OsmNodeP : OsmLinkP() {
     public var position: Position = Position.ZERO

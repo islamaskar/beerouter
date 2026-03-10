@@ -9,7 +9,7 @@ import androidx.collection.MutableLongObjectMap
 import dev.skynomads.beerouter.map.MatchedWaypoint
 import dev.skynomads.beerouter.map.MatchedWaypoint.Companion.readFromStream
 import dev.skynomads.beerouter.map.OsmPos
-import dev.skynomads.beerouter.osm.toSElev
+import dev.skynomads.beerouter.geo.toSElev
 import kotlinx.io.EOFException
 import kotlinx.io.Sink
 import kotlinx.io.Source
@@ -267,7 +267,7 @@ public class OsmTrack {
                         }
                         input.angle =
                             turnMessage.turnangle
-                        input.distanceToNext = node.calcDistance(origin).toDouble()
+                        input.distanceToNext = node.distanceTo(origin).toDouble()
                     }
                 }
                 run {

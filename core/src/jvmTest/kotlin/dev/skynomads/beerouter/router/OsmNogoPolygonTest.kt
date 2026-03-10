@@ -17,7 +17,7 @@ import kotlin.test.assertTrue
 class OsmNogoPolygonTest {
     @Test
     fun testCalcBoundingCircle() {
-        polygon!!.calcBoundingCircle()
+        polygon!!.updateBoundingCircle()
 
         val scale = coordinateScaleAt(polygon!!.position.latitude)
         val dlon2m = scale.longitudeToMeters
@@ -33,7 +33,7 @@ class OsmNogoPolygonTest {
             val diff = r - r1
             assertTrue(diff >= 0, "i: $i r($r) >= r1($r1)")
         }
-        polyline!!.calcBoundingCircle()
+        polyline!!.updateBoundingCircle()
         r = polyline!!.radius
         for (i in lons.indices) {
             val testLon = toOsmLon(lons[i], OFFSET_X)

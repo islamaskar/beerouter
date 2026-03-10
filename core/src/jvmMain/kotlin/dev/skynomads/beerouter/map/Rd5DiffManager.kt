@@ -12,13 +12,13 @@ import kotlinx.io.files.SystemFileSystem
 
 public object Rd5DiffManager {
     public fun main(args: Array<String>) {
-        calcDiffs(Path(args[0]), Path(args[1]))
+        buildDiffs(Path(args[0]), Path(args[1]))
     }
 
     /**
      * Compute diffs for all RD5 files
      */
-    public fun calcDiffs(oldDir: Path, newDir: Path) {
+    public fun buildDiffs(oldDir: Path, newDir: Path) {
         val oldDiffDir = resolve(oldDir, "diff")
         val newDiffDir = resolve(newDir, "diff")
 

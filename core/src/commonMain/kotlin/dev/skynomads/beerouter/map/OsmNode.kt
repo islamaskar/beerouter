@@ -89,7 +89,7 @@ public open class OsmNode : OsmLink, OsmPos {
         }
     }
 
-    override fun calcDistance(p: OsmPos): Int {
+    override fun distanceTo(p: OsmPos): Int {
         return max(
             1,
             distance(position, p.position).roundToInt()

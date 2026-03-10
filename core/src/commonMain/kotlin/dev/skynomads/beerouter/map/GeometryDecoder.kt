@@ -6,7 +6,7 @@
 package dev.skynomads.beerouter.map
 
 import dev.skynomads.beerouter.geo.Position
-import dev.skynomads.beerouter.osm.toSElev
+import dev.skynomads.beerouter.geo.toSElev
 import dev.skynomads.beerouter.util.ByteDataReader
 
 public class GeometryDecoder {

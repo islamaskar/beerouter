@@ -7,8 +7,8 @@ import dev.skynomads.beerouter.geo.CheapAngleMeter.rawBearing
 import dev.skynomads.beerouter.geo.CheapAngleMeter.turnAngle
 import dev.skynomads.beerouter.geo.Position
 import dev.skynomads.beerouter.geo.coordinateScaleAt
-import dev.skynomads.beerouter.osm.toIntLatitude
-import dev.skynomads.beerouter.osm.toIntLongitude
+import dev.skynomads.beerouter.geo.toIntLatitude
+import dev.skynomads.beerouter.geo.toIntLongitude
 import kotlin.math.PI
 import kotlin.math.cos
 import kotlin.math.sin

@@ -73,6 +73,6 @@ public object CheapAngleMeter {
         return abs(r)
     }
 
-    public fun calcAngle(lon0: Int, lat0: Int, lon1: Int, lat1: Int, lon2: Int, lat2: Int): Double =
+    public fun measureAngle(lon0: Int, lat0: Int, lon1: Int, lat1: Int, lon2: Int, lat2: Int): Double =
         turnAngle(Position(lon0, lat0), Position(lon1, lat1), Position(lon2, lat2)).angle
 }

@@ -239,7 +239,7 @@ internal class StdPath : OsmPath() {
         return cost > c
     }
 
-    private fun calcIncline(dist: Double): Double {
+    private fun computeIncline(dist: Double): Double {
         val min_delta = 3.0
         var shift = 0.0
         if (elevation_buffer > min_delta) {
@@ -266,7 +266,7 @@ internal class StdPath : OsmPath() {
 
         // compute incline
         elevation_buffer = (elevation_buffer + delta_h).toFloat()
-        val incline = calcIncline(dist)
+        val incline = computeIncline(dist)
 
         var maxSpeed = rc.global.maxSpeed
         val speedLimit = (rc.way.maxspeed / 3.6f).toDouble()

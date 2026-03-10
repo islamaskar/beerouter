@@ -1,8 +1,8 @@
 package dev.skynomads.beerouter.router
 
 import dev.skynomads.beerouter.geo.Position
-import dev.skynomads.beerouter.osm.toIntLatitude
-import dev.skynomads.beerouter.osm.toIntLongitude
+import dev.skynomads.beerouter.geo.toIntLatitude
+import dev.skynomads.beerouter.geo.toIntLongitude
 import kotlinx.coroutines.runBlocking
 import kotlin.test.BeforeTest
 import kotlin.test.Test

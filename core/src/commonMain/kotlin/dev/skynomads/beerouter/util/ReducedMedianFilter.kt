@@ -29,7 +29,7 @@ public class ReducedMedianFilter(size: Int) {
         nsamples++
     }
 
-    public fun calcEdgeReducedMedian(fraction: Double): Double {
+    public fun edgeReducedMedian(fraction: Double): Double {
         removeEdgeWeight((1.0 - fraction) / 2.0, true)
         removeEdgeWeight((1.0 - fraction) / 2.0, false)
 

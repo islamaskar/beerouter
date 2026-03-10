@@ -285,7 +285,7 @@ internal class VoiceHintProcessor // this.catchingRange = catchingRange;
 
             if (unconditionalTrigger || conditionalTrigger) {
                 input.angle = turnAngle
-                input.calcCommand()
+                input.updateCommand()
                 val isStraight = input.command == VoiceHint.Command.C
                 input.needsRealTurn = (!unconditionalTrigger) && isStraight
 
@@ -325,7 +325,7 @@ internal class VoiceHintProcessor // this.catchingRange = catchingRange;
         while (i > 0) {
             var hint = results[--i]
             if (hint.command == VoiceHint.Command.UNSET) {
-                hint.calcCommand()
+                hint.updateCommand()
             }
             if (hint.command == VoiceHint.Command.END) {
                 results2.add(hint)
@@ -350,7 +350,7 @@ internal class VoiceHintProcessor // this.catchingRange = catchingRange;
                 if (!explicitRoundabouts) {
                     hint.exitNumber = 0 // use an angular hint instead
                 }
-                hint.calcCommand()
+                hint.updateCommand()
                 results2.add(hint)
             } else if (hint.command == VoiceHint.Command.BL) {
                 results2.add(hint)
@@ -489,13 +489,13 @@ internal class VoiceHintProcessor // this.catchingRange = catchingRange;
                     } else if (transportMode == VoiceHintList.TransportMode.CAR && abs(angles) > 180 - significantAngle) {
                         // add when inc car mode and u-turn, collects e.g. two left turns in range
                         input.angle = angles
-                        input.calcCommand()
+                        input.updateCommand()
                         input.distanceToNext += nextInput.distanceToNext
                         save = true
                         hintIdx++
                     } else if (abs(angles) < significantAngle && input.distanceToNext < minRange) {
                         input.angle = angles
-                        input.calcCommand()
+                        input.updateCommand()
                         input.distanceToNext += nextInput.distanceToNext
                         save = true
                         hintIdx++

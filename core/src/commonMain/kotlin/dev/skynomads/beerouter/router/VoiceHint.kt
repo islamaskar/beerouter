@@ -62,7 +62,7 @@ public class VoiceHint {
         badWay?.let(badWays::add)
     }
 
-    public fun calcCommand() {
+    public fun updateCommand() {
         for (badWay in badWays) {
             if (badWay.isBadOneway) {
                 continue

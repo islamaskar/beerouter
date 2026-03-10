@@ -87,7 +87,7 @@ public class ElevationRaster {
                 rmf.addSample(weights.getWeight(ix, iy), get(row + iy - my, col + ix - mx).toInt())
             }
         }
-        return if (missingData) 0.0 else rmf.calcEdgeReducedMedian(filterCenterFraction)
+        return if (missingData) 0.0 else rmf.edgeReducedMedian(filterCenterFraction)
     }
 
     override fun toString(): String =
@@ -141,13 +141,13 @@ public class ElevationRaster {
             val idx = if (latIndex < 16) latIndex else 16
             var res = allShiftWeights[idx]
             if (res == null) {
-                res = calcWeights(idx)
+                res = buildWeights(idx)
                 allShiftWeights[idx] = res
             }
             return requireNotNull(res)
         }
 
-        private fun calcWeights(latIndex: Int): Array<Array<Weights>> {
+        private fun buildWeights(latIndex: Int): Array<Array<Weights>> {
             val coslat = cos(latIndex * 5.0 / 57.3)
             val ry = filterDiscRadius
             val rx = ry / coslat

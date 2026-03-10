@@ -1,12 +1,12 @@
 package dev.skynomads.beerouter.map
 
 import dev.skynomads.beerouter.geo.Position
-import dev.skynomads.beerouter.osm.toAltitude
-import dev.skynomads.beerouter.osm.toDoubleLatitude
-import dev.skynomads.beerouter.osm.toDoubleLongitude
-import dev.skynomads.beerouter.osm.toIntLatitude
-import dev.skynomads.beerouter.osm.toIntLongitude
-import dev.skynomads.beerouter.osm.toSElev
+import dev.skynomads.beerouter.geo.toAltitude
+import dev.skynomads.beerouter.geo.toDoubleLatitude
+import dev.skynomads.beerouter.geo.toDoubleLongitude
+import dev.skynomads.beerouter.geo.toIntLatitude
+import dev.skynomads.beerouter.geo.toIntLongitude
+import dev.skynomads.beerouter.geo.toSElev
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

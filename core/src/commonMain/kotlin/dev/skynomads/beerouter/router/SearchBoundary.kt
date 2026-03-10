@@ -62,17 +62,17 @@ internal class SearchBoundary(n: OsmNode, private val radius: Int, val direction
 
     fun isInBoundary(n: OsmNode, cost: Int): Boolean {
         if (radius > 0) {
-            return n.calcDistance(p) < radius
+            return n.distanceTo(p) < radius
         }
         return if (cost == 0) wideBounds.contains(n.position) else narrowBounds.contains(n.position)
     }
 
     fun getBoundaryDistance(n: OsmNode): Int {
         return when (searchDirection) {
-            Direction.NORTH -> n.calcDistance(OsmNode(n.position.longitude, narrowBounds.minLat))
-            Direction.WEST -> n.calcDistance(OsmNode(narrowBounds.minLon, n.position.latitude))
-            Direction.SOUTH -> n.calcDistance(OsmNode(n.position.longitude, narrowBounds.maxLat))
-            Direction.EAST -> n.calcDistance(OsmNode(narrowBounds.maxLon, n.position.latitude))
+            Direction.NORTH -> n.distanceTo(OsmNode(n.position.longitude, narrowBounds.minLat))
+            Direction.WEST -> n.distanceTo(OsmNode(narrowBounds.minLon, n.position.latitude))
+            Direction.SOUTH -> n.distanceTo(OsmNode(n.position.longitude, narrowBounds.maxLat))
+            Direction.EAST -> n.distanceTo(OsmNode(narrowBounds.maxLon, n.position.latitude))
         }
     }
 

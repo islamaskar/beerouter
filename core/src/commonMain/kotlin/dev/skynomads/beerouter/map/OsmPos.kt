@@ -10,7 +10,7 @@ import dev.skynomads.beerouter.geo.Position
 public interface OsmPos {
     public val position: Position
 
-    public fun calcDistance(p: OsmPos): Int
+    public fun distanceTo(p: OsmPos): Int
 
     public val idFromPos: Long
 }

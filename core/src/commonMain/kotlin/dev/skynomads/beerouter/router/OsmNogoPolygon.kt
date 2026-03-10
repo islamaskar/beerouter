@@ -27,7 +27,7 @@ public class OsmNogoPolygon(public val isClosed: Boolean) : OsmNodeNamed() {
     }
 
     /**
-     * calcBoundingCircle is inspired by the algorithm described on
+     * updateBoundingCircle is inspired by the algorithm described on
      * http://geomalgorithms.com/a08-_containers.html
      * (fast computation of bounding circly in c). It is not as fast (the original
      * algorithm runs in linear time), as it may do more iterations but it takes
@@ -35,7 +35,7 @@ public class OsmNogoPolygon(public val isClosed: Boolean) : OsmNodeNamed() {
      * is also used in other places of brouter does change when moving the centerpoint
      * with each iteration.
      * This is done to ensure the calculated radius being used
-     * in RoutingContext.calcDistance will actually contain the whole polygon.
+     * in RoutingContext.distanceBetween will actually contain the whole polygon.
      *
      *
      * For reasonable distributed vertices the implemented algorithm runs in O(n*ln(n)).
@@ -43,7 +43,7 @@ public class OsmNogoPolygon(public val isClosed: Boolean) : OsmNodeNamed() {
      * overall usage of cpu is neglegible in comparism to the cpu-usage of the
      * actual routing algoritm.
      */
-    public fun calcBoundingCircle() {
+    public fun updateBoundingCircle() {
         var cxmin: Int
         var cxmax: Int
         var cymin: Int
@@ -87,7 +87,7 @@ public class OsmNogoPolygon(public val isClosed: Boolean) : OsmNodeNamed() {
             for (i in points.indices) {
                 val p = points[i]
 
-                // to get precisely the same results as in RoutingContext.calcDistance()
+                // to get precisely the same results as in RoutingContext.distanceBetween()
                 // it's crucial to use the factors of the center!
                 val x1 = (cx - p.longitude) * dlon2m
                 val y1 = (cy - p.latitude) * dlat2m
@@ -125,7 +125,7 @@ public class OsmNogoPolygon(public val isClosed: Boolean) : OsmNodeNamed() {
 
         position = Position(cx, cy, 0.0)
         radius =
-            rad * 1.001 + 1.0 // ensure the outside-of-enclosing-circle test in RoutingContext.calcDistance() is not passed by segments ending very close to the radius due to limited numerical precision
+            rad * 1.001 + 1.0 // ensure the outside-of-enclosing-circle test in RoutingContext.distanceBetween() is not passed by segments ending very close to the radius due to limited numerical precision
     }
 
     /**

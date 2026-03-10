@@ -219,7 +219,7 @@ public class Rd5DiffTool {
                                     val mc1: MicroCache = createMicroCache(ab1, dataBuffers)
                                     val mc2: MicroCache = createMicroCache(ab2, dataBuffers)
                                     mc = MicroCache2(mc1.size + mc2.size, abBuf2, 0, 0, 32)
-                                    mc.calcDelta(mc1, mc2)
+                                    mc.buildDelta(mc1, mc2)
                                 }
 
                                 val len = mcOut.writeMC(mc)

@@ -46,7 +46,7 @@ public class RestrictionData() : GeneratorBase() {
     }
 
     private fun checkGeometry(): Boolean {
-        val a = CheapAngleMeter.calcAngle(
+        val a = CheapAngleMeter.measureAngle(
             fromPosition.longitude, fromPosition.latitude,
             viaPosition.longitude, viaPosition.latitude,
             toPosition.longitude, toPosition.latitude

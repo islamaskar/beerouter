@@ -1,4 +1,4 @@
-package dev.skynomads.beerouter.osm
+package dev.skynomads.beerouter.geo
 
 import kotlin.math.roundToInt
 

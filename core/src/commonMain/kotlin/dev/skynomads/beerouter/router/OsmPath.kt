@@ -14,7 +14,7 @@ import dev.skynomads.beerouter.map.OsmLink
 import dev.skynomads.beerouter.map.OsmLinkHolder
 import dev.skynomads.beerouter.map.OsmNode
 import dev.skynomads.beerouter.map.TurnRestriction.Companion.isTurnForbidden
-import dev.skynomads.beerouter.osm.toSElev
+import dev.skynomads.beerouter.geo.toSElev
 import kotlin.math.cos
 import kotlin.math.sin
 
@@ -123,7 +123,7 @@ public abstract class OsmPath : OsmLinkHolder {
                 it.priorityclassifier = 0
                 it.classifiermask = 0
                 it.position = targetNode!!.idFromPos.toPosition()
-                it.linkdist = sourceNode!!.calcDistance(targetNode!!)
+                it.linkdist = sourceNode!!.distanceTo(targetNode!!)
                 it.wayTags = mapOf("direct_segment" to "$seg")
                 seg++
             }
@@ -261,7 +261,7 @@ public abstract class OsmPath : OsmLinkHolder {
                 message = MessageData()
             }
 
-            var dist = rc.calcDistance(currentPosition, nextPosition)
+            var dist = rc.distanceBetween(currentPosition, nextPosition)
 
             var stopAtEndpoint = false
             if (rc.shortestmatch) {
@@ -293,7 +293,7 @@ public abstract class OsmPath : OsmLinkHolder {
                     }
 
                     if (rc.checkPendingEndpoint()) {
-                        dist = rc.calcDistance(
+                        dist = rc.distanceBetween(
                             requireNotNull(rc.shortestPosition),
                             nextPosition
                         )

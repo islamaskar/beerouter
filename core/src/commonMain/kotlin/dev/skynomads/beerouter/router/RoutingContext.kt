@@ -258,7 +258,7 @@ public class RoutingContext(
         for (nogo in nogopoints) {
             var goodGuy = true
             for (wp in waypoints) {
-                if (wp.calcDistance(nogo) < nogo.radius.toInt()
+                if (wp.distanceTo(nogo) < nogo.radius.toInt()
                     && (nogo !is OsmNogoPolygon || (if (nogo.isClosed)
                         nogo.isWithin(
                             wp.position.longitude.toLong(),
@@ -292,7 +292,7 @@ public class RoutingContext(
             val wp = requireNotNull(mwp.crosspoint)
             for (nogo in nogopoints) {
                 if (nogo.nogoWeight.isNaN()
-                    && wp.calcDistance(nogo) < nogo.radius && (nogo !is OsmNogoPolygon || (if (nogo.isClosed)
+                    && wp.distanceTo(nogo) < nogo.radius && (nogo !is OsmNogoPolygon || (if (nogo.isClosed)
                         nogo.isWithin(
                             wp.position.longitude.toLong(),
                             wp.position.latitude.toLong()
@@ -340,7 +340,7 @@ public class RoutingContext(
         for (nogo in nogopoints) {
             var allIn = nogo.nogoWeight.isNaN()
             for (wp in waypoints) {
-                val dist = wp.calcDistance(nogo)
+                val dist = wp.distanceTo(nogo)
                 if (dist < nogo.radius
                     && (nogo !is OsmNogoPolygon || (if (nogo.isClosed)
                         nogo.isWithin(
@@ -428,7 +428,7 @@ public class RoutingContext(
         isEndpoint = false
     }
 
-    public fun calcDistance(start: Position, end: Position): Int {
+    public fun distanceBetween(start: Position, end: Position): Int {
         var lon1 = start.longitude
         var lat1 = start.latitude
         var lon2 = end.longitude
