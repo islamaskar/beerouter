@@ -137,8 +137,7 @@ public abstract class OsmPath : OsmLinkHolder {
         // extract the 3 positions of the first section
         var previousPosition = origin.originPosition
 
-        var lon1 = sourceNode!!.position.longitude
-        var lat1 = sourceNode!!.position.latitude
+        var pos1 = sourceNode!!.position
         var ele1 = origin.selev
 
         var linkdisttotal = 0
@@ -151,7 +150,7 @@ public abstract class OsmPath : OsmLinkHolder {
         rc.way.evaluate(rc.inverseDirection xor isReverse, description)
 
         // and check if is useful
-        if (rc.ai != null && rc.ai!!.polygon!!.isWithin(lon1.toLong(), lat1.toLong())) {
+        if (rc.ai != null && rc.ai!!.polygon!!.isWithin(pos1.longitude.toLong(), pos1.latitude.toLong())) {
             rc.ai!!.checkAreaInfo(rc.way, ele1 / 4.0, description)
         }
 
@@ -209,25 +208,19 @@ public abstract class OsmPath : OsmLinkHolder {
 
         var nsection = 0
         while (true) {
-            val currentPosition = Position(lon1, lat1)
+            val currentPosition = pos1
             originPosition = currentPosition
 
-            val lon2: Int
-            val lat2: Int
             var ele2: Short
             val originEle2: Short
             val nextPosition: Position
 
             if (transferNode == null) {
                 val targetPosition = requireNotNull(targetNode).position
-                lon2 = targetPosition.longitude
-                lat2 = targetPosition.latitude
                 originEle2 = toSElev(targetPosition.altitude)
                 nextPosition = targetPosition
             } else {
                 nextPosition = transferNode.position
-                lon2 = nextPosition.longitude
-                lat2 = nextPosition.latitude
                 originEle2 = toSElev(nextPosition.altitude)
             }
             ele2 = originEle2
@@ -239,7 +232,7 @@ public abstract class OsmPath : OsmLinkHolder {
                 if (if (rc.inverseDirection)
                         isTurnForbidden(
                             sourceNode!!.firstRestriction,
-                            Position(lon2, lat2).id,
+                            nextPosition.id,
                             requireNotNull(previousPosition).id,
                             rc.global.bikeMode || rc.global.footMode,
                             rc.global.carMode
@@ -248,7 +241,7 @@ public abstract class OsmPath : OsmLinkHolder {
                         isTurnForbidden(
                             sourceNode!!.firstRestriction,
                             requireNotNull(previousPosition).id,
-                            Position(lon2, lat2).id,
+                            nextPosition.id,
                             rc.global.bikeMode || rc.global.footMode,
                             rc.global.carMode
                         )
@@ -298,7 +291,7 @@ public abstract class OsmPath : OsmLinkHolder {
                     if (rc.checkPendingEndpoint()) {
                         dist = rc.calcDistance(
                             requireNotNull(rc.shortestPosition),
-                            Position(lon2, lat2)
+                            nextPosition
                         )
                         if (rc.shortestmatch) {
                             stopAtEndpoint = true
@@ -315,13 +308,13 @@ public abstract class OsmPath : OsmLinkHolder {
             if (isStartpoint) {
                 if (rc.startDirectionValid) {
                     val dir = rc.startDirection!! * DEG_TO_RAD
-                    val scale = coordinateScaleAt(lat1)
+                    val scale = coordinateScaleAt(pos1.latitude)
                     previousPosition = Position(
-                        lon1 - (1000.0 * sin(dir) / scale.longitudeToMeters).toInt(),
-                        lat1 - (1000.0 * cos(dir) / scale.latitudeToMeters).toInt()
+                        pos1.longitude - (1000.0 * sin(dir) / scale.longitudeToMeters).toInt(),
+                        pos1.latitude - (1000.0 * cos(dir) / scale.latitudeToMeters).toInt()
                     )
                 } else {
-                    previousPosition = Position(lon1 - (lon2 - lon1), lat1 - (lat2 - lat1))
+                    previousPosition = Position(pos1.longitude - (nextPosition.longitude - pos1.longitude), pos1.latitude - (nextPosition.latitude - pos1.latitude))
                 }
             }
             val angleMeasurement = turnAngle(
@@ -376,7 +369,7 @@ public abstract class OsmPath : OsmLinkHolder {
                 it.energy = this.totalEnergy.toFloat()
                 it.priorityclassifier = priorityclassifier
                 it.classifiermask = classifiermask
-                it.position = Position(lon2, lat2, originEle2.toDouble() / 4.0)
+                it.position = Position(nextPosition.longitude, nextPosition.latitude, originEle2.toDouble() / 4.0)
                 it.wayTags = rc.way.getMap(isReverse, description)
             }
 
@@ -418,12 +411,11 @@ public abstract class OsmPath : OsmLinkHolder {
 
             if (recordTransferNodes) {
                 originElement =
-                    OsmPathElement.create(lon2, lat2, originEle2, originElement)
+                    OsmPathElement.create(Position(nextPosition.longitude, nextPosition.latitude, originEle2.toDouble() / 4.0), originElement)
                 originElement!!.cost = cost
             }
-            previousPosition = Position(lon1, lat1)
-            lon1 = lon2
-            lat1 = lat2
+            previousPosition = pos1
+            pos1 = nextPosition
             ele1 = ele2
             nsection++
         }
