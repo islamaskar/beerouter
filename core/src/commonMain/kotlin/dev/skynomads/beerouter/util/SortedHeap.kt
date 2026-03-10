@@ -116,8 +116,8 @@ public class SortedHeap<V> {
     ) {
         var next: SortedBin? = null
         var nextNonEmpty: SortedBin? = null
-        var al: IntArray = IntArray(binsize) // key array
-        var vla: Array<Any?> = arrayOfNulls(binsize) // value array
+        val al: IntArray = IntArray(binsize) // key array
+        val vla: Array<Any?> = arrayOfNulls(binsize) // value array
         var lv: Int = 0 // low value
         var lp: Int = binsize // low pointer
 
