@@ -1,5 +1,6 @@
 package dev.skynomads.beerouter.benchmark
 
+import dev.skynomads.beerouter.geo.Position
 import dev.skynomads.beerouter.map.DefaultMapSource
 import dev.skynomads.beerouter.router.OsmNodeNamed
 import dev.skynomads.beerouter.router.RoutingContext
@@ -17,7 +18,6 @@ import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
 import kotlinx.io.files.SystemTemporaryDirectory
 import kotlinx.io.readString
-import dev.skynomads.beerouter.geo.Position
 
 @State(Scope.Benchmark)
 @Warmup(iterations = 1)
@@ -79,6 +79,7 @@ open class BeerouterRoutingBenchmark {
         }
         error("none of the candidate files exist: ${candidates.joinToString()}")
     }
+
     private companion object {
         private const val SEGMENT_FILE_NAME = "E5_N45.rd5"
     }

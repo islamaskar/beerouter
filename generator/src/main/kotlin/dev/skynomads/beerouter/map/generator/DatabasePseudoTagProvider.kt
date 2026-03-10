@@ -46,7 +46,10 @@ public class DatabasePseudoTagProvider(filename: String?, jdbcurl: String?) {
     }
 
     private fun doFileImport(filename: String) {
-        val input = if (filename.endsWith(".gz")) GZIPInputStream(FileInputStream(filename)) else FileInputStream(filename)
+        val input =
+            if (filename.endsWith(".gz")) GZIPInputStream(FileInputStream(filename)) else FileInputStream(
+                filename
+            )
         BufferedReader(InputStreamReader(input)).use { br ->
             println("DatabasePseudoTagProvider reading from file: $filename")
             br.readLine()

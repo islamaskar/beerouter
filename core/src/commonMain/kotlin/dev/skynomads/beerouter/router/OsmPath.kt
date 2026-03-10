@@ -150,8 +150,12 @@ public abstract class OsmPath : OsmLinkHolder {
         rc.way.evaluate(rc.inverseDirection xor isReverse, description)
 
         // and check if is useful
-        if (rc.ai != null && rc.ai!!.polygon!!.isWithin(pos1.longitude.toLong(), pos1.latitude.toLong())) {
-            rc.ai!!.checkAreaInfo(rc.way, ele1 / 4.0, description)
+        if (rc.ai != null && rc.ai!!.polygon!!.isWithin(
+                pos1.longitude.toLong(),
+                pos1.latitude.toLong()
+            )
+        ) {
+            rc.ai!!.checkAreaInfo(rc.way, ele1.toDouble() / 4.0, description)
         }
 
         // calculate the costfactor inputs
@@ -314,7 +318,10 @@ public abstract class OsmPath : OsmLinkHolder {
                         pos1.latitude - (1000.0 * cos(dir) / scale.latitudeToMeters).toInt()
                     )
                 } else {
-                    previousPosition = Position(pos1.longitude - (nextPosition.longitude - pos1.longitude), pos1.latitude - (nextPosition.latitude - pos1.latitude))
+                    previousPosition = Position(
+                        pos1.longitude - (nextPosition.longitude - pos1.longitude),
+                        pos1.latitude - (nextPosition.latitude - pos1.latitude)
+                    )
                 }
             }
             val angleMeasurement = turnAngle(
@@ -329,14 +336,14 @@ public abstract class OsmPath : OsmLinkHolder {
             var delta_h = 0.0
             if (ele2 == Short.MIN_VALUE) ele2 = ele1
             if (ele1 != Short.MIN_VALUE) {
-                delta_h = (ele2 - ele1) / 4.0
+                delta_h = (ele2.toInt() - ele1.toInt()) / 4.0
                 if (rc.inverseDirection) {
                     delta_h = -delta_h
                 }
             }
 
 
-            val elevation = if (ele2 == Short.MIN_VALUE) 100.0 else ele2 / 4.0
+            val elevation = if (ele2 == Short.MIN_VALUE) 100.0 else ele2.toDouble() / 4.0
 
             var sectionCost = processWaySection(
                 rc,
@@ -369,7 +376,11 @@ public abstract class OsmPath : OsmLinkHolder {
                 it.energy = this.totalEnergy.toFloat()
                 it.priorityclassifier = priorityclassifier
                 it.classifiermask = classifiermask
-                it.position = Position(nextPosition.longitude, nextPosition.latitude, originEle2.toDouble() / 4.0)
+                it.position = Position(
+                    nextPosition.longitude,
+                    nextPosition.latitude,
+                    originEle2.toDouble() / 4.0
+                )
                 it.wayTags = rc.way.getMap(isReverse, description)
             }
 
@@ -380,7 +391,7 @@ public abstract class OsmPath : OsmLinkHolder {
                         Position(
                             shortestPosition.longitude,
                             shortestPosition.latitude,
-                            originEle2.toDouble() / 4.0
+                            ele2.toDouble() / 4.0
                         ),
                         originElement
                     )
@@ -411,7 +422,13 @@ public abstract class OsmPath : OsmLinkHolder {
 
             if (recordTransferNodes) {
                 originElement =
-                    OsmPathElement.create(Position(nextPosition.longitude, nextPosition.latitude, originEle2.toDouble() / 4.0), originElement)
+                    OsmPathElement.create(
+                        Position(
+                            nextPosition.longitude,
+                            nextPosition.latitude,
+                            originEle2.toDouble() / 4.0
+                        ), originElement
+                    )
                 originElement!!.cost = cost
             }
             previousPosition = pos1

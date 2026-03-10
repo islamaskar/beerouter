@@ -1,8 +1,6 @@
 package dev.skynomads.beerouter.map.generator
 
 import dev.skynomads.beerouter.geo.Position
-import dev.skynomads.beerouter.map.generator.DiffCoderDataInputStream
-import dev.skynomads.beerouter.map.generator.DiffCoderDataOutputStream
 
 public class NodeData : GeneratorBase {
     public var nid: Long
@@ -38,8 +36,8 @@ public class NodeData : GeneratorBase {
         dos.writeDiffed(position.longitude.toLong(), 1)
         dos.writeDiffed(position.latitude.toLong(), 2)
         val mode = (if (description == null) 0 else 1) or
-            (if (position.altitude == null) 0 else 2) or
-            (if (retainWithoutLinks) 4 else 0)
+                (if (position.altitude == null) 0 else 2) or
+                (if (retainWithoutLinks) 4 else 0)
         dos.writeByte(mode)
         if ((mode and 1) != 0) {
             dos.writeShort(description!!.size)

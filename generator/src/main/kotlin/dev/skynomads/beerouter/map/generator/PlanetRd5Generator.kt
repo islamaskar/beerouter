@@ -43,9 +43,12 @@ public object PlanetRd5Generator {
         val nodes55 = File(runDir, "nodes55").apply { mkdirs() }
         val ways55 = File(runDir, "waytiles55").apply { mkdirs() }
         val baseLookupFile = File(profileDir, "lookups.dat")
-        val poiGenerationConfig = poiConfigFile?.let { PoiConfigParser.parse(it.readText()) } ?: PoiGenerationConfig.EMPTY
-        val generatedLookup = GeneratedLookups.generate(baseLookupFile.readText(), poiGenerationConfig)
-        val lookupFile = File(runDir, "generated-lookups.dat").apply { writeText(generatedLookup.lookupContent) }
+        val poiGenerationConfig =
+            poiConfigFile?.let { PoiConfigParser.parse(it.readText()) } ?: PoiGenerationConfig.EMPTY
+        val generatedLookup =
+            GeneratedLookups.generate(baseLookupFile.readText(), poiGenerationConfig)
+        val lookupFile =
+            File(runDir, "generated-lookups.dat").apply { writeText(generatedLookup.lookupContent) }
         val relFile = File(runDir, "cycleways.dat")
         val resFile = File(runDir, "restrictions.dat")
         val profileAll = File(profileDir, "all.brf")
@@ -78,7 +81,7 @@ public object PlanetRd5Generator {
                 "Running PosUnifier without SRTM data"
             } else {
                 "Running PosUnifier with SRTM dir ${srtmDir.absolutePath}" +
-                    (srtmFallbackDir?.let { " and fallback ${it.absolutePath}" } ?: "")
+                        (srtmFallbackDir?.let { " and fallback ${it.absolutePath}" } ?: "")
             },
         )
         PosUnifier().process(
@@ -122,9 +125,17 @@ public object PlanetRd5Generator {
                 """.trimIndent() + "\n",
             )
         }
-        Files.copy(lookupFile.toPath(), File(outputDir, "lookups.dat").toPath(), StandardCopyOption.REPLACE_EXISTING)
+        Files.copy(
+            lookupFile.toPath(),
+            File(outputDir, "lookups.dat").toPath(),
+            StandardCopyOption.REPLACE_EXISTING
+        )
         poiConfigFile?.let {
-            Files.copy(it.toPath(), File(outputDir, "poi-rules.conf").toPath(), StandardCopyOption.REPLACE_EXISTING)
+            Files.copy(
+                it.toPath(),
+                File(outputDir, "poi-rules.conf").toPath(),
+                StandardCopyOption.REPLACE_EXISTING
+            )
         }
 
         println("rd5 files written to ${outputDir.absolutePath}")

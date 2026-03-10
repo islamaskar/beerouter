@@ -1,6 +1,5 @@
 package dev.skynomads.beerouter.map.generator
 
-import dev.skynomads.beerouter.map.generator.DiffCoderDataInputStream
 import java.io.BufferedInputStream
 import java.io.EOFException
 import java.io.File

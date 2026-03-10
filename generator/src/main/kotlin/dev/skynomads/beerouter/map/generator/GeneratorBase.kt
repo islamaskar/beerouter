@@ -1,6 +1,5 @@
 package dev.skynomads.beerouter.map.generator
 
-import dev.skynomads.beerouter.map.generator.DiffCoderDataOutputStream
 import java.io.BufferedInputStream
 import java.io.BufferedOutputStream
 import java.io.DataInputStream
@@ -46,7 +45,8 @@ public abstract class GeneratorBase : WayListener, NodeListener, RelationListene
             tileOutStreams = arrayOfNulls(64)
         }
         if (tileOutStreams!![tileIndex] == null) {
-            tileOutStreams!![tileIndex] = createOutStream(File(requireNotNull(outTileDir), getNameForTile(tileIndex)))
+            tileOutStreams!![tileIndex] =
+                createOutStream(File(requireNotNull(outTileDir), getNameForTile(tileIndex)))
         }
         return tileOutStreams!![tileIndex]!!
     }
@@ -62,14 +62,20 @@ public abstract class GeneratorBase : WayListener, NodeListener, RelationListene
         }
     }
 
-    override fun nodeFileStart(nodefile: File?) {}
-    override fun nextNode(data: NodeData) {}
-    override fun nodeFileEnd(nodefile: File?) {}
-    override fun wayFileStart(wayfile: File): Boolean = true
-    override fun nextWay(data: WayData) {}
-    override fun wayFileEnd(wayfile: File) {}
-    override fun nextRelation(data: RelationData) {}
-    override fun nextRestriction(data: RelationData, fromWid: Long, toWid: Long, viaNid: Long) {}
+    public override fun nodeFileStart(nodefile: File?) {}
+    public override fun nextNode(data: NodeData) {}
+    public override fun nodeFileEnd(nodefile: File?) {}
+    public override fun wayFileStart(wayfile: File): Boolean = true
+    public override fun nextWay(data: WayData) {}
+    public override fun wayFileEnd(wayfile: File) {}
+    public override fun nextRelation(data: RelationData) {}
+    public override fun nextRestriction(
+        data: RelationData,
+        fromWid: Long,
+        toWid: Long,
+        viaNid: Long
+    ) {
+    }
 
     public companion object {
         public fun readId(`is`: DataInputStream): Long {

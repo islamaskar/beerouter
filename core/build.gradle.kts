@@ -1,6 +1,3 @@
-import org.gradle.api.Project
-import org.gradle.plugins.signing.SigningExtension
-
 fun Project.trimmedGradleProperty(name: String): String? =
     providers.gradleProperty(name).orNull?.trim()?.takeIf { it.isNotEmpty() }
 
@@ -75,11 +72,15 @@ tasks.withType<Test> {
     }
 }
 
-val routingTestGeneratedSegmentsDir = rootProject.layout.buildDirectory.dir("routing-test/tuebingen-regbez/segments4")
+val routingTestGeneratedSegmentsDir =
+    rootProject.layout.buildDirectory.dir("routing-test/tuebingen-regbez/segments4")
 
 tasks.named<Test>("jvmTest") {
     dependsOn(":generator:generateRoutingTestRd5")
-    systemProperty("beerouter.generatedSegmentDir", routingTestGeneratedSegmentsDir.get().asFile.absolutePath)
+    systemProperty(
+        "beerouter.generatedSegmentDir",
+        routingTestGeneratedSegmentsDir.get().asFile.absolutePath
+    )
 }
 
 tasks.register<Test>("routingParityMiniTest") {
@@ -89,7 +90,10 @@ tasks.register<Test>("routingParityMiniTest") {
     val jvmTestTask = tasks.named<Test>("jvmTest").get()
     testClassesDirs = jvmTestTask.testClassesDirs
     classpath = jvmTestTask.classpath
-    systemProperty("beerouter.generatedSegmentDir", routingTestGeneratedSegmentsDir.get().asFile.absolutePath)
+    systemProperty(
+        "beerouter.generatedSegmentDir",
+        routingTestGeneratedSegmentsDir.get().asFile.absolutePath
+    )
     filter {
         includeTestsMatching("dev.skynomads.beerouter.router.RoutingTest.routingParityMiniTest")
     }
@@ -101,8 +105,8 @@ mavenPublishing {
     val isNonLocalPublish = requestedTasks.any {
         val taskName = it.substringAfterLast(':')
         taskName.equals("publish", ignoreCase = true) ||
-            (taskName.contains("publish", ignoreCase = true) &&
-                !taskName.contains("mavenlocal", ignoreCase = true))
+                (taskName.contains("publish", ignoreCase = true) &&
+                        !taskName.contains("mavenlocal", ignoreCase = true))
     }
 
     publishToMavenCentral(automaticRelease = true)

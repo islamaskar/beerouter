@@ -10,6 +10,8 @@ purpose. Prefer val over var.
 
 Prefer data classes when possible.
 
+Java getter and setter functions should be replaced by properties.
+
 Java dependencies should be removed since we aim to support Kotlin Native. The currently targeted
 platforms are JVM and Linux Native. Do not remove the brouter dependency for testing.
 androidx.collection is a multiplatform library, do not remove it. Do not replace java.net.URI with

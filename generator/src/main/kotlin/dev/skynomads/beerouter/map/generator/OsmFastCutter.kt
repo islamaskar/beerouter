@@ -21,7 +21,9 @@ public object OsmFastCutter : GeneratorBase() {
     ) {
         var cutter = OsmCutter()
         if (dbTagInfo != null) {
-            if (dbTagInfo.lowercase().startsWith("jdbc")) cutter.setDbTagDatabase(dbTagInfo) else cutter.setDbTagFilename(dbTagInfo)
+            if (dbTagInfo.lowercase()
+                    .startsWith("jdbc")
+            ) cutter.setDbTagDatabase(dbTagInfo) else cutter.setDbTagFilename(dbTagInfo)
         }
         cutter.setNodeTagRetentionPolicy(
             NodeTagRetentionPolicy.fromProfiles(
@@ -39,13 +41,22 @@ public object OsmFastCutter : GeneratorBase() {
             it.retainDescribedNodes = !poiGenerationConfig.isEmpty
         }
         cutter.nodeFilter = nodeFilter
-        cutter.process(lookupFile, nodeDir, null, relFile, null, profileAll, requireNotNull(mapFile))
+        cutter.process(
+            lookupFile,
+            nodeDir,
+            null,
+            relFile,
+            null,
+            profileAll,
+            requireNotNull(mapFile)
+        )
         cutter.wayCutter!!.finish()
         cutter.restrictionCutter!!.finish()
         cutter = OsmCutter()
 
         val wayCut5 = WayCutter5()
-        wayCut5.relMerger = RelationMerger().also { it.init(relFile, lookupFile, profileReport, profileCheck) }
+        wayCut5.relMerger =
+            RelationMerger().also { it.init(relFile, lookupFile, profileReport, profileCheck) }
         wayCut5.restrictionCutter5 = RestrictionCutter5().also {
             it.init(File(requireNotNull(nodeDir.parentFile), "restrictions55"), wayCut5)
         }

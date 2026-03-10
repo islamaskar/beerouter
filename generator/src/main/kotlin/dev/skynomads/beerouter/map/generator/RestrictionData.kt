@@ -1,9 +1,9 @@
 package dev.skynomads.beerouter.map.generator
 
 import dev.skynomads.beerouter.geo.CheapAngleMeter
+import dev.skynomads.beerouter.geo.Position
 import java.io.BufferedWriter
 import java.io.DataInputStream
-import dev.skynomads.beerouter.geo.Position
 import java.io.DataOutputStream
 import java.io.FileWriter
 import java.io.IOException
@@ -35,7 +35,7 @@ public class RestrictionData() : GeneratorBase() {
 
     public fun isValid(): Boolean {
         var valid = fromPosition.longitude != 0 && toPosition.longitude != 0 &&
-            (restriction.startsWith("only_") || restriction.startsWith("no_"))
+                (restriction.startsWith("only_") || restriction.startsWith("no_"))
         valid = valid && !restriction.contains("on_red")
         if (!valid || badWayMatch || !checkGeometry()) {
             synchronized(badTRs) {

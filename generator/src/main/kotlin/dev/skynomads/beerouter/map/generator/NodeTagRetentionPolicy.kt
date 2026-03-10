@@ -6,7 +6,7 @@ internal data class NodeTagRetentionPolicy(
     val routingRelevantKeys: Set<String>,
     val poiConfig: PoiGenerationConfig,
 ) {
-    fun retainedTags(tags: Map<String, String>): Map<String, String> {
+    internal fun retainedTags(tags: Map<String, String>): Map<String, String> {
         if (poiConfig.isEmpty) {
             return tags
         }
@@ -22,10 +22,10 @@ internal data class NodeTagRetentionPolicy(
         return retained
     }
 
-    companion object {
-        val DEFAULT: NodeTagRetentionPolicy = NodeTagRetentionPolicy(emptySet(), PoiGenerationConfig.EMPTY)
+    internal companion object {
+        internal val DEFAULT: NodeTagRetentionPolicy = NodeTagRetentionPolicy(emptySet(), PoiGenerationConfig.EMPTY)
 
-        fun fromProfiles(
+        internal fun fromProfiles(
             lookupFile: File,
             profileFiles: List<File>,
             poiConfig: PoiGenerationConfig,

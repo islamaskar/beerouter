@@ -1,7 +1,5 @@
 package dev.skynomads.beerouter.map.generator
 
-import dev.skynomads.beerouter.map.generator.MixCoderDataInputStream
-import dev.skynomads.beerouter.map.generator.MixCoderDataOutputStream
 import java.io.DataInputStream
 import java.io.DataOutputStream
 import java.io.InputStream
@@ -49,7 +47,8 @@ public class ElevationRasterCoder {
                 } else {
                     lastval = value
                 }
-                val code = if (value == Short.MIN_VALUE) -1 else if (value < 0) value - 1 else value.toInt()
+                val code =
+                    if (value == Short.MIN_VALUE) -1 else if (value < 0) value - 1 else value.toInt()
                 mco.writeMixed(code)
                 col += colstep
             }
@@ -64,7 +63,8 @@ public class ElevationRasterCoder {
             var col = 0
             while (col < raster.ncols) {
                 val code = mci.readMixed()
-                var v30 = if (code == -1) Short.MIN_VALUE.toInt() else if (code < 0) code + 1 else code
+                var v30 =
+                    if (code == -1) Short.MIN_VALUE.toInt() else if (code < 0) code + 1 else code
                 if (raster.usingWeights && v30 > -32766) {
                     v30 *= 2
                 }

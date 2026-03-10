@@ -2,7 +2,6 @@ package dev.skynomads.beerouter.map.generator
 
 import androidx.collection.MutableLongSet
 import dev.skynomads.beerouter.geo.Position
-import dev.skynomads.beerouter.map.generator.DiffCoderDataOutputStream
 import java.io.BufferedInputStream
 import java.io.DataInputStream
 import java.io.EOFException
@@ -52,14 +51,14 @@ public class PosUnifier : GeneratorBase() {
         borderNodesOut.close()
     }
 
-    override fun nodeFileStart(nodefile: File?) {
+    public override fun nodeFileStart(nodefile: File?) {
         resetElevationRaster()
         outNodeFile = fileFromTemplate(requireNotNull(nodefile), nodeTilesOut, "u5d")
         nodesOutStream = createOutStream(requireNotNull(outNodeFile))
         positionSets = arrayOfNulls(2500)
     }
 
-    override fun nextNode(data: NodeData) {
+    public override fun nextNode(data: NodeData) {
         val srtm = srtmForNode(data.position)
         val selev = srtm?.getElevation(data.position)
         data.position = data.position.copy(altitude = selev)
@@ -70,7 +69,7 @@ public class PosUnifier : GeneratorBase() {
         }
     }
 
-    override fun nodeFileEnd(nodefile: File?) {
+    public override fun nodeFileEnd(nodefile: File?) {
         nodesOutStream.close()
         val raster = lastSrtmRaster
         val output = outNodeFile
@@ -82,7 +81,8 @@ public class PosUnifier : GeneratorBase() {
     }
 
     private fun checkAdd(position: Position): Boolean {
-        val slot = ((position.longitude % 5_000_000) / 100_000) * 50 + ((position.latitude % 5_000_000) / 100_000)
+        val slot =
+            ((position.longitude % 5_000_000) / 100_000) * 50 + ((position.latitude % 5_000_000) / 100_000)
         val id = position.id
         var set = positionSets[slot]
         if (set == null) {
@@ -126,7 +126,10 @@ public class PosUnifier : GeneratorBase() {
         }
         lastSrtmLonIdx = srtmLonIdx
         lastSrtmLatIdx = srtmLatIdx
-        val filename = if (UseRasterRd5FileName) genFilenameRd5(position) else genFilenameXY(srtmLonIdx, srtmLatIdx)
+        val filename = if (UseRasterRd5FileName) genFilenameRd5(position) else genFilenameXY(
+            srtmLonIdx,
+            srtmLatIdx
+        )
         lastSrtmRaster = srtmmap[filename]
         if (lastSrtmRaster == null && !srtmmap.containsKey(filename)) {
             fun loadRaster(dir: String?): ElevationRaster? {
@@ -134,7 +137,11 @@ public class PosUnifier : GeneratorBase() {
                 val file = File(File(dir), "$filename.bef")
                 if (!file.exists()) return null
                 return try {
-                    BufferedInputStream(FileInputStream(file)).use { ElevationRasterCoder().decodeRaster(it) }
+                    BufferedInputStream(FileInputStream(file)).use {
+                        ElevationRasterCoder().decodeRaster(
+                            it
+                        )
+                    }
                 } catch (_: Exception) {
                     null
                 }

@@ -1,7 +1,7 @@
 package dev.skynomads.beerouter.map.generator
 
 public data class PoiGenerationConfig(
-    val rules: List<PoiRule>,
+    public val rules: List<PoiRule>,
 ) {
     public val isEmpty: Boolean
         get() = rules.isEmpty()

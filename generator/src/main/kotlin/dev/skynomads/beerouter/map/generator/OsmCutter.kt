@@ -1,9 +1,9 @@
 package dev.skynomads.beerouter.map.generator
 
-import dev.skynomads.beerouter.geo.Position
 import dev.skynomads.beerouter.expressions.BExpressionContextNode
 import dev.skynomads.beerouter.expressions.BExpressionContextWay
 import dev.skynomads.beerouter.expressions.BExpressionMetaData
+import dev.skynomads.beerouter.geo.Position
 import java.io.BufferedOutputStream
 import java.io.DataOutputStream
 import java.io.File
@@ -78,7 +78,7 @@ public class OsmCutter : GeneratorBase() {
         this.nodeTagRetentionPolicy = nodeTagRetentionPolicy
     }
 
-    override fun nextNode(data: NodeData) {
+    public override fun nextNode(data: NodeData) {
         nodesParsed++
         checkStats()
         val tags = data.getTagsOrNull()
@@ -114,7 +114,7 @@ public class OsmCutter : GeneratorBase() {
         }
     }
 
-    override fun nextWay(data: WayData) {
+    public override fun nextWay(data: WayData) {
         waysParsed++
         checkStats()
         val tags = data.getTagsOrNull() ?: return
@@ -122,7 +122,11 @@ public class OsmCutter : GeneratorBase() {
         generatePseudoTags(tags)
         val lookupData = expctxWay.createNewLookupData()!!
         for (key in tags.keys) {
-            expctxWay.addLookupValue(key, requireNotNull(data.getTag(key)).replace(' ', '_'), lookupData)
+            expctxWay.addLookupValue(
+                key,
+                requireNotNull(data.getTag(key)).replace(' ', '_'),
+                lookupData
+            )
         }
         data.description = expctxWay.encode(lookupData)
         if (data.description == null) return
@@ -136,7 +140,7 @@ public class OsmCutter : GeneratorBase() {
         nodeFilter?.nextWay(data)
     }
 
-    override fun nextRelation(data: RelationData) {
+    public override fun nextRelation(data: RelationData) {
         relsParsed++
         checkStats()
         val route = data.getTag("route") ?: return
@@ -154,7 +158,12 @@ public class OsmCutter : GeneratorBase() {
         writeId(cyclewayDos, -1)
     }
 
-    override fun nextRestriction(data: RelationData, fromWid: Long, toWid: Long, viaNid: Long) {
+    public override fun nextRestriction(
+        data: RelationData,
+        fromWid: Long,
+        toWid: Long,
+        viaNid: Long
+    ) {
         val type = data.getTag("type")
         if (type != "restriction") return
         var exceptions: Short = 0
@@ -201,7 +210,7 @@ public class OsmCutter : GeneratorBase() {
         return lon * 6 + lat
     }
 
-    override fun getNameForTile(tileIndex: Int): String {
+    public override fun getNameForTile(tileIndex: Int): String {
         val lon = (tileIndex / 6) * 45 - 180
         val lat = (tileIndex % 6) * 30 - 90
         val slon = if (lon < 0) "W${-lon}" else "E$lon"

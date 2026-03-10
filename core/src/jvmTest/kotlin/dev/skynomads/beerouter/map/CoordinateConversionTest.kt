@@ -1,11 +1,11 @@
 package dev.skynomads.beerouter.map
 
 import dev.skynomads.beerouter.geo.Position
+import dev.skynomads.beerouter.osm.toAltitude
 import dev.skynomads.beerouter.osm.toDoubleLatitude
 import dev.skynomads.beerouter.osm.toDoubleLongitude
 import dev.skynomads.beerouter.osm.toIntLatitude
 import dev.skynomads.beerouter.osm.toIntLongitude
-import dev.skynomads.beerouter.osm.toAltitude
 import dev.skynomads.beerouter.osm.toSElev
 import kotlin.test.Test
 import kotlin.test.assertEquals
@@ -145,8 +145,16 @@ class CoordinateConversionTest {
             )
             val node = OsmNode(position)
 
-            assertEquals(lon, node.position.longitude, message = "iLon should match original for extreme value")
-            assertEquals(lat, node.position.latitude, message = "iLat should match original for extreme value")
+            assertEquals(
+                lon,
+                node.position.longitude,
+                message = "iLon should match original for extreme value"
+            )
+            assertEquals(
+                lat,
+                node.position.latitude,
+                message = "iLat should match original for extreme value"
+            )
         }
     }
 

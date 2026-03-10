@@ -1,24 +1,24 @@
 package dev.skynomads.beerouter.map.generator
 
+import dev.skynomads.beerouter.geo.Position
 import dev.skynomads.beerouter.map.MapSource
 import dev.skynomads.beerouter.map.PoiFinder
 import dev.skynomads.beerouter.map.PoiQuery
 import dev.skynomads.beerouter.map.RandomAccessReader
-import dev.skynomads.beerouter.geo.Position
+import java.io.File
+import java.io.RandomAccessFile
+import java.net.URI
+import java.nio.file.Files
+import java.nio.file.StandardCopyOption
+import java.util.zip.GZIPInputStream
+import javax.xml.stream.XMLInputFactory
+import kotlin.io.path.createTempDirectory
 import kotlin.test.Test
 import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertFailsWith
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
-import java.io.File
-import java.io.RandomAccessFile
-import java.net.URI
-import java.nio.file.Files
-import java.nio.file.StandardCopyOption
-import kotlin.io.path.createTempDirectory
-import javax.xml.stream.XMLInputFactory
-import java.util.zip.GZIPInputStream
 
 public class GeneratorTest {
     @Test
@@ -33,7 +33,10 @@ public class GeneratorTest {
         val generation = generateBeerouterSegments(tmpdir, mapFile, workingDir, profileDir)
         val segments = generation.segments
 
-        assertTrue(requireNotNull(segments.listFiles()).isNotEmpty(), "segments directory should not be empty")
+        assertTrue(
+            requireNotNull(segments.listFiles()).isNotEmpty(),
+            "segments directory should not be empty"
+        )
     }
 
     @Test
@@ -45,7 +48,12 @@ public class GeneratorTest {
         val profileDir = findProfileDir()
         val tmpdir = createTempDirectory("generator-parity-").toFile()
 
-        val beerouterSegments = generateBeerouterSegments(File(tmpdir, "beerouter"), mapFile, workingDir, profileDir).segments
+        val beerouterSegments = generateBeerouterSegments(
+            File(tmpdir, "beerouter"),
+            mapFile,
+            workingDir,
+            profileDir
+        ).segments
         val brouterSegments = UpstreamBrouterReference.generateSegments(
             baseDir = File(tmpdir, "brouter"),
             mapFile = mapFile,
@@ -93,7 +101,10 @@ public class GeneratorTest {
         )
         finder.close()
 
-        assertEquals(expectedPois.map(ExpectedPoi::positionId).sorted(), results.map { it.nodeId }.sorted())
+        assertEquals(
+            expectedPois.map(ExpectedPoi::positionId).sorted(),
+            results.map { it.nodeId }.sorted()
+        )
         assertTrue(results.all { it.tags["amenity"] == "toilets" })
     }
 
@@ -144,7 +155,10 @@ public class GeneratorTest {
         finder.close()
 
         assertEquals(expectedPois.size, results.size)
-        assertEquals(expectedPois.map(ExpectedPoi::positionId).sorted(), results.map { it.nodeId }.sorted())
+        assertEquals(
+            expectedPois.map(ExpectedPoi::positionId).sorted(),
+            results.map { it.nodeId }.sorted()
+        )
     }
 
     @Test
@@ -167,7 +181,11 @@ public class GeneratorTest {
             mapSource = TestMapSource(generation.segments),
             lookupContent = File(profileDir, "lookups.dat").readText(),
         )
-        val bbox = parseExpectedPois(testResourceFile("/dreieich.osm.gz"), "amenity", "toilets").boundingBox()
+        val bbox = parseExpectedPois(
+            testResourceFile("/dreieich.osm.gz"),
+            "amenity",
+            "toilets"
+        ).boundingBox()
 
         val error = assertFailsWith<Exception> {
             finder.find(
@@ -199,9 +217,12 @@ public class GeneratorTest {
         val nodes55 = File(tmpdir, "nodes55").apply { mkdir() }
         val ways55 = File(tmpdir, "waytiles55").apply { mkdir() }
         val baseLookupFile = File(profileDir, "lookups.dat")
-        val poiGenerationConfig = poiConfigContent?.let(PoiConfigParser::parse) ?: PoiGenerationConfig.EMPTY
-        val generatedLookup = GeneratedLookups.generate(baseLookupFile.readText(), poiGenerationConfig)
-        val lookupFile = File(tmpdir, "generated-lookups.dat").apply { writeText(generatedLookup.lookupContent) }
+        val poiGenerationConfig =
+            poiConfigContent?.let(PoiConfigParser::parse) ?: PoiGenerationConfig.EMPTY
+        val generatedLookup =
+            GeneratedLookups.generate(baseLookupFile.readText(), poiGenerationConfig)
+        val lookupFile =
+            File(tmpdir, "generated-lookups.dat").apply { writeText(generatedLookup.lookupContent) }
         val relFile = File(tmpdir, "cycleways.dat")
         val resFile = File(tmpdir, "restrictions.dat")
         val profileAll = File(profileDir, "all.brf")
@@ -228,10 +249,26 @@ public class GeneratorTest {
 
         val unodes55 = File(tmpdir, "unodes55").apply { mkdir() }
         val bordernodes = File(tmpdir, "bordernodes.dat")
-        PosUnifier().process(nodes55, unodes55, borderFile, bordernodes, workingDir.absolutePath, null)
+        PosUnifier().process(
+            nodes55,
+            unodes55,
+            borderFile,
+            bordernodes,
+            workingDir.absolutePath,
+            null
+        )
 
         val segments = File(tmpdir, "segments").apply { mkdir() }
-        WayLinker().process(unodes55, ways55, bordernodes, resFile, lookupFile, profileAll, segments, "rd5")
+        WayLinker().process(
+            unodes55,
+            ways55,
+            bordernodes,
+            resFile,
+            lookupFile,
+            profileAll,
+            segments,
+            "rd5"
+        )
         return GeneratedSegments(segments, lookupFile)
     }
 
@@ -312,7 +349,8 @@ public class GeneratorTest {
         assertEquals(brouterFiles.keys, beerouterFiles.keys, "segment file set differs")
 
         for ((relativePath, beerouterFile) in beerouterFiles) {
-            val brouterFile = requireNotNull(brouterFiles[relativePath]) { "missing $relativePath in brouter output" }
+            val brouterFile =
+                requireNotNull(brouterFiles[relativePath]) { "missing $relativePath in brouter output" }
             assertRd5Equivalent(beerouterFile, brouterFile)
         }
     }
@@ -347,7 +385,8 @@ public class GeneratorTest {
                 if (beerouterBytes[index] != brouterBytes[index]) add(index)
             }
         }
-        val timestampRange = beerouterTimestampOffset until (beerouterTimestampOffset + Long.SIZE_BYTES)
+        val timestampRange =
+            beerouterTimestampOffset until (beerouterTimestampOffset + Long.SIZE_BYTES)
         assertTrue(
             diffPositions.all(timestampRange::contains),
             "${beerouterFile.name}: unexpected byte differences at ${diffPositions.take(16)}",
@@ -441,7 +480,8 @@ public class GeneratorTest {
     private class TestMapSource(private val segmentDir: File) : MapSource {
         override fun exists(fileName: String): Boolean = File(segmentDir, fileName).isFile
 
-        override fun open(fileName: String): RandomAccessReader = TestRandomAccessReader(File(segmentDir, fileName))
+        override fun open(fileName: String): RandomAccessReader =
+            TestRandomAccessReader(File(segmentDir, fileName))
     }
 
     private class TestRandomAccessReader(file: File) : RandomAccessReader {

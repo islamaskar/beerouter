@@ -5,11 +5,11 @@
  */
 package dev.skynomads.beerouter.router
 
-import dev.skynomads.beerouter.map.MatchedWaypoint
-import dev.skynomads.beerouter.map.OsmNode
 import dev.skynomads.beerouter.geo.CheapRuler.distance
 import dev.skynomads.beerouter.geo.Position
 import dev.skynomads.beerouter.geo.coordinateScaleAt
+import dev.skynomads.beerouter.map.MatchedWaypoint
+import dev.skynomads.beerouter.map.OsmNode
 import kotlin.math.sqrt
 
 public open class OsmNodeNamed : OsmNode {
@@ -22,6 +22,8 @@ public open class OsmNodeNamed : OsmNode {
     public var type: MatchedWaypoint.Type = MatchedWaypoint.Type.SHAPING
 
     public constructor()
+
+    public constructor(position: Position) : super(position)
 
     public constructor(n: OsmNode) : super(n.position)
 

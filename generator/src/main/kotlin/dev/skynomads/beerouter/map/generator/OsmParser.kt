@@ -13,7 +13,12 @@ public class OsmParser : GeneratorBase() {
     private lateinit var wListener: WayListener
     private lateinit var rListener: RelationListener
 
-    public fun readMap(mapFile: File, nListener: NodeListener, wListener: WayListener, rListener: RelationListener) {
+    public fun readMap(
+        mapFile: File,
+        nListener: NodeListener,
+        wListener: WayListener,
+        rListener: RelationListener
+    ) {
         this.nListener = nListener
         this.wListener = wListener
         this.rListener = rListener
@@ -106,7 +111,12 @@ public class OsmParser : GeneratorBase() {
             }
             for (fi in 0 until fromWid.size) {
                 for (ti in 0 until toWid.size) {
-                    rListener.nextRestriction(relation, fromWid.get(fi), toWid.get(ti), viaNid.get(0))
+                    rListener.nextRestriction(
+                        relation,
+                        fromWid.get(fi),
+                        toWid.get(ti),
+                        viaNid.get(0)
+                    )
                 }
             }
         } catch (e: Exception) {

@@ -3,6 +3,7 @@ package dev.skynomads.beerouter.map.generator
 import dev.skynomads.beerouter.codec.MicroCache
 import dev.skynomads.beerouter.codec.MicroCache2
 import dev.skynomads.beerouter.geo.Position
+import dev.skynomads.beerouter.osm.toAltitude
 
 public open class OsmNodeP : OsmLinkP() {
     public var position: Position = Position.ZERO
@@ -12,9 +13,10 @@ public open class OsmNodeP : OsmLinkP() {
     public fun getILon(): Int = position.longitude
 
     public open fun getSElev(): Short =
-        if ((bits.toInt() and NO_BRIDGE_BIT) == 0 || (bits.toInt() and NO_TUNNEL_BIT) == 0) Short.MIN_VALUE else position.altitude ?: 0
+        if ((bits.toInt() and NO_BRIDGE_BIT) == 0 || (bits.toInt() and NO_TUNNEL_BIT) == 0) Short.MIN_VALUE else position.altitude
+            ?: 0
 
-    public fun getElev(): Double = (position.altitude ?: 0).toDouble() / 4.0
+    public fun getElev(): Double = (position.altitude ?: 0).toAltitude() ?: 0.0
 
     public fun createLink(source: OsmNodeP): OsmLinkP {
         if (sourceNode == null && targetNode == null) {
@@ -191,7 +193,8 @@ public open class OsmNodeP : OsmLinkP() {
         return hasLinks || retainWithoutLinks()
     }
 
-    public fun toString2(): String = "${position.longitude - 180000000}_${position.latitude - 90000000}_${(position.altitude ?: 0) / 4}"
+    public fun toString2(): String =
+        "${position.longitude - 180000000}_${position.latitude - 90000000}_${position.altitudeMeters ?: 0.0}"
 
     public val idFromPos: Long
         get() = position.id

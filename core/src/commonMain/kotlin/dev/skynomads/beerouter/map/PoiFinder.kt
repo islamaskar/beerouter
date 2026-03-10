@@ -4,9 +4,8 @@ import dev.skynomads.beerouter.codec.DataBuffers
 import dev.skynomads.beerouter.codec.TagValueValidator
 import dev.skynomads.beerouter.expressions.BExpressionContextNode
 import dev.skynomads.beerouter.expressions.BExpressionMetaData
-import dev.skynomads.beerouter.geo.Position
-import dev.skynomads.beerouter.geo.longitudeFromId
 import dev.skynomads.beerouter.geo.latitudeFromId
+import dev.skynomads.beerouter.geo.longitudeFromId
 import kotlin.math.max
 import kotlin.math.min
 
@@ -74,13 +73,13 @@ public class PoiFinder(
                             null,
                             null
                         )
-                        
+
                         val size = segment.size
                         for (index in 0 until size) {
                             val nodeId = segment.getIdForIndex(index)
                             val lon = nodeId.longitudeFromId()
                             val lat = nodeId.latitudeFromId()
-                            
+
                             if (lon !in query.minLon..query.maxLon ||
                                 lat !in query.minLat..query.maxLat
                             ) {
@@ -90,19 +89,19 @@ public class PoiFinder(
                             if (!segment.getAndClear(nodeId)) {
                                 continue
                             }
-                            
+
                             val node = OsmNode(nodeId)
                             val description = node.parseNodeTags(segment, nodeContext) ?: continue
-                            
+
                             val tags = nodeContext.getMap(false, description)
                             if (!matchesRequiredTags(tags, query.requiredTags)) {
                                 continue
                             }
-                            
+
                             if (!seenNodeIds.add(nodeId)) {
                                 continue
                             }
-                            
+
                             results += PoiResult(
                                 nodeId = nodeId,
                                 position = node.position,

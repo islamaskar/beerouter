@@ -22,7 +22,7 @@ public class RestrictionCutter5 : GeneratorBase() {
         }
     }
 
-    override fun getNameForTile(tileIndex: Int): String {
+    public override fun getNameForTile(tileIndex: Int): String {
         val name = wayCutter5.getNameForTile(tileIndex)
         return name.substring(0, name.length - 3) + "rt5"
     }

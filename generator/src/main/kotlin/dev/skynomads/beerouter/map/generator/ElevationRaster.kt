@@ -31,9 +31,9 @@ public class ElevationRaster {
         val wcol = dcol - col
         missingData = false
         val eval = (1.0 - wrow) * (1.0 - wcol) * get(row, col) +
-            wrow * (1.0 - wcol) * get(row + 1, col) +
-            (1.0 - wrow) * wcol * get(row, col + 1) +
-            wrow * wcol * get(row + 1, col + 1)
+                wrow * (1.0 - wcol) * get(row + 1, col) +
+                (1.0 - wrow) * wcol * get(row, col + 1) +
+                wrow * wcol * get(row + 1, col + 1)
         return if (missingData) Short.MIN_VALUE else (eval * 4).toInt().toShort()
     }
 
@@ -66,13 +66,13 @@ public class ElevationRaster {
         val w1 = getWeights(latIdx + 1)
         missingData = false
         val m0 = w00 * getElevation(w0[gx][gy], row, col) +
-            w01 * getElevation(w0[gx][gy + 1], row, col) +
-            w10 * getElevation(w0[gx + 1][gy], row, col) +
-            w11 * getElevation(w0[gx + 1][gy + 1], row, col)
+                w01 * getElevation(w0[gx][gy + 1], row, col) +
+                w10 * getElevation(w0[gx + 1][gy], row, col) +
+                w11 * getElevation(w0[gx + 1][gy + 1], row, col)
         val m1 = w00 * getElevation(w1[gx][gy], row, col) +
-            w01 * getElevation(w1[gx][gy + 1], row, col) +
-            w10 * getElevation(w1[gx + 1][gy], row, col) +
-            w11 * getElevation(w1[gx + 1][gy + 1], row, col)
+                w01 * getElevation(w1[gx][gy + 1], row, col) +
+                w10 * getElevation(w1[gx + 1][gy], row, col) +
+                w11 * getElevation(w1[gx + 1][gy + 1], row, col)
         if (missingData) return Short.MIN_VALUE
         return (((1.0 - wlat) * m0 + wlat * m1) * 2).toInt().toShort()
     }
@@ -96,11 +96,12 @@ public class ElevationRaster {
     private class Weights(public val nx: Int, public val ny: Int) {
         private val weights: DoubleArray = DoubleArray(nx * ny)
         private var total: Long = 0
-        fun inc(ix: Int, iy: Int) {
+        internal fun inc(ix: Int, iy: Int) {
             weights[iy * nx + ix] += 1.0
             total++
         }
-        fun normalize(verbose: Boolean) {
+
+        internal fun normalize(verbose: Boolean) {
             for (iy in 0 until ny) {
                 val sb = if (verbose) StringBuilder() else null
                 for (ix in 0 until nx) {
@@ -117,7 +118,8 @@ public class ElevationRaster {
                 }
             }
         }
-        fun getWeight(ix: Int, iy: Int): Double = weights[iy * nx + ix]
+
+        internal fun getWeight(ix: Int, iy: Int): Double = weights[iy * nx + ix]
     }
 
     public companion object {

@@ -8,7 +8,6 @@ import dev.skynomads.beerouter.codec.MicroCache2
 import dev.skynomads.beerouter.codec.StatCoderContext
 import dev.skynomads.beerouter.expressions.BExpressionContextWay
 import dev.skynomads.beerouter.expressions.BExpressionMetaData
-import dev.skynomads.beerouter.geo.Position
 import dev.skynomads.beerouter.util.ByteArrayUnifier
 import dev.skynomads.beerouter.util.Crc32
 import java.io.BufferedInputStream
@@ -80,7 +79,7 @@ public class WayLinker : GeneratorBase(), Runnable {
                 while (size + currentMasterSize + 50_000_000L > maxFileSize) {
                     println(
                         "****** slave thread waiting for permission to process file of size $size " +
-                            "currentMaster=$currentMasterSize maxFileSize=$maxFileSize"
+                                "currentMaster=$currentMasterSize maxFileSize=$maxFileSize"
                     )
                     stateChanged.awaitNanos(10_000_000_000L)
                 }
@@ -114,8 +113,26 @@ public class WayLinker : GeneratorBase(), Runnable {
         val controller = ThreadController()
         slave.tc = controller
         master.tc = controller
-        master.processInternal(nodeTilesIn, wayTilesIn, borderFileIn, restrictionsFileIn, lookupFile, profileFile, dataTilesOut, dataTilesSuffix)
-        slave.processInternal(nodeTilesIn, wayTilesIn, borderFileIn, restrictionsFileIn, lookupFile, profileFile, dataTilesOut, dataTilesSuffix)
+        master.processInternal(
+            nodeTilesIn,
+            wayTilesIn,
+            borderFileIn,
+            restrictionsFileIn,
+            lookupFile,
+            profileFile,
+            dataTilesOut,
+            dataTilesSuffix
+        )
+        slave.processInternal(
+            nodeTilesIn,
+            wayTilesIn,
+            borderFileIn,
+            restrictionsFileIn,
+            lookupFile,
+            profileFile,
+            dataTilesOut,
+            dataTilesSuffix
+        )
         val m = Thread(master)
         val s = Thread(slave)
         m.start()
@@ -151,7 +168,7 @@ public class WayLinker : GeneratorBase(), Runnable {
         skipEncodingCheck = java.lang.Boolean.getBoolean("skipEncodingCheck")
     }
 
-    override fun run() {
+    public override fun run() {
         try {
             // Both worker threads read from the same directory with different size ordering.
             // Do not delete input tiles during iteration or one thread can race the other.
@@ -165,7 +182,7 @@ public class WayLinker : GeneratorBase(), Runnable {
         }
     }
 
-    override fun wayFileStart(wayfile: File): Boolean {
+    public override fun wayFileStart(wayfile: File): Boolean {
         val filesize = wayfile.length()
         if (isSlave) {
             if (!tc.setCurrentSlaveSize(filesize)) return false
@@ -189,7 +206,11 @@ public class WayLinker : GeneratorBase(), Runnable {
             NodeIterator(this, false).processFile(borderFileIn)
             readingBorder = false
             NodeIterator(this, true).processFile(nodeFile)
-            val restrictionFile = fileFromTemplate(wayfile, File(requireNotNull(nodeTilesIn.parentFile), "restrictions55"), "rt5")
+            val restrictionFile = fileFromTemplate(
+                wayfile,
+                File(requireNotNull(nodeTilesIn.parentFile), "restrictions55"),
+                "rt5"
+            )
             if (restrictionFile.exists()) {
                 val di = DataInputStream(BufferedInputStream(FileInputStream(restrictionFile)))
                 try {
@@ -202,7 +223,8 @@ public class WayLinker : GeneratorBase(), Runnable {
                                 nodesMap[res.viaNid] = node
                             }
                             res.viaPosition = node.position
-                            node.firstRestrictionData = res.also { it.next = node.firstRestrictionData }
+                            node.firstRestrictionData =
+                                res.also { it.next = node.firstRestrictionData }
                         }
                     }
                 } catch (_: EOFException) {
@@ -225,7 +247,7 @@ public class WayLinker : GeneratorBase(), Runnable {
         return false
     }
 
-    override fun nextNode(data: NodeData) {
+    public override fun nextNode(data: NodeData) {
         val node = if (data.description == null) {
             OsmNodeP()
         } else {
@@ -274,7 +296,7 @@ public class WayLinker : GeneratorBase(), Runnable {
     private fun isEndNode(node: OsmNodeP, way: WayData): Boolean =
         node === nodesMap.get(way.nodes.get(0)) || node === nodesMap.get(way.nodes.get(way.nodes.size - 1))
 
-    override fun nextWay(data: WayData) {
+    public override fun nextWay(data: WayData) {
         val description = abUnifier.unify(requireNotNull(data.description))
         expctxWay.evaluate(false, description)
         var ok = expctxWay.costfactor < 10000f
@@ -284,8 +306,10 @@ public class WayLinker : GeneratorBase(), Runnable {
 
         var wayBits: Byte = 0
         expctxWay.decode(description)
-        if (!expctxWay.getBooleanLookupValue("bridge")) wayBits = (wayBits.toInt() or OsmNodeP.NO_BRIDGE_BIT).toByte()
-        if (!expctxWay.getBooleanLookupValue("tunnel")) wayBits = (wayBits.toInt() or OsmNodeP.NO_TUNNEL_BIT).toByte()
+        if (!expctxWay.getBooleanLookupValue("bridge")) wayBits =
+            (wayBits.toInt() or OsmNodeP.NO_BRIDGE_BIT).toByte()
+        if (!expctxWay.getBooleanLookupValue("tunnel")) wayBits =
+            (wayBits.toInt() or OsmNodeP.NO_TUNNEL_BIT).toByte()
 
         var n1: OsmNodeP? = null
         var n2: OsmNodeP? = null
@@ -308,7 +332,7 @@ public class WayLinker : GeneratorBase(), Runnable {
         }
     }
 
-    override fun wayFileEnd(wayfile: File) {
+    public override fun wayFileEnd(wayfile: File) {
         val ncaches = divisor * divisor
         val indexsize = ncaches * 4
         val localNodesList = nodesList ?: return
@@ -354,8 +378,10 @@ public class WayLinker : GeneratorBase(), Runnable {
                     val subs: Array<MutableList<OsmNodeP>?> = arrayOfNulls(ncaches)
                     val subByteArrays: Array<ByteArray?> = arrayOfNulls(ncaches)
                     for (node in nlist) {
-                        val subLonIdx = (node.position.longitude - minLon) / cellsize - divisor * lonIdx
-                        val subLatIdx = (node.position.latitude - minLat) / cellsize - divisor * latIdx
+                        val subLonIdx =
+                            (node.position.longitude - minLon) / cellsize - divisor * lonIdx
+                        val subLatIdx =
+                            (node.position.latitude - minLat) / cellsize - divisor * latIdx
                         val si = subLatIdx * divisor + subLonIdx
                         val list = subs[si] ?: ArrayList<OsmNodeP>().also { subs[si] = it }
                         list.add(node)
@@ -368,7 +394,8 @@ public class WayLinker : GeneratorBase(), Runnable {
                             val n0 = subList[0]
                             val lonIdxDiv = n0.position.longitude / cellsize
                             val latIdxDiv = n0.position.latitude / cellsize
-                            val mc: MicroCache = MicroCache2(subList.size, abBuf2, lonIdxDiv, latIdxDiv, divisor)
+                            val mc: MicroCache =
+                                MicroCache2(subList.size, abBuf2, lonIdxDiv, latIdxDiv, divisor)
                             val sortedList = TreeMap<Int, OsmNodeP>()
                             for (node in subList) {
                                 val longId = node.idFromPos
@@ -436,11 +463,16 @@ public class WayLinker : GeneratorBase(), Runnable {
         println("**** codec stats: *******\n${StatCoderContext.bitReport}")
     }
 
-    private fun compileFileIndex(fileIndex: LongArray, lookupVersion: Short, lookupMinorVersion: Short): ByteArray {
+    private fun compileFileIndex(
+        fileIndex: LongArray,
+        lookupVersion: Short,
+        lookupMinorVersion: Short
+    ): ByteArray {
         val bos = ByteArrayOutputStream()
         DataOutputStream(bos).use { dos ->
             for (i55 in 0 until 25) {
-                var versionPrefix = if (i55 == 1) lookupMinorVersion.toLong() else lookupVersion.toLong()
+                var versionPrefix =
+                    if (i55 == 1) lookupMinorVersion.toLong() else lookupVersion.toLong()
                 versionPrefix = versionPrefix shl 48
                 dos.writeLong(fileIndex[i55] or versionPrefix)
             }

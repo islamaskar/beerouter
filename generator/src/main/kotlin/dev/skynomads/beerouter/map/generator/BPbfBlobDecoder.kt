@@ -65,7 +65,11 @@ public class BPbfBlobDecoder(
         }
     }
 
-    private fun buildTags(keys: List<Int>, values: List<Int>, fieldDecoder: BPbfFieldDecoder): Map<String, String>? {
+    private fun buildTags(
+        keys: List<Int>,
+        values: List<Int>,
+        fieldDecoder: BPbfFieldDecoder
+    ): Map<String, String>? {
         if (keys.isEmpty()) return null
         val tags = HashMap<String, String>()
         for (i in keys.indices) {
@@ -77,7 +81,12 @@ public class BPbfBlobDecoder(
     private fun processNodes(nodes: List<Osmformat.Node>, fieldDecoder: BPbfFieldDecoder) {
         for (node in nodes) {
             val tags = buildTags(node.keysList, node.valsList, fieldDecoder)
-            parser.addNode(node.id, tags, fieldDecoder.decodeLatitude(node.lat), fieldDecoder.decodeLongitude(node.lon))
+            parser.addNode(
+                node.id,
+                tags,
+                fieldDecoder.decodeLatitude(node.lat),
+                fieldDecoder.decodeLongitude(node.lon)
+            )
         }
     }
 
@@ -100,7 +109,12 @@ public class BPbfBlobDecoder(
                 }
                 tags[fieldDecoder.decodeString(keyIndex)] = fieldDecoder.decodeString(valueIndex)
             }
-            parser.addNode(nodeId, tags, latitude.toDouble() / 10_000_000.0, longitude.toDouble() / 10_000_000.0)
+            parser.addNode(
+                nodeId,
+                tags,
+                latitude.toDouble() / 10_000_000.0,
+                longitude.toDouble() / 10_000_000.0
+            )
         }
     }
 
@@ -154,10 +168,18 @@ public class BPbfBlobDecoder(
         return wayIds
     }
 
-    private fun processRelations(relations: List<Osmformat.Relation>, fieldDecoder: BPbfFieldDecoder) {
+    private fun processRelations(
+        relations: List<Osmformat.Relation>,
+        fieldDecoder: BPbfFieldDecoder
+    ) {
         for (relation in relations) {
             val tags = buildTags(relation.keysList, relation.valsList, fieldDecoder)
-            val wayIds = buildRelationMembers(relation.memidsList, relation.rolesSidList, relation.typesList, fieldDecoder)
+            val wayIds = buildRelationMembers(
+                relation.memidsList,
+                relation.rolesSidList,
+                relation.typesList,
+                fieldDecoder
+            )
             parser.addRelation(relation.id, tags, wayIds, fromWid, toWid, viaNid)
         }
     }

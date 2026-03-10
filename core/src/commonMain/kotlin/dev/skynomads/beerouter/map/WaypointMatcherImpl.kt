@@ -1,8 +1,8 @@
 package dev.skynomads.beerouter.map
 
 import dev.skynomads.beerouter.codec.WaypointMatcher
-import dev.skynomads.beerouter.geo.CheapAngleMeter.bearingDifference
 import dev.skynomads.beerouter.geo.CheapAngleMeter.bearing
+import dev.skynomads.beerouter.geo.CheapAngleMeter.bearingDifference
 import dev.skynomads.beerouter.geo.Position
 import dev.skynomads.beerouter.geo.coordinateScaleAt
 import kotlin.math.abs

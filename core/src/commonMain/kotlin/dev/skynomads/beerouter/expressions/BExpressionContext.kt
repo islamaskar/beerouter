@@ -73,7 +73,7 @@ public abstract class BExpressionContext protected constructor(
     public abstract val buildInVariableNames: Array<String?>
 
     public fun getBuildInVariable(idx: Int): Float {
-        return requireNotNull(currentVars)[idx + currentVarOffset]
+        return currentVars!![idx + currentVarOffset]
     }
 
     private var linenr = 0

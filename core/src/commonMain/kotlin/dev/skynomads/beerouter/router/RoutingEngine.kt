@@ -1,9 +1,9 @@
 package dev.skynomads.beerouter.router
 
 import androidx.collection.MutableLongObjectMap
-import dev.skynomads.beerouter.geo.CheapAngleMeter.turnAngle
-import dev.skynomads.beerouter.geo.CheapAngleMeter.bearingDifference
 import dev.skynomads.beerouter.geo.CheapAngleMeter.bearing
+import dev.skynomads.beerouter.geo.CheapAngleMeter.bearingDifference
+import dev.skynomads.beerouter.geo.CheapAngleMeter.turnAngle
 import dev.skynomads.beerouter.geo.CheapRuler.destination
 import dev.skynomads.beerouter.geo.CheapRuler.distance
 import dev.skynomads.beerouter.geo.Position

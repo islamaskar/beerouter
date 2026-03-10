@@ -3,7 +3,6 @@ package dev.skynomads.beerouter.map.generator
 import androidx.collection.MutableLongSet
 import dev.skynomads.beerouter.expressions.BExpressionContextWay
 import dev.skynomads.beerouter.expressions.BExpressionMetaData
-import dev.skynomads.beerouter.map.generator.DiffCoderDataOutputStream
 import java.io.DataInputStream
 import java.io.EOFException
 import java.io.File
@@ -15,7 +14,12 @@ public class RelationMerger : GeneratorBase() {
     private lateinit var expctxCheck: BExpressionContextWay
     private var wayOutStream: DiffCoderDataOutputStream? = null
 
-    public fun init(relationFileIn: File, lookupFile: File, reportProfile: File, checkProfile: File) {
+    public fun init(
+        relationFileIn: File,
+        lookupFile: File,
+        reportProfile: File,
+        checkProfile: File
+    ) {
         val metaReport = BExpressionMetaData()
         expctxReport = BExpressionContextWay(metaReport)
         metaReport.readMetaData(lookupFile.readText())
@@ -59,14 +63,21 @@ public class RelationMerger : GeneratorBase() {
         }
     }
 
-    public fun process(wayFileIn: File, wayFileOut: File, relationFileIn: File, lookupFile: File, reportProfile: File, checkProfile: File) {
+    public fun process(
+        wayFileIn: File,
+        wayFileOut: File,
+        relationFileIn: File,
+        lookupFile: File,
+        reportProfile: File,
+        checkProfile: File
+    ) {
         init(relationFileIn, lookupFile, reportProfile, checkProfile)
         wayOutStream = createOutStream(wayFileOut)
         WayIterator(this, true).processFile(wayFileIn)
         wayOutStream?.close()
     }
 
-    override fun nextWay(data: WayData) {
+    public override fun nextWay(data: WayData) {
         if (routesetall.contains(data.wid)) {
             var ok = true
             expctxReport.evaluate(false, requireNotNull(data.description))
@@ -74,7 +85,14 @@ public class RelationMerger : GeneratorBase() {
             if (warn) {
                 expctxCheck.evaluate(false, requireNotNull(data.description))
                 ok = expctxCheck.costfactor < 10000f
-                println("** relation access conflict for wid = ${data.wid} tags:${expctxReport.getKeyValueDescription(false, requireNotNull(data.description))} (ok=$ok)")
+                println(
+                    "** relation access conflict for wid = ${data.wid} tags:${
+                        expctxReport.getKeyValueDescription(
+                            false,
+                            requireNotNull(data.description)
+                        )
+                    } (ok=$ok)"
+                )
             }
             if (ok) {
                 expctxReport.decode(requireNotNull(data.description))

@@ -16,16 +16,16 @@ public class NodeCutter : GeneratorBase() {
         NodeIterator(this, true).processDir(nodeTilesIn, ".tlf")
     }
 
-    override fun nodeFileStart(nodefile: File?) {
+    public override fun nodeFileStart(nodefile: File?) {
         lonoffset = -1
         latoffset = -1
     }
 
-    override fun nextNode(data: NodeData) {
+    public override fun nextNode(data: NodeData) {
         data.writeTo(getOutStreamForTile(getTileIndex(data.position)))
     }
 
-    override fun nodeFileEnd(nodefile: File?) {
+    public override fun nodeFileEnd(nodefile: File?) {
         closeTileOutStreams()
     }
 
@@ -47,7 +47,7 @@ public class NodeCutter : GeneratorBase() {
         return lon * 6 + lat
     }
 
-    override fun getNameForTile(tileIndex: Int): String {
+    public override fun getNameForTile(tileIndex: Int): String {
         val lon = (tileIndex / 6) * 5 + lonoffset - 180
         val lat = (tileIndex % 6) * 5 + latoffset - 90
         val slon = if (lon < 0) "W${-lon}" else "E$lon"

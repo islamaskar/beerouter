@@ -1,7 +1,4 @@
-import org.gradle.api.tasks.SourceSetContainer
 import org.gradle.api.tasks.testing.logging.TestExceptionFormat
-import org.gradle.jvm.tasks.Jar
-import java.io.File
 import java.net.HttpURLConnection
 import java.net.URI
 import java.nio.file.Files
@@ -17,6 +14,7 @@ repositories {
 }
 
 kotlin {
+    explicitApi()
     jvmToolchain(21)
     compilerOptions {
         jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_21)
@@ -118,7 +116,10 @@ fun findExecutable(name: String): File? {
     for (entry in pathEntries) {
         val dir = File(entry)
         for (extension in extensions) {
-            val executable = File(dir, if (name.endsWith(extension, ignoreCase = true)) name else name + extension)
+            val executable = File(
+                dir,
+                if (name.endsWith(extension, ignoreCase = true)) name else name + extension
+            )
             if (executable.isFile && executable.canExecute()) {
                 return executable
             }
@@ -129,7 +130,8 @@ fun findExecutable(name: String): File? {
 
 tasks.register("downloadPlanetOsmPbf") {
     group = "generator"
-    description = "Download the latest OSM planet PBF, or update an existing copy with osmupdate when available."
+    description =
+        "Download the latest OSM planet PBF, or update an existing copy with osmupdate when available."
 
     val defaultPlanetFile = layout.buildDirectory.file("planet/planet-latest.osm.pbf")
     outputs.file(defaultPlanetFile)
@@ -148,7 +150,11 @@ tasks.register("downloadPlanetOsmPbf") {
         val osmUpdate = findExecutable("osmupdate")
         if (planetFile.exists() && osmUpdate != null) {
             val backupFile = File(planetFile.parentFile, "${planetFile.name}.old")
-            Files.move(planetFile.toPath(), backupFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
+            Files.move(
+                planetFile.toPath(),
+                backupFile.toPath(),
+                StandardCopyOption.REPLACE_EXISTING
+            )
             try {
                 val process = ProcessBuilder(
                     osmUpdate.absolutePath,
@@ -163,7 +169,11 @@ tasks.register("downloadPlanetOsmPbf") {
                 backupFile.delete()
                 logger.lifecycle("Updated planet file with osmupdate: ${planetFile.absolutePath}")
             } catch (e: Exception) {
-                Files.move(backupFile.toPath(), planetFile.toPath(), StandardCopyOption.REPLACE_EXISTING)
+                Files.move(
+                    backupFile.toPath(),
+                    planetFile.toPath(),
+                    StandardCopyOption.REPLACE_EXISTING
+                )
                 throw e
             }
             return@doLast
@@ -182,7 +192,8 @@ tasks.register("downloadCountryOsmPbf") {
         val extractSlug = geofabrikExtractSlug(extractPath)
         val countryFile = configuredFileProperty(
             "generator.countryFile",
-            layout.buildDirectory.file("country/$extractSlug/${extractSlug}-latest.osm.pbf").get().asFile.absolutePath,
+            layout.buildDirectory.file("country/$extractSlug/${extractSlug}-latest.osm.pbf")
+                .get().asFile.absolutePath,
         )
         val countryUri = URI(
             configuredStringProperty("generator.countryUrl")
@@ -210,7 +221,8 @@ tasks.register("downloadRoutingTestCountryOsmPbf") {
 
 tasks.register<JavaExec>("generatePlanetRd5") {
     group = "generator"
-    description = "Generate BRouter-compatible rd5 files for a planet PBF using the Beerouter Kotlin generator pipeline."
+    description =
+        "Generate BRouter-compatible rd5 files for a planet PBF using the Beerouter Kotlin generator pipeline."
 
     dependsOn("classes", "downloadPlanetOsmPbf")
 
@@ -245,9 +257,11 @@ tasks.register<JavaExec>("generatePlanetRd5") {
             rootProject.file("misc/profiles2").absolutePath,
         )
         val srtmDir = configuredStringProperty("generator.srtmDir")?.let(::resolveConfiguredFile)
-        val srtmFallbackDir = configuredStringProperty("generator.srtmFallbackDir")?.let(::resolveConfiguredFile)
+        val srtmFallbackDir =
+            configuredStringProperty("generator.srtmFallbackDir")?.let(::resolveConfiguredFile)
         val dbTagInfo = configuredStringProperty("generator.dbTagInfo").orEmpty()
-        val poiConfig = configuredStringProperty("generator.poiConfig")?.let(::resolveConfiguredFile)
+        val poiConfig =
+            configuredStringProperty("generator.poiConfig")?.let(::resolveConfiguredFile)
 
         args = listOf(
             planetFile.absolutePath,
@@ -273,7 +287,8 @@ tasks.register<JavaExec>("generatePlanetRd5") {
 
 tasks.register<JavaExec>("generateCountryRd5") {
     group = "generator"
-    description = "Download a Geofabrik country extract and generate rd5 files for that single extract."
+    description =
+        "Download a Geofabrik country extract and generate rd5 files for that single extract."
 
     dependsOn("classes", "downloadCountryOsmPbf")
 
@@ -291,7 +306,8 @@ tasks.register<JavaExec>("generateCountryRd5") {
         val extractSlug = geofabrikExtractSlug(extractPath)
         val countryFile = configuredFileProperty(
             "generator.countryFile",
-            layout.buildDirectory.file("country/$extractSlug/${extractSlug}-latest.osm.pbf").get().asFile.absolutePath,
+            layout.buildDirectory.file("country/$extractSlug/${extractSlug}-latest.osm.pbf")
+                .get().asFile.absolutePath,
         )
         val workDir = configuredFileProperty(
             "generator.workDir",
@@ -306,9 +322,11 @@ tasks.register<JavaExec>("generateCountryRd5") {
             rootProject.file("misc/profiles2").absolutePath,
         )
         val srtmDir = configuredStringProperty("generator.srtmDir")?.let(::resolveConfiguredFile)
-        val srtmFallbackDir = configuredStringProperty("generator.srtmFallbackDir")?.let(::resolveConfiguredFile)
+        val srtmFallbackDir =
+            configuredStringProperty("generator.srtmFallbackDir")?.let(::resolveConfiguredFile)
         val dbTagInfo = configuredStringProperty("generator.dbTagInfo").orEmpty()
-        val poiConfig = configuredStringProperty("generator.poiConfig")?.let(::resolveConfiguredFile)
+        val poiConfig =
+            configuredStringProperty("generator.poiConfig")?.let(::resolveConfiguredFile)
 
         args = listOf(
             countryFile.absolutePath,
@@ -344,8 +362,10 @@ tasks.register<JavaExec>("generateRoutingTestRd5") {
     val defaultCountryFile = rootProject.layout.buildDirectory.file(
         "routing-test/$routingTestExtractSlug/${routingTestExtractSlug}-latest.osm.pbf",
     )
-    val defaultWorkDir = rootProject.layout.buildDirectory.dir("routing-test/$routingTestExtractSlug/work")
-    val defaultOutputDir = rootProject.layout.buildDirectory.dir("routing-test/$routingTestExtractSlug/segments4")
+    val defaultWorkDir =
+        rootProject.layout.buildDirectory.dir("routing-test/$routingTestExtractSlug/work")
+    val defaultOutputDir =
+        rootProject.layout.buildDirectory.dir("routing-test/$routingTestExtractSlug/segments4")
     val defaultPoiConfig = rootProject.file("pois.conf")
 
     inputs.file(defaultCountryFile)

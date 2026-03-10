@@ -23,11 +23,11 @@ public class WayCutter : GeneratorBase() {
         closeTileOutStreams()
     }
 
-    override fun nextNode(data: NodeData) {
+    public override fun nextNode(data: NodeData) {
         tileIndexMap[data.nid] = getTileIndex(data.position)
     }
 
-    override fun nextWay(data: WayData) {
+    public override fun nextWay(data: WayData) {
         var waytileset = 0L
         for (i in 0 until data.nodes.size) {
             val tileIndex = tileIndexMap.getOrDefault(data.nodes.get(i), -1)

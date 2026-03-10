@@ -1,8 +1,8 @@
 package dev.skynomads.beerouter.codec
 
+import dev.skynomads.beerouter.geo.Position
 import dev.skynomads.beerouter.geo.latitudeFromId
 import dev.skynomads.beerouter.geo.longitudeFromId
-import dev.skynomads.beerouter.geo.Position
 import dev.skynomads.beerouter.util.ByteDataReader
 import dev.skynomads.beerouter.util.IByteArrayUnifier
 
@@ -15,7 +15,13 @@ public class MicroCache2 : MicroCache {
     private val latBase: Int
     private val cellsize: Int
 
-    public constructor(size: Int, databuffer: ByteArray, lonIdx: Int, latIdx: Int, divisor: Int) : super(
+    public constructor(
+        size: Int,
+        databuffer: ByteArray,
+        lonIdx: Int,
+        latIdx: Int,
+        divisor: Int
+    ) : super(
         databuffer
     ) // sets ab=databuffer, aboffset=0
     {
@@ -178,7 +184,12 @@ public class MicroCache2 : MicroCache {
                     val ilattarget = ilat + dlatRemaining
                     if (matcher != null) {
                         val useAsStartWay = wayValidator!!.checkStartWay(wayTags!!.data)
-                        if (!matcher.start(Position(ilon, ilat), Position(ilontarget, ilattarget), useAsStartWay)) {
+                        if (!matcher.start(
+                                Position(ilon, ilat),
+                                Position(ilontarget, ilattarget),
+                                useAsStartWay
+                            )
+                        ) {
                             matcher = null
                         }
                     }
@@ -199,7 +210,12 @@ public class MicroCache2 : MicroCache {
                             writeVarLengthSigned(elediff)
                         }
 
-                        matcher?.transferNode(Position(ilontarget - dlonRemaining, ilattarget - dlatRemaining))
+                        matcher?.transferNode(
+                            Position(
+                                ilontarget - dlonRemaining,
+                                ilattarget - dlatRemaining
+                            )
+                        )
                     }
                     matcher?.end()
                 }
@@ -299,9 +315,9 @@ public class MicroCache2 : MicroCache {
 
     public override fun isInternal(position: Position): Boolean {
         return position.longitude >= lonBase &&
-            position.longitude < lonBase + cellsize &&
-            position.latitude >= latBase &&
-            position.latitude < latBase + cellsize
+                position.longitude < lonBase + cellsize &&
+                position.latitude >= latBase &&
+                position.latitude < latBase + cellsize
     }
 
     public override fun encodeMicroCache(buffer: ByteArray): Int {

@@ -10,7 +10,7 @@ internal data class GeneratedLookupResult(
 )
 
 internal object GeneratedLookups {
-    fun generate(baseContent: String, config: PoiGenerationConfig): GeneratedLookupResult {
+    internal fun generate(baseContent: String, config: PoiGenerationConfig): GeneratedLookupResult {
         if (config.isEmpty) {
             val version = baseContent.substringAfter("---lookupversion:").lineSequence().first().trim().toShort()
             val minorVersion = baseContent.substringAfter("---minorversion:").lineSequence().first().trim().toShort()

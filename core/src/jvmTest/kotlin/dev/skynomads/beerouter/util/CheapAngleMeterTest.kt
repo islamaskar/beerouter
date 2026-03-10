@@ -1,10 +1,10 @@
 package dev.skynomads.beerouter.util
 
-import dev.skynomads.beerouter.geo.CheapAngleMeter.turnAngle
-import dev.skynomads.beerouter.geo.CheapAngleMeter.rawBearing
-import dev.skynomads.beerouter.geo.CheapAngleMeter.bearingDifference
 import dev.skynomads.beerouter.geo.CheapAngleMeter.bearing
+import dev.skynomads.beerouter.geo.CheapAngleMeter.bearingDifference
 import dev.skynomads.beerouter.geo.CheapAngleMeter.normalizeAngle
+import dev.skynomads.beerouter.geo.CheapAngleMeter.rawBearing
+import dev.skynomads.beerouter.geo.CheapAngleMeter.turnAngle
 import dev.skynomads.beerouter.geo.Position
 import dev.skynomads.beerouter.geo.coordinateScaleAt
 import dev.skynomads.beerouter.osm.toIntLatitude

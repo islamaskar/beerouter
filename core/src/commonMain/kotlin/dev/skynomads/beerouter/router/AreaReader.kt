@@ -2,17 +2,16 @@ package dev.skynomads.beerouter.router
 
 import dev.skynomads.beerouter.codec.DataBuffers
 import dev.skynomads.beerouter.expressions.BExpressionContextWay
+import dev.skynomads.beerouter.geo.Position
+import dev.skynomads.beerouter.geo.latitudeFromId
+import dev.skynomads.beerouter.geo.longitudeFromId
 import dev.skynomads.beerouter.map.MatchedWaypoint
 import dev.skynomads.beerouter.map.MatchedWaypoint.Companion.readFromStream
 import dev.skynomads.beerouter.map.NodesCache
 import dev.skynomads.beerouter.map.OsmFile
-import dev.skynomads.beerouter.map.OsmLink
 import dev.skynomads.beerouter.map.OsmNode
 import dev.skynomads.beerouter.map.OsmNodesMap
 import dev.skynomads.beerouter.map.PhysicalFile
-import dev.skynomads.beerouter.geo.Position
-import dev.skynomads.beerouter.geo.latitudeFromId
-import dev.skynomads.beerouter.geo.longitudeFromId
 import kotlinx.io.Sink
 import kotlinx.io.Source
 import kotlin.math.abs
@@ -77,14 +76,19 @@ public class AreaReader {
                 tmplat2 = lat + cellsize * (subLatIdx + 1)
                 dataRect.addVertex(Position(tmplon2, tmplat2))
 
-                var intersects = checkBorder && dataRect.intersects(searchRect.points[0], searchRect.points[2])
-                if (!intersects && checkBorder) intersects = dataRect.intersects(searchRect.points[1], Position(searchRect.points[2].longitude, searchRect.points[3].latitude))
+                var intersects =
+                    checkBorder && dataRect.intersects(searchRect.points[0], searchRect.points[2])
+                if (!intersects && checkBorder) intersects = dataRect.intersects(
+                    searchRect.points[1],
+                    Position(searchRect.points[2].longitude, searchRect.points[3].latitude)
+                )
                 if (intersects) {
                     continue
                 }
 
                 intersects = searchRect.intersects(dataRect.points[0], dataRect.points[2])
-                if (!intersects) intersects = searchRect.intersects(dataRect.points[1], dataRect.points[3])
+                if (!intersects) intersects =
+                    searchRect.intersects(dataRect.points[1], dataRect.points[3])
                 if (!intersects) intersects = containsRect(
                     searchRect,
                     dataRect.points[0],

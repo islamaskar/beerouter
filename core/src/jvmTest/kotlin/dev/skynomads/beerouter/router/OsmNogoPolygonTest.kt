@@ -3,10 +3,10 @@
  */
 package dev.skynomads.beerouter.router
 
-import dev.skynomads.beerouter.router.OsmNogoPolygon.Companion.isOnLine
-import dev.skynomads.beerouter.geo.Position
 import dev.skynomads.beerouter.geo.CheapRuler.distance
+import dev.skynomads.beerouter.geo.Position
 import dev.skynomads.beerouter.geo.coordinateScaleAt
+import dev.skynomads.beerouter.router.OsmNogoPolygon.Companion.isOnLine
 import kotlin.math.sqrt
 import kotlin.test.BeforeTest
 import kotlin.test.Test

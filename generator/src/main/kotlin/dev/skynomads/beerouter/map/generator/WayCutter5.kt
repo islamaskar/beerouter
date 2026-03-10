@@ -2,7 +2,6 @@ package dev.skynomads.beerouter.map.generator
 
 import androidx.collection.MutableLongIntMap
 import dev.skynomads.beerouter.geo.Position
-import dev.skynomads.beerouter.map.generator.DiffCoderDataOutputStream
 import java.io.BufferedInputStream
 import java.io.DataInputStream
 import java.io.EOFException
@@ -21,7 +20,12 @@ public class WayCutter5 : GeneratorBase() {
     public var nodeCutter: NodeCutter? = null
     public var restrictionCutter5: RestrictionCutter5? = null
 
-    public fun process(nodeTilesIn: File, wayTilesIn: File, wayTilesOut: File, borderNidsOut: File) {
+    public fun process(
+        nodeTilesIn: File,
+        wayTilesIn: File,
+        wayTilesOut: File,
+        borderNidsOut: File
+    ) {
         this.nodeTilesIn = nodeTilesIn
         this.outTileDir = wayTilesOut
         borderNidsOutStream = createOutStream(borderNidsOut)
@@ -29,7 +33,7 @@ public class WayCutter5 : GeneratorBase() {
         borderNidsOutStream.close()
     }
 
-    override fun wayFileStart(wayfile: File): Boolean {
+    public override fun wayFileStart(wayfile: File): Boolean {
         val nodefilename = wayfile.name.substring(0, wayfile.name.length - 3) + "ntl"
         val nodefile = File(nodeTilesIn, nodefilename)
         tileIndexMap = MutableLongIntMap()
@@ -54,7 +58,7 @@ public class WayCutter5 : GeneratorBase() {
         return true
     }
 
-    override fun nextNode(data: NodeData) {
+    public override fun nextNode(data: NodeData) {
         if (nodeFilter?.isRelevant(data) == false) {
             return
         }
@@ -62,7 +66,7 @@ public class WayCutter5 : GeneratorBase() {
         tileIndexMap[data.nid] = getTileIndex(data.position)
     }
 
-    override fun nextWay(data: WayData) {
+    public override fun nextWay(data: WayData) {
         var waytileset = 0L
         val tiForNode = IntArray(data.nodes.size)
         for (i in 0 until data.nodes.size) {
@@ -86,7 +90,7 @@ public class WayCutter5 : GeneratorBase() {
         }
     }
 
-    override fun wayFileEnd(wayfile: File) {
+    public override fun wayFileEnd(wayfile: File) {
         closeTileOutStreams()
         nodeCutter?.nodeFileEnd(null)
         restrictionCutter5?.finish()
