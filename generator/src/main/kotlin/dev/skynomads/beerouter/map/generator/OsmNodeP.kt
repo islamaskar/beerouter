@@ -5,18 +5,16 @@ import dev.skynomads.beerouter.codec.MicroCache2
 import dev.skynomads.beerouter.geo.Position
 
 public open class OsmNodeP : OsmLinkP() {
-    public var ilat: Int = 0
-    public var ilon: Int = 0
-    public var selev: Short = 0
+    public var position: Position = Position.ZERO
     public var bits: Byte = 0
 
-    public fun getILat(): Int = ilat
-    public fun getILon(): Int = ilon
+    public fun getILat(): Int = position.latitude
+    public fun getILon(): Int = position.longitude
 
     public open fun getSElev(): Short =
-        if ((bits.toInt() and NO_BRIDGE_BIT) == 0 || (bits.toInt() and NO_TUNNEL_BIT) == 0) Short.MIN_VALUE else selev
+        if ((bits.toInt() and NO_BRIDGE_BIT) == 0 || (bits.toInt() and NO_TUNNEL_BIT) == 0) Short.MIN_VALUE else position.altitude ?: 0
 
-    public fun getElev(): Double = selev / 4.0
+    public fun getElev(): Double = (position.altitude ?: 0).toDouble() / 4.0
 
     public fun createLink(source: OsmNodeP): OsmLinkP {
         if (sourceNode == null && targetNode == null) {
@@ -100,14 +98,14 @@ public open class OsmNodeP : OsmLinkP() {
         var hasLinks = false
         var restriction = getFirstRestriction()
         while (restriction != null) {
-            if (restriction.isValid() && restriction.fromLon != 0 && restriction.toLon != 0) {
+            if (restriction.isValid() && restriction.fromPosition.longitude != 0 && restriction.toPosition.longitude != 0) {
                 mc.writeBoolean(true)
                 mc.writeShort(restriction.exceptions.toInt())
                 mc.writeBoolean(restriction.isPositive())
-                mc.writeInt(restriction.fromLon)
-                mc.writeInt(restriction.fromLat)
-                mc.writeInt(restriction.toLon)
-                mc.writeInt(restriction.toLat)
+                mc.writeInt(restriction.fromPosition.longitude)
+                mc.writeInt(restriction.fromPosition.latitude)
+                mc.writeInt(restriction.toPosition.longitude)
+                mc.writeInt(restriction.toPosition.latitude)
             }
             restriction = restriction.next
         }
@@ -145,12 +143,12 @@ public open class OsmNodeP : OsmLinkP() {
             if (link != null && target != this && target != null) {
                 hasLinks = true
                 val isReverse = link0.isReverse(this)
-                if (isReverse && mc.isInternal(Position(target.ilon, target.ilat))) {
+                if (isReverse && mc.isInternal(target.position)) {
                     internalReverse.add(target)
                 } else {
                     val sizeoffset = mc.writeSizePlaceHolder()
-                    mc.writeVarLengthSigned(target.ilon - ilon)
-                    mc.writeVarLengthSigned(target.ilat - ilat)
+                    mc.writeVarLengthSigned(target.position.longitude - position.longitude)
+                    mc.writeVarLengthSigned(target.position.latitude - position.latitude)
                     mc.writeModeAndDesc(isReverse, link0.descriptionBitmap)
                     if (!isReverse && linkNodes.size > 2) {
                         DPFilter.doDPFilter(linkNodes)
@@ -158,8 +156,8 @@ public open class OsmNodeP : OsmLinkP() {
                         for (i in 1 until linkNodes.size - 1) {
                             val transferNode = linkNodes[i]
                             if ((transferNode.bits.toInt() and DP_SURVIVOR_BIT) != 0) {
-                                mc.writeVarLengthSigned(transferNode.ilon - origin.ilon)
-                                mc.writeVarLengthSigned(transferNode.ilat - origin.ilat)
+                                mc.writeVarLengthSigned(transferNode.position.longitude - origin.position.longitude)
+                                mc.writeVarLengthSigned(transferNode.position.latitude - origin.position.latitude)
                                 mc.writeVarLengthSigned(transferNode.getSElev() - origin.getSElev())
                                 origin = transferNode
                             }
@@ -185,18 +183,18 @@ public open class OsmNodeP : OsmLinkP() {
             }
             val target = internalReverse.removeAt(nextIdx)
             val sizeoffset = mc.writeSizePlaceHolder()
-            mc.writeVarLengthSigned(target.ilon - ilon)
-            mc.writeVarLengthSigned(target.ilat - ilat)
+            mc.writeVarLengthSigned(target.position.longitude - position.longitude)
+            mc.writeVarLengthSigned(target.position.latitude - position.latitude)
             mc.writeModeAndDesc(true, null)
             mc.injectSize(sizeoffset)
         }
         return hasLinks || retainWithoutLinks()
     }
 
-    public fun toString2(): String = "${ilon - 180000000}_${ilat - 90000000}_${selev / 4}"
+    public fun toString2(): String = "${position.longitude - 180000000}_${position.latitude - 90000000}_${(position.altitude ?: 0) / 4}"
 
     public val idFromPos: Long
-        get() = Position.computeId(ilon, ilat)
+        get() = position.id
 
     public fun isBorderNode(): Boolean = (bits.toInt() and BORDER_BIT) != 0
     public fun hasTraffic(): Boolean = (bits.toInt() and TRAFFIC_BIT) != 0

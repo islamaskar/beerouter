@@ -8,6 +8,7 @@ import dev.skynomads.beerouter.codec.MicroCache2
 import dev.skynomads.beerouter.codec.StatCoderContext
 import dev.skynomads.beerouter.expressions.BExpressionContextWay
 import dev.skynomads.beerouter.expressions.BExpressionMetaData
+import dev.skynomads.beerouter.geo.Position
 import dev.skynomads.beerouter.util.ByteArrayUnifier
 import dev.skynomads.beerouter.util.Crc32
 import java.io.BufferedInputStream
@@ -200,10 +201,8 @@ public class WayLinker : GeneratorBase(), Runnable {
                                 node = OsmNodePT(node)
                                 nodesMap[res.viaNid] = node
                             }
-                            node.firstRestrictionData = node.firstRestrictionData?.also { res.next = it }
-                            res.viaLon = node.ilon
-                            res.viaLat = node.ilat
-                            node.firstRestrictionData = res
+                            res.viaPosition = node.position
+                            node.firstRestrictionData = res.also { it.next = node.firstRestrictionData }
                         }
                     }
                 } catch (_: EOFException) {
@@ -232,9 +231,7 @@ public class WayLinker : GeneratorBase(), Runnable {
         } else {
             OsmNodePT(data.description, data.retainWithoutLinks)
         }
-        node.ilon = data.ilon
-        node.ilat = data.ilat
-        node.selev = data.selev
+        node.position = data.position
         if (readingBorder || !borderSet.contains(data.nid)) {
             nodesMap[data.nid] = node
         }
@@ -243,12 +240,12 @@ public class WayLinker : GeneratorBase(), Runnable {
             borderSet.add(data.nid)
             return
         }
-        val minLon = (node.ilon / 5_000_000) * 5_000_000
-        val minLat = (node.ilat / 5_000_000) * 5_000_000
+        val minLon = (node.position.longitude / 5_000_000) * 5_000_000
+        val minLat = (node.position.latitude / 5_000_000) * 5_000_000
         if (this.minLon == -1) this.minLon = minLon
         if (this.minLat == -1) this.minLat = minLat
         if (this.minLon != minLon || this.minLat != minLat) {
-            throw IllegalArgumentException("inconsistent node: ${node.ilon} ${node.ilat}")
+            throw IllegalArgumentException("inconsistent node: ${node.position.longitude} ${node.position.latitude}")
         }
     }
 
@@ -260,15 +257,13 @@ public class WayLinker : GeneratorBase(), Runnable {
     private fun checkRestriction(n1: OsmNodeP, n2: OsmNodeP, w: WayData, checkFrom: Boolean) {
         var restriction = n2.getFirstRestriction()
         while (restriction != null) {
-            if (restriction.fromWid == w.wid && (restriction.fromLon == 0 || checkFrom)) {
-                restriction.fromLon = n1.ilon
-                restriction.fromLat = n1.ilat
+            if (restriction.fromWid == w.wid && (restriction.fromPosition.longitude == 0 || checkFrom)) {
+                restriction.fromPosition = n1.position
                 n1.bits = (n1.bits.toInt() or OsmNodeP.DP_SURVIVOR_BIT).toByte()
                 if (!isEndNode(n2, w)) restriction.badWayMatch = true
             }
-            if (restriction.toWid == w.wid && (restriction.toLon == 0 || !checkFrom)) {
-                restriction.toLon = n1.ilon
-                restriction.toLat = n1.ilat
+            if (restriction.toWid == w.wid && (restriction.toPosition.longitude == 0 || !checkFrom)) {
+                restriction.toPosition = n1.position
                 n1.bits = (n1.bits.toInt() or OsmNodeP.DP_SURVIVOR_BIT).toByte()
                 if (!isEndNode(n2, w)) restriction.badWayMatch = true
             }
@@ -302,7 +297,7 @@ public class WayLinker : GeneratorBase(), Runnable {
                 checkRestriction(n1, n2, data)
                 val link = n2.createLink(n1)
                 link.descriptionBitmap = description
-                if (n1.ilon / cellsize != n2.ilon / cellsize || n1.ilat / cellsize != n2.ilat / cellsize) {
+                if (n1.position.longitude / cellsize != n2.position.longitude / cellsize || n1.position.latitude / cellsize != n2.position.latitude / cellsize) {
                     n2.incWayCount()
                 }
             }
@@ -336,9 +331,9 @@ public class WayLinker : GeneratorBase(), Runnable {
         val seglists: Array<MutableList<OsmNodeP>?> = arrayOfNulls(nLonSegs * nLatSegs)
         for (node in localNodesList) {
             if ((node.getFirstLink() == null && !node.retainWithoutLinks()) || node.isTransferNode()) continue
-            if (node.ilon < minLon || node.ilon >= maxLon || node.ilat < minLat || node.ilat >= maxLat) continue
-            val lonIdx = (node.ilon - minLon) / 1_000_000
-            val latIdx = (node.ilat - minLat) / 1_000_000
+            if (node.position.longitude < minLon || node.position.longitude >= maxLon || node.position.latitude < minLat || node.position.latitude >= maxLat) continue
+            val lonIdx = (node.position.longitude - minLon) / 1_000_000
+            val latIdx = (node.position.latitude - minLat) / 1_000_000
             val idx = lonIdx * nLatSegs + latIdx
             val list = seglists[idx] ?: ArrayList<OsmNodeP>().also { seglists[idx] = it }
             list.add(node)
@@ -359,8 +354,8 @@ public class WayLinker : GeneratorBase(), Runnable {
                     val subs: Array<MutableList<OsmNodeP>?> = arrayOfNulls(ncaches)
                     val subByteArrays: Array<ByteArray?> = arrayOfNulls(ncaches)
                     for (node in nlist) {
-                        val subLonIdx = (node.ilon - minLon) / cellsize - divisor * lonIdx
-                        val subLatIdx = (node.ilat - minLat) / cellsize - divisor * latIdx
+                        val subLonIdx = (node.position.longitude - minLon) / cellsize - divisor * lonIdx
+                        val subLatIdx = (node.position.latitude - minLat) / cellsize - divisor * latIdx
                         val si = subLatIdx * divisor + subLonIdx
                         val list = subs[si] ?: ArrayList<OsmNodeP>().also { subs[si] = it }
                         list.add(node)
@@ -371,8 +366,8 @@ public class WayLinker : GeneratorBase(), Runnable {
                         val subList = subs[si]
                         if (subList != null && subList.isNotEmpty()) {
                             val n0 = subList[0]
-                            val lonIdxDiv = n0.ilon / cellsize
-                            val latIdxDiv = n0.ilat / cellsize
+                            val lonIdxDiv = n0.position.longitude / cellsize
+                            val latIdxDiv = n0.position.latitude / cellsize
                             val mc: MicroCache = MicroCache2(subList.size, abBuf2, lonIdxDiv, latIdxDiv, divisor)
                             val sortedList = TreeMap<Int, OsmNodeP>()
                             for (node in subList) {

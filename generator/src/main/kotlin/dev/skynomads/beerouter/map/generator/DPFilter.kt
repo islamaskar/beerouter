@@ -24,21 +24,21 @@ public object DPFilter {
         var index = -1
         val p1 = nodes[first]
         val p2 = nodes[last]
-        val scale = coordinateScaleAt((p1.ilat + p2.ilat) shr 1)
+        val scale = coordinateScaleAt((p1.position.latitude + p2.position.latitude) shr 1)
         val dlon2m = scale.longitudeToMeters
         val dlat2m = scale.latitudeToMeters
-        val dx = (p2.ilon - p1.ilon) * dlon2m
-        val dy = (p2.ilat - p1.ilat) * dlat2m
+        val dx = (p2.position.longitude - p1.position.longitude) * dlon2m
+        val dy = (p2.position.latitude - p1.position.latitude) * dlat2m
         val d2 = dx * dx + dy * dy
         for (i in first + 1 until last) {
             val p = nodes[i]
             var t = 0.0
             if (d2 != 0.0) {
-                t = ((p.ilon - p1.ilon) * dlon2m * dx + (p.ilat - p1.ilat) * dlat2m * dy) / d2
+                t = ((p.position.longitude - p1.position.longitude) * dlon2m * dx + (p.position.latitude - p1.position.latitude) * dlat2m * dy) / d2
                 t = t.coerceIn(0.0, 1.0)
             }
-            val dx2 = (p.ilon - (p1.ilon + t * (p2.ilon - p1.ilon))) * dlon2m
-            val dy2 = (p.ilat - (p1.ilat + t * (p2.ilat - p1.ilat))) * dlat2m
+            val dx2 = (p.position.longitude - (p1.position.longitude + t * (p2.position.longitude - p1.position.longitude))) * dlon2m
+            val dy2 = (p.position.latitude - (p1.position.latitude + t * (p2.position.latitude - p1.position.latitude))) * dlat2m
             val sqDist = dx2 * dx2 + dy2 * dy2
             if (sqDist > maxSqDist) {
                 index = i

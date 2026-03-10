@@ -6,9 +6,7 @@ public class OsmNodePT() : OsmNodeP() {
     private var keepWithoutLinks: Boolean = false
 
     public constructor(node: OsmNodeP) : this() {
-        ilat = node.ilat
-        ilon = node.ilon
-        selev = node.selev
+        position = node.position
         bits = node.bits
     }
 

@@ -1,6 +1,7 @@
 package dev.skynomads.beerouter.map.generator
 
 import androidx.collection.MutableLongIntMap
+import dev.skynomads.beerouter.geo.Position
 import dev.skynomads.beerouter.map.generator.DiffCoderDataOutputStream
 import java.io.BufferedInputStream
 import java.io.DataInputStream
@@ -58,7 +59,7 @@ public class WayCutter5 : GeneratorBase() {
             return
         }
         nodeCutter?.nextNode(data)
-        tileIndexMap[data.nid] = getTileIndex(data.ilon, data.ilat)
+        tileIndexMap[data.nid] = getTileIndex(data.position)
     }
 
     override fun nextWay(data: WayData) {
@@ -93,18 +94,18 @@ public class WayCutter5 : GeneratorBase() {
 
     public fun getTileIndexForNid(nid: Long): Int = tileIndexMap.getOrDefault(nid, -1)
 
-    private fun getTileIndex(ilon: Int, ilat: Int): Int {
-        val lonoff = (ilon / 45000000) * 45
-        val latoff = (ilat / 30000000) * 30
+    private fun getTileIndex(position: Position): Int {
+        val lonoff = (position.longitude / 45000000) * 45
+        val latoff = (position.latitude / 30000000) * 30
         if (lonoffset == -1) lonoffset = lonoff
         if (latoffset == -1) latoffset = latoff
         if (lonoff != lonoffset || latoff != latoffset) {
-            throw IllegalArgumentException("inconsistent node: $ilon $ilat")
+            throw IllegalArgumentException("inconsistent node: ${position.longitude} ${position.latitude}")
         }
-        val lon = (ilon / 5000000) % 9
-        val lat = (ilat / 5000000) % 6
+        val lon = (position.longitude / 5000000) % 9
+        val lat = (position.latitude / 5000000) % 6
         if (lon !in 0..8 || lat !in 0..5) {
-            throw IllegalArgumentException("illegal pos: $ilon,$ilat")
+            throw IllegalArgumentException("illegal pos: ${position.longitude},${position.latitude}")
         }
         return lon * 6 + lat
     }

@@ -1,5 +1,6 @@
 package dev.skynomads.beerouter.map.generator
 
+import dev.skynomads.beerouter.geo.Position
 import dev.skynomads.beerouter.expressions.BExpressionContextNode
 import dev.skynomads.beerouter.expressions.BExpressionContextWay
 import dev.skynomads.beerouter.expressions.BExpressionMetaData
@@ -91,7 +92,7 @@ public class OsmCutter : GeneratorBase() {
             data.description = expctxNode.encode(lookupData)
             data.retainWithoutLinks = poiMatches.isNotEmpty()
         }
-        val tileIndex = getTileIndex(data.ilon, data.ilat)
+        val tileIndex = getTileIndex(data.position)
         if (tileIndex >= 0) {
             data.writeTo(getOutStreamForTile(tileIndex))
             wayCutter?.nextNode(data)
@@ -190,11 +191,11 @@ public class OsmCutter : GeneratorBase() {
     private fun statsLine(): String =
         "records read: $recordCnt nodes=$nodesParsed ways=$waysParsed rels=$relsParsed changesets=$changesetsParsed"
 
-    private fun getTileIndex(ilon: Int, ilat: Int): Int {
-        val lon = ilon / 45000000
-        val lat = ilat / 30000000
+    private fun getTileIndex(position: Position): Int {
+        val lon = position.longitude / 45000000
+        val lat = position.latitude / 30000000
         if (lon !in 0..7 || lat !in 0..5) {
-            println("warning: ignoring illegal pos: $ilon,$ilat")
+            println("warning: ignoring illegal pos: ${position.longitude},${position.latitude}")
             return -1
         }
         return lon * 6 + lat

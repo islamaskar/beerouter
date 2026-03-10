@@ -60,11 +60,9 @@ public class PosUnifier : GeneratorBase() {
     }
 
     override fun nextNode(data: NodeData) {
-        data.selev = Short.MIN_VALUE
-        val srtm = srtmForNode(data.ilon, data.ilat)
-        if (srtm != null) {
-            data.selev = srtm.getElevation(data.ilon, data.ilat)
-        }
+        val srtm = srtmForNode(data.position)
+        val selev = srtm?.getElevation(data.position)
+        data.position = data.position.copy(altitude = selev)
         findUniquePos(data)
         data.writeTo(nodesOutStream)
         if (borderNids.contains(data.nid)) {
@@ -83,9 +81,9 @@ public class PosUnifier : GeneratorBase() {
         resetElevationRaster()
     }
 
-    private fun checkAdd(lon: Int, lat: Int): Boolean {
-        val slot = ((lon % 5_000_000) / 100_000) * 50 + ((lat % 5_000_000) / 100_000)
-        val id = Position.computeId(lon, lat)
+    private fun checkAdd(position: Position): Boolean {
+        val slot = ((position.longitude % 5_000_000) / 100_000) * 50 + ((position.latitude % 5_000_000) / 100_000)
+        val id = position.id
         var set = positionSets[slot]
         if (set == null) {
             set = MutableLongSet()
@@ -100,35 +98,35 @@ public class PosUnifier : GeneratorBase() {
     }
 
     private fun findUniquePos(node: NodeData) {
-        if (!checkAdd(node.ilon, node.ilat)) {
-            val lonmod = node.ilon % 1_000_000
+        if (!checkAdd(node.position)) {
+            val lonmod = node.position.longitude % 1_000_000
             val londelta = if (lonmod < 500_000) 1 else -1
-            val latmod = node.ilat % 1_000_000
+            val latmod = node.position.latitude % 1_000_000
             val latdelta = if (latmod < 500_000) 1 else -1
             for (latsteps in 0 until 100) {
                 for (lonsteps in 0..latsteps) {
-                    val lon = node.ilon + lonsteps * londelta
-                    val lat = node.ilat + latsteps * latdelta
-                    if (checkAdd(lon, lat)) {
-                        node.ilon = lon
-                        node.ilat = lat
+                    val lon = node.position.longitude + lonsteps * londelta
+                    val lat = node.position.latitude + latsteps * latdelta
+                    val newPos = node.position.copy(longitude = lon, latitude = lat)
+                    if (checkAdd(newPos)) {
+                        node.position = newPos
                         return
                     }
                 }
             }
-            println("*** WARNING: cannot unify position for: ${node.ilon} ${node.ilat}")
+            println("*** WARNING: cannot unify position for: ${node.position.longitude} ${node.position.latitude}")
         }
     }
 
-    private fun srtmForNode(ilon: Int, ilat: Int): ElevationRaster? {
-        val srtmLonIdx = (ilon + 5_000_000) / 5_000_000
-        val srtmLatIdx = (654_999_999 - ilat) / 5_000_000 - 100
+    private fun srtmForNode(position: Position): ElevationRaster? {
+        val srtmLonIdx = (position.longitude + 5_000_000) / 5_000_000
+        val srtmLatIdx = (654_999_999 - position.latitude) / 5_000_000 - 100
         if (srtmLonIdx == lastSrtmLonIdx && srtmLatIdx == lastSrtmLatIdx) {
             return lastSrtmRaster
         }
         lastSrtmLonIdx = srtmLonIdx
         lastSrtmLatIdx = srtmLatIdx
-        val filename = if (UseRasterRd5FileName) genFilenameRd5(ilon, ilat) else genFilenameXY(srtmLonIdx, srtmLatIdx)
+        val filename = if (UseRasterRd5FileName) genFilenameRd5(position) else genFilenameXY(srtmLonIdx, srtmLatIdx)
         lastSrtmRaster = srtmmap[filename]
         if (lastSrtmRaster == null && !srtmmap.containsKey(filename)) {
             fun loadRaster(dir: String?): ElevationRaster? {
@@ -163,9 +161,9 @@ public class PosUnifier : GeneratorBase() {
             return "srtm_${slonidx.takeLast(2)}_${slatidx.takeLast(2)}"
         }
 
-        public fun genFilenameRd5(ilon: Int, ilat: Int): String {
-            var lonDegree = ilon / 1_000_000
-            var latDegree = ilat / 1_000_000
+        public fun genFilenameRd5(position: Position): String {
+            var lonDegree = position.longitude / 1_000_000
+            var latDegree = position.latitude / 1_000_000
             val lonMod5 = lonDegree % 5
             val latMod5 = latDegree % 5
             lonDegree = lonDegree - 180 - lonMod5

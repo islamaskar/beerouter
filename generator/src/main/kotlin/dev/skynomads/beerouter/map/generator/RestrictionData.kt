@@ -17,12 +17,9 @@ public class RestrictionData() : GeneratorBase() {
     public var toWid: Long = 0
     public var viaNid: Long = 0
     public var next: RestrictionData? = null
-    public var viaLon: Int = 0
-    public var viaLat: Int = 0
-    public var fromLon: Int = 0
-    public var fromLat: Int = 0
-    public var toLon: Int = 0
-    public var toLat: Int = 0
+    public var viaPosition: Position = Position.ZERO
+    public var fromPosition: Position = Position.ZERO
+    public var toPosition: Position = Position.ZERO
     public var badWayMatch: Boolean = false
 
     public constructor(di: DataInputStream) : this() {
@@ -37,19 +34,23 @@ public class RestrictionData() : GeneratorBase() {
     public fun isPositive(): Boolean = restriction.startsWith("only_")
 
     public fun isValid(): Boolean {
-        var valid = fromLon != 0 && toLon != 0 &&
+        var valid = fromPosition.longitude != 0 && toPosition.longitude != 0 &&
             (restriction.startsWith("only_") || restriction.startsWith("no_"))
         valid = valid && !restriction.contains("on_red")
         if (!valid || badWayMatch || !checkGeometry()) {
             synchronized(badTRs) {
-                badTRs.add(Position.computeId(viaLon, viaLat))
+                badTRs.add(viaPosition.id)
             }
         }
         return valid && restrictionKey == "restriction"
     }
 
     private fun checkGeometry(): Boolean {
-        val a = CheapAngleMeter.calcAngle(fromLon, fromLat, viaLon, viaLat, toLon, toLat)
+        val a = CheapAngleMeter.calcAngle(
+            fromPosition.longitude, fromPosition.latitude,
+            viaPosition.longitude, viaPosition.latitude,
+            toPosition.longitude, toPosition.latitude
+        )
         var t = when {
             restriction.startsWith("only_") -> restriction.substring("only_".length)
             restriction.startsWith("no_") -> restriction.substring("no_".length)

@@ -35,14 +35,12 @@ public open class OsmNodeNamed : OsmNode {
         totalSegmentLength: Double
     ): Double {
         val center = position
-        var currentLon1 = start.longitude
-        var currentLat1 = start.latitude
-        var currentLon2 = end.longitude
-        var currentLat2 = end.latitude
-        val scale = coordinateScaleAt((currentLat1 + currentLat2) shr 1)
+        var currentStart = start
+        var currentEnd = end
+        val scale = coordinateScaleAt((currentStart.latitude + currentEnd.latitude) shr 1)
 
-        var isFirstPointWithinCircle = distance(Position(currentLon1, currentLat1), center) < radius
-        var isLastPointWithinCircle = distance(Position(currentLon2, currentLat2), center) < radius
+        var isFirstPointWithinCircle = distance(currentStart, center) < radius
+        var isLastPointWithinCircle = distance(currentEnd, center) < radius
         // First point is within the circle
         if (isFirstPointWithinCircle) {
             // Last point is within the circle
@@ -52,14 +50,10 @@ public open class OsmNodeNamed : OsmNode {
             // Last point is not within the circle
             // Just swap points and go on with first first point not within the
             // circle now.
-            // Swap coordinates
-            val tempLon = currentLon2
-            currentLon2 = currentLon1
-            currentLon1 = tempLon
-
-            val tempLat = currentLat2
-            currentLat2 = currentLat1
-            currentLat1 = tempLat
+            // Swap positions
+            val temp = currentEnd
+            currentEnd = currentStart
+            currentStart = temp
 
             // Fix boolean values
             isLastPointWithinCircle = isFirstPointWithinCircle
@@ -68,11 +62,11 @@ public open class OsmNodeNamed : OsmNode {
         // Distance between the initial point and projection of center of
         // the circle on the current segment.
         val initialToProject: Double =
-            (((currentLon2 - currentLon1) * (center.longitude - currentLon1) * scale.longitudeToMeters * scale.longitudeToMeters
-                    + (currentLat2 - currentLat1) * (center.latitude - currentLat1) * scale.latitudeToMeters * scale.latitudeToMeters
+            (((currentEnd.longitude - currentStart.longitude) * (center.longitude - currentStart.longitude) * scale.longitudeToMeters * scale.longitudeToMeters
+                    + (currentEnd.latitude - currentStart.latitude) * (center.latitude - currentStart.latitude) * scale.latitudeToMeters * scale.latitudeToMeters
                     ) / totalSegmentLength)
         // Distance between the initial point and the center of the circle.
-        val initialToCenter = distance(center, Position(currentLon1, currentLat1))
+        val initialToCenter = distance(center, currentStart)
         // Half length of the segment within the circle
         val halfDistanceWithin = sqrt(
             radius * radius - (initialToCenter * initialToCenter -

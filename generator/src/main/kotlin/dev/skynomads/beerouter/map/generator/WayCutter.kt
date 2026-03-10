@@ -1,6 +1,7 @@
 package dev.skynomads.beerouter.map.generator
 
 import androidx.collection.MutableLongIntMap
+import dev.skynomads.beerouter.geo.Position
 import java.io.File
 
 public class WayCutter : GeneratorBase() {
@@ -23,7 +24,7 @@ public class WayCutter : GeneratorBase() {
     }
 
     override fun nextNode(data: NodeData) {
-        tileIndexMap[data.nid] = getTileIndex(data.ilon, data.ilat)
+        tileIndexMap[data.nid] = getTileIndex(data.position)
     }
 
     override fun nextWay(data: WayData) {
@@ -43,11 +44,11 @@ public class WayCutter : GeneratorBase() {
 
     public fun getTileIndexForNid(nid: Long): Int = tileIndexMap.getOrDefault(nid, -1)
 
-    private fun getTileIndex(ilon: Int, ilat: Int): Int {
-        val lon = ilon / 45000000
-        val lat = ilat / 30000000
+    private fun getTileIndex(position: Position): Int {
+        val lon = position.longitude / 45000000
+        val lat = position.latitude / 30000000
         if (lon !in 0..7 || lat !in 0..5) {
-            throw IllegalArgumentException("illegal pos: $ilon,$ilat")
+            throw IllegalArgumentException("illegal pos: ${position.longitude},${position.latitude}")
         }
         return lon * 6 + lat
     }

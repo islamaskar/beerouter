@@ -1,5 +1,6 @@
 package dev.skynomads.beerouter.map.generator
 
+import dev.skynomads.beerouter.geo.Position
 import dev.skynomads.beerouter.util.ReducedMedianFilter
 import kotlin.math.cos
 
@@ -16,9 +17,9 @@ public class ElevationRaster {
     private var missingData: Boolean = false
     private val rmf: ReducedMedianFilter = ReducedMedianFilter(256)
 
-    public fun getElevation(ilon: Int, ilat: Int): Short {
-        val lon = ilon / 1_000_000.0 - 180.0
-        val lat = ilat / 1_000_000.0 - 90.0
+    public fun getElevation(position: Position): Short {
+        val lon = position.longitudeDegree
+        val lat = position.latitudeDegree
         if (usingWeights) {
             return getElevationFromShiftWeights(lon, lat)
         }

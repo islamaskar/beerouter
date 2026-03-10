@@ -1,5 +1,6 @@
 package dev.skynomads.beerouter.map.generator
 
+import dev.skynomads.beerouter.geo.Position
 import java.io.File
 
 public class NodeCutter : GeneratorBase() {
@@ -21,14 +22,16 @@ public class NodeCutter : GeneratorBase() {
     }
 
     override fun nextNode(data: NodeData) {
-        data.writeTo(getOutStreamForTile(getTileIndex(data.ilon, data.ilat)))
+        data.writeTo(getOutStreamForTile(getTileIndex(data.position)))
     }
 
     override fun nodeFileEnd(nodefile: File?) {
         closeTileOutStreams()
     }
 
-    private fun getTileIndex(ilon: Int, ilat: Int): Int {
+    private fun getTileIndex(position: Position): Int {
+        val ilon = position.longitude
+        val ilat = position.latitude
         val lonoff = (ilon / 45000000) * 45
         val latoff = (ilat / 30000000) * 30
         if (lonoffset == -1) lonoffset = lonoff
