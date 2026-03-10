@@ -144,7 +144,7 @@ public class RoutingContext(
             turnInstructionCatchingRange =
                 ctx.getVariableValue("turnInstructionCatchingRange", 40f).toDouble()
             turnInstructionRoundabouts =
-                ctx.getVariableValue("turnInstructionRoundabouts", 1f) != 0f
+                ctx.getVariableValue("turnInstructionRoundabouts", if (footMode) 0f else 1f) != 0f
 
             // Speed computation model (for bikes)
             // Total mass (biker + bike + luggages or hiker), in kg

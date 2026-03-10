@@ -299,8 +299,12 @@ internal class VoiceHintProcessor // this.catchingRange = catchingRange;
                     }
                 }
 
-                input.angle =
-                    sumNonConsumedWithinCatchingRange(inputs, hintIdx, internalCatchingRangeWide)
+                if (explicitRoundabouts) {
+                    input.angle =
+                        sumNonConsumedWithinCatchingRange(inputs, hintIdx, internalCatchingRangeWide)
+                } else {
+                    input.turnAngleConsumed = true
+                }
                 input.distanceToNext = distance
                 distance = 0.0
                 results.add(input)
