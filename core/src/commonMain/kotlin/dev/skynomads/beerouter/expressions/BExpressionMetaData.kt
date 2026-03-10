@@ -2,8 +2,11 @@ package dev.skynomads.beerouter.expressions
 
 public class BExpressionMetaData {
     public var lookupVersion: Short = -1
+        internal set
     public var lookupMinorVersion: Short = -1
+        internal set
     public var minAppVersion: Short = -1
+        internal set
 
     private val listeners: MutableMap<String?, BExpressionContext> = HashMap()
 
