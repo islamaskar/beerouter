@@ -170,13 +170,9 @@ class CoordinateConversionTest {
             )
             val node = OsmNode(position)
 
-            // Step 2: Extract the Position coordinates
-            val positionLon = node.position.longitude
-            val positionLat = node.position.latitude
-
             // Step 3: Convert Position coordinates back to integer coordinates using conversion functions
-            val resultLon = positionLon
-            val resultLat = positionLat
+            val resultLon = node.position.longitude
+            val resultLat = node.position.latitude
 
             // Step 4: Check that the integer coordinates match the original (with tolerance for precision)
             assertEquals(

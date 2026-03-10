@@ -19,9 +19,7 @@ class OsmNogoPolygonTest {
     fun testCalcBoundingCircle() {
         polygon!!.calcBoundingCircle()
 
-        val polygonLon = polygon!!.position.longitude
-        val polygonLat = polygon!!.position.latitude
-        val scale = coordinateScaleAt(polygonLat)
+        val scale = coordinateScaleAt(polygon!!.position.latitude)
         val dlon2m = scale.longitudeToMeters
         val dlat2m = scale.latitudeToMeters
 
@@ -29,21 +27,19 @@ class OsmNogoPolygonTest {
         for (i in lons.indices) {
             val testLon = toOsmLon(lons[i], OFFSET_X)
             val testLat = toOsmLat(lats[i], OFFSET_Y)
-            val dpx: Double = (testLon - polygonLon) * dlon2m
-            val dpy: Double = (testLat - polygonLat) * dlat2m
+            val dpx: Double = (testLon - polygon!!.position.longitude) * dlon2m
+            val dpy: Double = (testLat - polygon!!.position.latitude) * dlat2m
             val r1 = sqrt(dpx * dpx + dpy * dpy)
             val diff = r - r1
             assertTrue(diff >= 0, "i: $i r($r) >= r1($r1)")
         }
         polyline!!.calcBoundingCircle()
-        val polylineLon = polyline!!.position.longitude
-        val polylineLat = polyline!!.position.latitude
         r = polyline!!.radius
         for (i in lons.indices) {
             val testLon = toOsmLon(lons[i], OFFSET_X)
             val testLat = toOsmLat(lats[i], OFFSET_Y)
-            val dpx: Double = (testLon - polylineLon) * dlon2m
-            val dpy: Double = (testLat - polylineLat) * dlat2m
+            val dpx: Double = (testLon - polyline!!.position.longitude) * dlon2m
+            val dpy: Double = (testLat - polyline!!.position.latitude) * dlat2m
             val r1 = sqrt(dpx * dpx + dpy * dpy)
             val diff = r - r1
             assertTrue(diff >= 0, "i: $i r($r) >= r1($r1)")

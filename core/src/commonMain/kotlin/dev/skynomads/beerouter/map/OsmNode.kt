@@ -120,16 +120,13 @@ public open class OsmNode : OsmLink, OsmPos {
         val nodeDescSize = mc.readVarLengthUnsigned()
         nodeDescription = if (nodeDescSize == 0) null else mc.readUnified(nodeDescSize, abUnifier)
 
-        // Extract lon/lat once from cached id (avoids repeated double→int conversions in the loop)
-        val selfId = _idFromPos
-        val selfLon = selfId.longitudeFromId()
-        val selfLat = selfId.latitudeFromId()
-
         while (mc.hasMoreData()) {
             // read link data
             val endPointer = mc.endPointer
-            val linklon = selfLon + mc.readVarLengthSigned()
-            val linklat = selfLat + mc.readVarLengthSigned()
+            val targetPosition = Position(
+                longitude = position.longitude + mc.readVarLengthSigned(),
+                latitude = position.latitude + mc.readVarLengthSigned()
+            )
             val sizecode = mc.readVarLengthUnsigned()
             val isReverse = (sizecode and 1) != 0
             var description: ByteArray? = null
@@ -139,21 +136,19 @@ public open class OsmNode : OsmLink, OsmPos {
             }
             val geometry = mc.readDataUntil(endPointer)
 
-            addLink(linklon, linklat, description, geometry, hollowNodes, isReverse)
+            addLink(targetPosition, description, geometry, hollowNodes, isReverse)
         }
         hollowNodes.remove(this)
     }
 
     public fun addLink(
-        linklon: Int,
-        linklat: Int,
+        targetPosition: Position,
         description: ByteArray?,
         geometry: ByteArray?,
         hollowNodes: OsmNodesMap,
         isReverse: Boolean
     ) {
-        val selfId = _idFromPos
-        if (linklon == selfId.longitudeFromId() && linklat == selfId.latitudeFromId()) {
+        if (targetPosition.longitude == position.longitude && targetPosition.latitude == position.latitude) {
             return  // skip self-ref
         }
 
@@ -165,7 +160,7 @@ public open class OsmNode : OsmLink, OsmPos {
         while (l != null) {
             val t = l.getTarget(this)
             val tId = t!!.idFromPos
-            if (tId.longitudeFromId() == linklon && tId.latitudeFromId() == linklat) {
+            if (tId.longitudeFromId() == targetPosition.longitude && tId.latitudeFromId() == targetPosition.latitude) {
                 tn = t
                 if (isReverse || (l.descriptionBitmap == null && !l.isReverse(this))) {
                     link = l // the correct one that needs our data
@@ -175,9 +170,9 @@ public open class OsmNode : OsmLink, OsmPos {
             l = l.getNext(this)
         }
         if (tn == null) { // .. not found, then check the hollow nodes
-            tn = hollowNodes.get(Position(linklon, linklat).id) // target node
+            tn = hollowNodes.get(targetPosition.id) // target node
             if (tn == null) { // node not yet known, create a new hollow proxy
-                tn = OsmNode(linklon, linklat)
+                tn = OsmNode(targetPosition)
                 tn.setHollow()
                 hollowNodes.put(tn)
                 addLink(

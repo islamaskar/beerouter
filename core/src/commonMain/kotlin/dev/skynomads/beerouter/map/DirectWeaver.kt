@@ -63,8 +63,8 @@ public class DirectWeaver(
         for (n in 0..<size) { // loop over nodes
             val node = nodes[n]
             val nodePosition = node.position
-            val ilon = nodePosition.longitude
-            val ilat = nodePosition.latitude
+            
+            
 
             // future escapes (turn restrictions?)
             var trExceptions: Short = 0
@@ -82,8 +82,8 @@ public class DirectWeaver(
                         val exceptions = trExceptions
                         trExceptions = 0
                         val isPositive = bc.decodeBit()
-                        val fromId = Position(ilon + bc.decodeNoisyDiff(10), ilat + bc.decodeNoisyDiff(10)).id
-                        val toId = Position(ilon + bc.decodeNoisyDiff(10), ilat + bc.decodeNoisyDiff(10)).id
+                        val fromId = Position(nodePosition.longitude + bc.decodeNoisyDiff(10), nodePosition.latitude + bc.decodeNoisyDiff(10)).id
+                        val toId = Position(nodePosition.longitude + bc.decodeNoisyDiff(10), nodePosition.latitude + bc.decodeNoisyDiff(10)).id
                         node.addTurnRestriction(
                             TurnRestriction(
                                 isPositive = isPositive,
@@ -116,8 +116,8 @@ public class DirectWeaver(
                 var isReverse = false
                 if (nodeIdx != n) { // internal (forward-) link
                     val targetPosition = nodes[nodeIdx].position
-                    dlonRemaining = targetPosition.longitude - ilon
-                    dlatRemaining = targetPosition.latitude - ilat
+                    dlonRemaining = targetPosition.longitude - nodePosition.longitude
+                    dlatRemaining = targetPosition.latitude - nodePosition.latitude
                 } else {
                     isReverse = bc.decodeBit()
                     dlonRemaining = extLonDiff.decodeSignedValue()
@@ -126,18 +126,18 @@ public class DirectWeaver(
 
                 val wayTags = wayTagCoder.decodeTagValueSet()
 
-                val linklon = ilon + dlonRemaining
-                val linklat = ilat + dlatRemaining
+                val linklon = nodePosition.longitude + dlonRemaining
+                val linklat = nodePosition.latitude + dlatRemaining
                 aboffset = 0
                 if (!isReverse) { // write geometry for forward links only
                     var matcher =
                         if (wayTags == null || wayTags.accessType < 2) null else waypointMatcher
-                    val ilontarget = ilon + dlonRemaining
-                    val ilattarget = ilat + dlatRemaining
+                    val ilontarget = nodePosition.longitude + dlonRemaining
+                    val ilattarget = nodePosition.latitude + dlatRemaining
                     if (matcher != null) {
                         val useAsStartWay =
                             wayTags == null || wayValidator.checkStartWay(wayTags.data)
-                        if (!matcher.start(Position(ilon, ilat), Position(ilontarget, ilattarget), useAsStartWay)) {
+                        if (!matcher.start(Position(nodePosition.longitude, nodePosition.latitude), Position(ilontarget, ilattarget), useAsStartWay)) {
                             matcher = null
                         }
                     }
@@ -181,8 +181,7 @@ public class DirectWeaver(
                         node.addLink(link, isReverse, node2)
                     } else { // weave external link
                         node.addLink(
-                            linklon,
-                            linklat,
+                            Position(linklon, linklat),
                             wayTags.data,
                             geometry,
                             hollowNodes,
