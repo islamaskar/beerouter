@@ -98,6 +98,25 @@ public open class OsmNode : OsmLink, OsmPos {
         return "n_${position.longitude - 180000000}_${position.latitude - 90000000}"
     }
 
+    public fun parseNodeTags(mc: MicroCache, unifier: IByteArrayUnifier): ByteArray? {
+        if (mc !is MicroCache2) throw IllegalArgumentException("unknown cache version: " + mc::class.simpleName)
+
+        // skip turn restrictions
+        while (mc.readBoolean()) {
+            mc.readShort() // exceptions
+            mc.readBoolean() // isPositive
+            mc.readInt(); mc.readInt() // from
+            mc.readInt(); mc.readInt() // to
+        }
+
+        val readSElev = mc.readShort()
+        position = position.copy(altitude = readSElev.takeUnless { it == Short.MIN_VALUE })
+        hollow = false
+        val nodeDescSize = mc.readVarLengthUnsigned()
+        nodeDescription = if (nodeDescSize == 0) null else mc.readUnified(nodeDescSize, unifier)
+        return nodeDescription
+    }
+
     public fun parseNodeBody(mc: MicroCache, hollowNodes: OsmNodesMap, expCtxWay: IByteArrayUnifier) {
         if (mc is MicroCache2) {
             parseNodeBody2(mc, hollowNodes, expCtxWay)

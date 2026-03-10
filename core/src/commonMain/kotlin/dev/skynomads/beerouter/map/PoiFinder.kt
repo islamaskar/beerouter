@@ -1,8 +1,10 @@
 package dev.skynomads.beerouter.map
 
 import dev.skynomads.beerouter.codec.DataBuffers
+import dev.skynomads.beerouter.codec.TagValueValidator
 import dev.skynomads.beerouter.expressions.BExpressionContextNode
 import dev.skynomads.beerouter.expressions.BExpressionMetaData
+import dev.skynomads.beerouter.geo.Position
 import kotlin.math.max
 import kotlin.math.min
 
@@ -26,7 +28,7 @@ public class PoiFinder(
 
     public fun find(query: PoiQuery): List<PoiResult> {
         val results = mutableListOf<PoiResult>()
-        val seenNodeIds = linkedSetOf<Long>()
+        val seenNodeIds = mutableSetOf<Long>()
         val minLonDegree = floorDiv(query.minLon, ONE_DEGREE)
         val maxLonDegree = floorDiv(query.maxLon, ONE_DEGREE)
         val minLatDegree = floorDiv(query.minLat, ONE_DEGREE)
@@ -66,34 +68,41 @@ public class PoiFinder(
                             lonIdx,
                             latIdx,
                             dataBuffers,
-                            null,
+                            RejectAllWayValidator,
                             null,
                             null
                         )
-                        val nodesMap = OsmNodesMap()
+                        
                         val size = segment.size
                         for (index in 0 until size) {
                             val nodeId = segment.getIdForIndex(index)
-                            if (!segment.getAndClear(nodeId)) {
-                                continue
-                            }
-                            val node = OsmNode(nodeId)
-                            node.parseNodeBody(segment, nodesMap, nodeContext)
-                            if (node.position.longitude !in query.minLon..query.maxLon ||
-                                node.position.latitude !in query.minLat..query.maxLat
+                            val lon = (nodeId shr 32).toInt()
+                            val lat = (nodeId and 0xffffffffL).toInt()
+                            
+                            if (lon !in query.minLon..query.maxLon ||
+                                lat !in query.minLat..query.maxLat
                             ) {
                                 continue
                             }
-                            val description = node.nodeDescription ?: continue
+
+                            if (!segment.getAndClear(nodeId)) {
+                                continue
+                            }
+                            
+                            val node = OsmNode(nodeId)
+                            val description = node.parseNodeTags(segment, nodeContext) ?: continue
+                            
                             val tags = nodeContext.getMap(false, description)
                             if (!matchesRequiredTags(tags, query.requiredTags)) {
                                 continue
                             }
-                            if (!seenNodeIds.add(node.idFromPos)) {
+                            
+                            if (!seenNodeIds.add(nodeId)) {
                                 continue
                             }
+                            
                             results += PoiResult(
-                                nodeId = node.idFromPos,
+                                nodeId = nodeId,
                                 position = node.position,
                                 tags = tags,
                                 sourceFile = physicalFile.fileName,
@@ -153,6 +162,14 @@ public class PoiFinder(
             }
         }
         return true
+    }
+
+    private object RejectAllWayValidator : TagValueValidator {
+        override fun accessType(tagValueSet: ByteArray?): Int = 0
+        override fun unify(ab: ByteArray, offset: Int, len: Int): ByteArray? = null
+        override fun isLookupIdxUsed(idx: Int): Boolean = false
+        override fun setDecodeForbidden(decodeForbidden: Boolean) {}
+        override fun checkStartWay(ab: ByteArray?): Boolean = false
     }
 
     private companion object {
