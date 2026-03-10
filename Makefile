@@ -10,7 +10,7 @@ refactor: image
 gemini: image
 	podman run --rm --cap-add=SYS_ADMIN --cpus 4 --memory=16g -it -e IS_SANDBOX=1 \
  		-v ~/.gitconfig:/root/.gitconfig:ro -v ~/.gemini:/root/.gemini \
- 		-v .:/root/src -w /root/src claude gemini
+ 		-v .:/root/src -w /root/src claude gemini --approval-mode yolo
 
 .PHONY: claude
 claude: image

@@ -11,15 +11,23 @@ public class AreaInfo(public val direction: Int) {
     }
 
     public var numForest: Int = -1
+        internal set
     public var numRiver: Int = -1
+        internal set
 
     public var polygon: OsmNogoPolygon? = null
+        internal set
 
     public var ways: Int = 0
+        internal set
     public var greenWays: Int = 0
+        internal set
     public var riverWays: Int = 0
+        internal set
     public var elevStart: Double = 0.0
+        internal set
     public var elev50: Int = 0
+        internal set
 
     private fun percentage(part: Int, total: Int): Int =
         if (total == 0) 0 else (part * 100.0 / total).toInt()

@@ -183,7 +183,7 @@ public class OsmTrack {
     public var plainAscend: Int = 0
     public var cost: Int = 0
     public var energy: Int = 0
-    public var itinerary: MutableList<String?> = mutableListOf()
+    public val itinerary: MutableList<String?> = mutableListOf()
 
     public fun getVoiceHint(i: Int): VoiceHint? = voiceHints.firstOrNull { it.indexInTrack == i }
 

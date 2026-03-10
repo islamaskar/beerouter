@@ -344,10 +344,10 @@ public class VoiceHint {
             }
         }
 
-        var cmdAngle = angle
-
-        if (angle == Float.MAX_VALUE) {
-            cmdAngle = goodWay!!.turnangle
+        val cmdAngle = if (angle == Float.MAX_VALUE) {
+            goodWay!!.turnangle
+        } else {
+            angle
         }
         if (this.command == Command.BL) return
 
