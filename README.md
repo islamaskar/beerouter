@@ -114,9 +114,7 @@ fun main() = runBlocking {
         profileContent = profileContent,
         lookupContent = lookupContent,
         mapSource = DefaultMapSource(segmentDir)
-    ).apply {
-        global.turnInstructionMode = TurnInstructionMode.LOCUS
-    }
+    )
 
     val track: OsmTrack = RoutingEngine(routingContext).doRouting(
         listOf(

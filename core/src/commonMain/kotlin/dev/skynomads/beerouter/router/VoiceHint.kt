@@ -58,14 +58,11 @@ public class VoiceHint {
     public val isRoundabout: Boolean
         get() = this.exitNumber != 0
 
-    private fun usesExplicitExitCommands(timode: Int): Boolean =
-        TurnInstructionMode.usesExplicitExitCommands(timode)
-
     public fun addBadWay(badWay: MessageData?) {
         badWay?.let(badWays::add)
     }
 
-    public fun getJsonCommandIndex(timode: Int): Int {
+    public fun getJsonCommandIndex(): Int {
         return when (command) {
             Command.TLU -> 10
             Command.TU -> 15
@@ -82,8 +79,8 @@ public class VoiceHint {
             Command.RNDB -> 13
             Command.RNLB -> 14
             Command.BL -> 16
-            Command.EL -> if (usesExplicitExitCommands(timode)) 17 else 8
-            Command.ER -> if (usesExplicitExitCommands(timode)) 18 else 9
+            Command.EL -> 17
+            Command.ER -> 18
             Command.OFFR -> 12
             else -> throw IllegalArgumentException("unknown command: $command")
         }
@@ -92,7 +89,7 @@ public class VoiceHint {
     /*
    * used by comment style, osmand style
    */
-    public fun getCommandString(timode: Int): String {
+    public fun getCommandString(): String {
         return when (command) {
             Command.TLU -> "TU" // should be changed to TLU when osmand uses new voice hint constants
             Command.TU -> "TU"
@@ -109,8 +106,8 @@ public class VoiceHint {
             Command.RNDB -> "RNDB" + exitNumber
             Command.RNLB -> "RNLB" + (-exitNumber)
             Command.BL -> "BL"
-            Command.EL -> if (usesExplicitExitCommands(timode)) "EL" else "KL"
-            Command.ER -> if (usesExplicitExitCommands(timode)) "ER" else "KR"
+            Command.EL -> "EL"
+            Command.ER -> "ER"
             Command.OFFR -> "OFFR"
             Command.END -> "END"
             else -> throw IllegalArgumentException("unknown command: $command")
@@ -120,7 +117,7 @@ public class VoiceHint {
     /*
    * used by trkpt/sym style
    */
-    public fun getCommandString(c: Command, timode: Int): String {
+    public fun getCommandString(c: Command): String {
         return when (c) {
             Command.TLU -> "TLU"
             Command.TU -> "TU"
@@ -137,8 +134,8 @@ public class VoiceHint {
             Command.RNDB -> "RNDB" + exitNumber
             Command.RNLB -> "RNLB" + (-exitNumber)
             Command.BL -> "BL"
-            Command.EL -> if (usesExplicitExitCommands(timode)) "EL" else "KL"
-            Command.ER -> if (usesExplicitExitCommands(timode)) "ER" else "KR"
+            Command.EL -> "EL"
+            Command.ER -> "ER"
             Command.OFFR -> "OFFR"
             else -> "unknown command: $c"
         }
@@ -147,7 +144,7 @@ public class VoiceHint {
     /*
    * used by gpsies style
    */
-    public fun getSymbolString(timode: Int): String {
+    public fun getSymbolString(): String {
         return when (command) {
             Command.TLU -> "TU"
             Command.TU -> "TU"
@@ -164,8 +161,8 @@ public class VoiceHint {
             Command.RNDB -> "RNDB" + exitNumber
             Command.RNLB -> "RNLB" + (-exitNumber)
             Command.BL -> "BL"
-            Command.EL -> if (usesExplicitExitCommands(timode)) "EL" else "KL"
-            Command.ER -> if (usesExplicitExitCommands(timode)) "ER" else "KR"
+            Command.EL -> "EL"
+            Command.ER -> "ER"
             Command.OFFR -> "OFFR"
             else -> throw IllegalArgumentException("unknown command: $command")
         }
@@ -201,7 +198,7 @@ public class VoiceHint {
     /*
   * used by osmand style
   */
-    public fun getMessageString(timode: Int): String {
+    public fun getMessageString(): String {
         return when (command) {
             Command.TLU -> "u-turn" // should be changed to u-turn-left when osmand uses new voice hint constants
             Command.TU -> "u-turn"
@@ -217,8 +214,8 @@ public class VoiceHint {
             Command.TRU -> "u-turn" // should be changed to u-turn-right when osmand uses new voice hint constants
             Command.RNDB -> "Take exit " + exitNumber
             Command.RNLB -> "Take exit " + (-exitNumber)
-            Command.EL -> if (usesExplicitExitCommands(timode)) "exit left" else "keep left"
-            Command.ER -> if (usesExplicitExitCommands(timode)) "exit right" else "keep right"
+            Command.EL -> "exit left"
+            Command.ER -> "exit right"
             else -> throw IllegalArgumentException("unknown command: $command")
         }
     }

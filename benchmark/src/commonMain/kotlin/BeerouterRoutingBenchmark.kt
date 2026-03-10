@@ -5,7 +5,6 @@ import dev.skynomads.beerouter.map.DefaultMapSource
 import dev.skynomads.beerouter.router.OsmNodeNamed
 import dev.skynomads.beerouter.router.RoutingContext
 import dev.skynomads.beerouter.router.RoutingEngine
-import dev.skynomads.beerouter.router.TurnInstructionMode
 import kotlinx.benchmark.Benchmark
 import kotlinx.benchmark.Measurement
 import kotlinx.benchmark.Scope
@@ -55,9 +54,7 @@ open class BeerouterRoutingBenchmark {
                     profileContent = profileSource.readString(),
                     lookupContent = lookupSource.readString(),
                     mapSource = DefaultMapSource(segmentDir)
-                ).apply {
-                    global.turnInstructionMode = TurnInstructionMode.LOCUS
-                }
+                )
             }
         }
 

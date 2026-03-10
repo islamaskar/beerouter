@@ -48,9 +48,7 @@ class EnergyParityTest {
 
     private suspend fun routeBeerouter(profileName: String, waypoints: List<OsmNodeNamed>): OsmTrack? {
         val profile = profilePath(profileName)
-        val ctx = routingContextFromFiles(profile, requireNotNull(testSegmentFile.parent)).apply {
-            global.turnInstructionMode = TurnInstructionMode.LOCUS
-        }
+        val ctx = routingContextFromFiles(profile, requireNotNull(testSegmentFile.parent))
         return RoutingEngine(ctx).doRouting(waypoints)
     }
 
@@ -104,9 +102,7 @@ class EnergyParityTest {
         )
         engine.doRouting(60_000)
 
-        val beerouterContext = routingContextFromFiles(profile, requireNotNull(testSegmentFile.parent)).apply {
-            global.turnInstructionMode = TurnInstructionMode.LOCUS
-        }
+        val beerouterContext = routingContextFromFiles(profile, requireNotNull(testSegmentFile.parent))
         runBlocking {
             RoutingEngine(beerouterContext).doRouting(
                 listOf(

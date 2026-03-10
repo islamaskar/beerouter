@@ -10,7 +10,7 @@ RUN curl -fsSL https://claude.ai/install.sh | bash && \
     npm i -g @openai/codex && \
     npm install -g @google/gemini-cli
 
-RUN curl -fsSL https://github.com/pingdotgg/t3code/releases/download/v0.0.4/T3-Code-0.0.4-x86_64.AppImage \
+RUN curl -fsSL https://github.com/pingdotgg/t3code/releases/download/v0.0.9/T3-Code-0.0.9-x86_64.AppImage \
     -o /tmp/t3code.AppImage && \
     chmod +x /tmp/t3code.AppImage && \
     /tmp/t3code.AppImage --appimage-extract && \

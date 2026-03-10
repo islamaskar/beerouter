@@ -1637,7 +1637,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
         var fastPartialRecalc = fastPartialRecalc
         val verbose = guideTrack != null
         val supportsGuideTrackDetours =
-            guideTrack != null && TurnInstructionMode.supportsGuideTrackDetours(routingContext.global.turnInstructionMode)
+            guideTrack != null && routingContext.generateTurns
 
         val currentGuideTrack = guideTrack
         var maxTotalCost =

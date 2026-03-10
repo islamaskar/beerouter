@@ -222,6 +222,9 @@ public class OsmTrack {
         voiceHints = VoiceHintList()
         voiceHints.setTransportMode(rc.global.carMode, rc.global.bikeMode)
 
+        if (!rc.generateTurns) {
+            return
+        }
         if (detourMap.isEmpty() && !rc.global.hasDirectRouting) {
             // only when no direct way points
             return
@@ -253,7 +256,7 @@ public class OsmTrack {
                 input.goodWay = node.message
                 input.oldWay = if (origin.message == null) node.message else origin.message
 
-                if (supportsBeelineCommand(rc.global.turnInstructionMode)) {
+                if (rc.generateTurns) {
                     val mwpt = getMatchedWaypoint(nodeNr)
                     if (mwpt != null && mwpt.type == MatchedWaypoint.Type.DIRECT) {
                         input.command = VoiceHint.Command.BL
@@ -340,9 +343,6 @@ public class OsmTrack {
         }
         return null
     }
-
-    private fun supportsBeelineCommand(turnInstructionMode: TurnInstructionMode): Boolean =
-        TurnInstructionMode.supportsBeelineHints(turnInstructionMode)
 
     public companion object {
         public fun readBinary(

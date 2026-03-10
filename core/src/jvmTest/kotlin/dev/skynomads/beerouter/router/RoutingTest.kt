@@ -298,9 +298,7 @@ class RoutingTest {
         assertTrue(SystemFileSystem.exists(profile), "profile exists $profile")
 
 
-        val ctx = routingContextFromFiles(profile, segmentDir).apply {
-            global.turnInstructionMode = TurnInstructionMode.LOCUS
-        }
+        val ctx = routingContextFromFiles(profile, segmentDir)
 
         val engine = RoutingEngine(ctx)
 

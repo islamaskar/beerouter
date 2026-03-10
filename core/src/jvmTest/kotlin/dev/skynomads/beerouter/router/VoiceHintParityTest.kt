@@ -45,9 +45,7 @@ class VoiceHintParityTest {
 
     private suspend fun routeBeerouter(profileName: String, waypoints: List<OsmNodeNamed>): OsmTrack? {
         val profile = profilePath(profileName)
-        val ctx = routingContextFromFiles(profile, requireNotNull(testSegmentFile.parent)).apply {
-            global.turnInstructionMode = TurnInstructionMode.LOCUS
-        }
+        val ctx = routingContextFromFiles(profile, requireNotNull(testSegmentFile.parent))
         return RoutingEngine(ctx).doRouting(waypoints)
     }
 

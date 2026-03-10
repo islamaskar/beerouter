@@ -6,7 +6,11 @@ import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
 import kotlinx.io.readString
 
-internal fun routingContextFromFiles(profile: Path, segmentDir: Path): RoutingContext {
+internal fun routingContextFromFiles(
+    profile: Path,
+    segmentDir: Path,
+    generateTurns: Boolean = true
+): RoutingContext {
     require(SystemFileSystem.exists(profile)) { "profile exists $profile" }
     val segmentLookup = Path(segmentDir, "lookups.dat")
     val lookup = if (SystemFileSystem.exists(segmentLookup)) {
@@ -20,7 +24,8 @@ internal fun routingContextFromFiles(profile: Path, segmentDir: Path): RoutingCo
             RoutingContext(
                 profileContent = profileSource.readString(),
                 lookupContent = lookupSource.readString(),
-                mapSource = DefaultMapSource(segmentDir)
+                mapSource = DefaultMapSource(segmentDir),
+                generateTurns = generateTurns
             )
         }
     }

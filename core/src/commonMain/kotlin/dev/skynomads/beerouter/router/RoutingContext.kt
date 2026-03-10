@@ -26,12 +26,14 @@ import kotlin.math.sqrt
 public class RoutingContext(
     private val profileContent: String,
     private val lookupContent: String,
-    public val mapSource: MapSource
+    public val mapSource: MapSource,
+    public val generateTurns: Boolean = true
 ) {
     public constructor(template: RoutingContext) : this(
         profileContent = template.profileContent,
         lookupContent = template.lookupContent,
-        mapSource = template.mapSource
+        mapSource = template.mapSource,
+        generateTurns = template.generateTurns
     ) {
         rawTrackSourceFactory = template.rawTrackSourceFactory
         rawAreaSourceFactory = template.rawAreaSourceFactory
@@ -67,7 +69,6 @@ public class RoutingContext(
         public var useDynamicDistance: Boolean
         public val buildBeelineOnRange: Boolean
 
-        public var turnInstructionMode: TurnInstructionMode = TurnInstructionMode.NONE
         public val turnInstructionCatchingRange: Double
         public val turnInstructionRoundabouts: Boolean
 
@@ -134,12 +135,6 @@ public class RoutingContext(
             showSpeedProfile = ctx.getVariableValue("showSpeedProfile", 0f) != 0f
             inverseRouting = ctx.getVariableValue("inverseRouting", 0f) != 0f
             showTime = ctx.getVariableValue("showtime", 0f) != 0f
-
-            val tiMode = ctx.getVariableValue("turnInstructionMode", 0f).toInt()
-            if (tiMode != TurnInstructionMode.AUTO.id) {
-                // Preserve externally provided mode for profile auto mode ("1"), as in brouter.
-                turnInstructionMode = TurnInstructionMode.fromId(tiMode) ?: TurnInstructionMode.NONE
-            }
 
             turnInstructionCatchingRange =
                 ctx.getVariableValue("turnInstructionCatchingRange", 40f).toDouble()
