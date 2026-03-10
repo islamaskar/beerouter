@@ -18,11 +18,15 @@ public open class OsmLink {
 
     // a link logically knows only its target, but for the reverse link, source and target are swapped
     public var n1: OsmNode? = null
+        internal set
     public var n2: OsmNode? = null
+        internal set
 
     // same for the next-link-for-node pointer: previous applies to the reverse link
     public var previous: OsmLink? = null
+        internal set
     public var next: OsmLink? = null
+        internal set
 
     private var reverselinkholder: OsmLinkHolder? = null
     private var firstlinkholder: OsmLinkHolder? = null

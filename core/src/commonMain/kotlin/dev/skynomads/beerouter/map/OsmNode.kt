@@ -18,15 +18,19 @@ public open class OsmNode : OsmLink, OsmPos {
      * The position
      */
     override var position: Position = Position.ZERO
+        internal set
 
     /**
      * The node-tags, if any
      */
     public var nodeDescription: ByteArray? = null
+        internal set
 
     public var firstRestriction: TurnRestriction? = null
+        internal set
 
     public var visitID: Int = 0
+        internal set
 
     public fun addTurnRestriction(tr: TurnRestriction) {
         tr.next = firstRestriction
@@ -37,6 +41,7 @@ public open class OsmNode : OsmLink, OsmPos {
      * The links to other nodes
      */
     public var firstlink: OsmLink? = null
+        internal set
 
     private var hollow: Boolean = false
 

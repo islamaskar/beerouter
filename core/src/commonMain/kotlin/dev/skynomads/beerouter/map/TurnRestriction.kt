@@ -8,10 +8,10 @@ package dev.skynomads.beerouter.map
 import dev.skynomads.beerouter.geo.Position
 
 public data class TurnRestriction(
-    public var isPositive: Boolean = false,
-    public var exceptions: Short = 0,
-    public var fromId: Long = 0,
-    public var toId: Long = 0,
+    public val isPositive: Boolean = false,
+    public val exceptions: Short = 0,
+    public val fromId: Long = 0,
+    public val toId: Long = 0,
     public var next: TurnRestriction? = null
 ) {
     public enum class RestrictionException(public val bit: Int) {
