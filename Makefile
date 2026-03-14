@@ -2,14 +2,11 @@
 
 IMAGE ?= beerouter
 
+IMAGE ?= beerouter
+
+
 image:
 	podman build . -t $(IMAGE)
-
-.PHONY: codex
-codex: image
-	podman run --rm --cpus 4 --memory=16g -it \
-		-v ~/.gitconfig:/root/.gitconfig:ro -v ~/.codex:/root/.codex \
-		-v .:/root/src -w /root/src $(IMAGE) codex -s danger-full-access -a never
 
 .PHONY: opencode
 opencode: image

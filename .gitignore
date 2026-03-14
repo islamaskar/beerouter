@@ -24,3 +24,5 @@ misc/customprofiles
 .code/agents/
 .worktrees/
 *.jfr
+.venv-desloppify
+.desloppify
