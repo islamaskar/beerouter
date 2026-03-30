@@ -65,48 +65,95 @@ public class OsmNodesMap {
         }
     }
 
+    private class DfsFrame(
+        val source: OsmNode?,
+        val n: OsmNode,
+        var l: OsmLink?,
+        var minId: Int,
+        var pendingLink: OsmLink? = null,
+        var pendingTarget: OsmNode? = null,
+        var pendingNodesCreated: Int = 0,
+    )
+
     private fun minVisitIdInSubtree(source: OsmNode?, n: OsmNode): Int {
-        if (n.visitID == 1) n.visitID = baseID // border node
-        else n.visitID = lastVisitID++
-        var minId = n.visitID
-        nodesCreated++
+        val stack = ArrayDeque<DfsFrame>()
 
-        var nextLink: OsmLink?
-        var l = n.firstlink
-        while (l != null) {
-            nextLink = l.getNext(n)
-
-            val t = requireNotNull(l.getTarget(n))
-            if (t === source) {
-                l = nextLink
-                continue
-            }
-            if (t.isHollow) {
-                l = nextLink
-                continue
-            }
-
-            var minIdSub = t.visitID
-            if (minIdSub == 1) {
-                minIdSub = baseID
-            } else if (minIdSub == 0) {
-                val nodesCreatedUntilHere = nodesCreated
-                minIdSub = minVisitIdInSubtree(n, t)
-                if (minIdSub > n.visitID) { // peninsula ?
-                    nodesCreated = nodesCreatedUntilHere
-                    n.unlinkLink(l)
-                    t.unlinkLink(l)
-                }
-            } else if (minIdSub < baseID) {
-                l = nextLink
-                continue
-            } else if (cleanupMode == CleanupMode.TREE) {
-                minIdSub = baseID // in tree-mode, hitting anything is like a gateway
-            }
-            if (minIdSub < minId) minId = minIdSub
-            l = nextLink
+        fun initNode(src: OsmNode?, node: OsmNode): DfsFrame {
+            if (node.visitID == 1) node.visitID = baseID // border node
+            else node.visitID = lastVisitID++
+            nodesCreated++
+            return DfsFrame(src, node, node.firstlink, node.visitID)
         }
-        return minId
+
+        stack.addLast(initNode(source, n))
+        var childResult = 0
+
+        while (stack.isNotEmpty()) {
+            val frame = stack.last()
+
+            // Apply the result of the child that just completed
+            if (frame.pendingLink != null) {
+                val pl = frame.pendingLink!!
+                val pt = frame.pendingTarget!!
+                if (childResult > frame.n.visitID) { // peninsula?
+                    nodesCreated = frame.pendingNodesCreated
+                    frame.n.unlinkLink(pl)
+                    pt.unlinkLink(pl)
+                } else if (childResult < frame.minId) {
+                    frame.minId = childResult
+                }
+                frame.pendingLink = null
+                frame.pendingTarget = null
+            }
+
+            // Continue walking this node's links
+            var pushed = false
+            while (frame.l != null) {
+                val l = frame.l!!
+                val nextLink = l.getNext(frame.n)
+                val t = requireNotNull(l.getTarget(frame.n))
+
+                if (t === frame.source) {
+                    frame.l = nextLink
+                    continue
+                }
+                if (t.isHollow) {
+                    frame.l = nextLink
+                    continue
+                }
+
+                var minIdSub = t.visitID
+                when {
+                    minIdSub == 1 -> minIdSub = baseID
+                    minIdSub == 0 -> {
+                        // Descend into unvisited child — save state, push child frame
+                        frame.pendingLink = l
+                        frame.pendingTarget = t
+                        frame.pendingNodesCreated = nodesCreated
+                        frame.l = nextLink
+                        stack.addLast(initNode(frame.n, t))
+                        pushed = true
+                        break
+                    }
+                    minIdSub < baseID -> {
+                        frame.l = nextLink
+                        continue
+                    }
+                    cleanupMode == CleanupMode.TREE -> minIdSub = baseID // in tree-mode, hitting anything is like a gateway
+                }
+
+                if (minIdSub < frame.minId) frame.minId = minIdSub
+                frame.l = nextLink
+            }
+
+            if (!pushed) {
+                // All links processed — pop and report result to parent
+                childResult = frame.minId
+                stack.removeLast()
+            }
+        }
+
+        return childResult
     }
 
 
