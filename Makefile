@@ -1,29 +1,38 @@
 .PHONY: image refactor
 
+IMAGE ?= beerouter
+
+
 image:
-	podman build ./prompts -t claude
+	podman build . -t $(IMAGE)
 
 refactor: image
-	podman run --rm -e IS_SANDBOX=1 -v ~/.gemini:/root/.gemini -v .:/root/src -w /root/src claude gemini -p "execute the prompt at ./prompts/refactor.md"
+	podman run --rm -e IS_SANDBOX=1 -v ~/.gemini:/root/.gemini -v .:/root/src -w /root/src $(IMAGE) gemini -p "execute the prompt at ./prompts/refactor.md"
 
 .PHONY: gemini
 gemini: image
 	podman run --rm --cap-add=SYS_ADMIN --cpus 4 --memory=16g -it -e IS_SANDBOX=1 \
  		-v ~/.gitconfig:/root/.gitconfig:ro -v ~/.gemini:/root/.gemini \
- 		-v .:/root/src -w /root/src claude gemini --approval-mode yolo
+ 		-v .:/root/src -w /root/src $(IMAGE)$(IMAGE) gemini --approval-mode yolo
 
 .PHONY: claude
 claude: image
 	# SYS_ADMIN for profiling
 	podman run --rm --cap-add=SYS_ADMIN --cpus 4 --memory=16g -it -e IS_SANDBOX=1 \
  		-v ~/.gitconfig:/root/.gitconfig:ro -v ~/.claude:/root/.claude -v ~/.claude.json:/root/.claude.json \
- 		-v .:/root/src -w /root/src claude claude --dangerously-skip-permissions
+ 		-v .:/root/src -w /root/src $(IMAGE) claude --dangerously-skip-permissions
 
 .PHONY: coder
 coder: image
 	podman run --rm --cpus 4 --memory=16g -it \
 		-v ~/.gitconfig:/root/.gitconfig:ro -v ~/.code:/root/.code \
-		-v .:/root/src -w /root/src claude coder
+		-v .:/root/src -w /root/src $(IMAGE) coder
+
+.PHONY: codex
+codex: image
+	podman run --rm --cpus 4 --memory=16g -it \
+		-v ~/.gitconfig:/root/.gitconfig:ro -v ~/.codex:/root/.codex \
+		-v .:/root/src -w /root/src $(IMAGE) codex -s danger-full-access -a never
 
 .PHONY: t3
 t3: image
@@ -39,5 +48,5 @@ t3: image
 		-e GTK_THEME=Adwaita:dark \
 		-v ~/.gitconfig:/root/.gitconfig:ro \
 		-v ~/.codex:/root/.codex \
-		-v .:/root/src -w /root/src claude \
-		t3code --ozone-platform=wayland --no-sandbox --force-device-scale-factor=1.15
+		-v .:/root/src -w /root/src $(IMAGE) \
+		t3code --ozone-platform=wayland --no-sandbox --force-device-scale-factor=1.1
