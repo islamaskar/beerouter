@@ -1,10 +1,9 @@
 package dev.skynomads.beerouter.geo
 
-import kotlin.math.roundToInt
-
 private const val COORDINATE_SCALE = 1e-6
 private const val LONGITUDE_OFFSET = 180.0
 private const val LATITUDE_OFFSET = 90.0
+private const val COORDINATE_FACTOR = 1_000_000.0
 private const val ALTITUDE_SCALE: Double = 4.0
 private const val MIN_ENCODED_ALTITUDE: Int = Short.MIN_VALUE.toInt()
 private const val MAX_ENCODED_ALTITUDE: Int = Short.MAX_VALUE.toInt()
@@ -30,8 +29,8 @@ public data class Position(
     )
 
     public constructor(longitude: Double, latitude: Double, altitude: Double? = null) : this(
-        longitude = ((longitude + LONGITUDE_OFFSET) / COORDINATE_SCALE).roundToInt(),
-        latitude = ((latitude + LATITUDE_OFFSET) / COORDINATE_SCALE).roundToInt(),
+        longitude = encodeCoordinate(longitude, LONGITUDE_OFFSET),
+        latitude = encodeCoordinate(latitude, LATITUDE_OFFSET),
         altitude = altitude.toShortAltitude(),
     )
 
@@ -49,6 +48,9 @@ public data class Position(
 
         public fun computeId(longitude: Int, latitude: Int): Long =
             (longitude.toLong() shl 32) or (latitude.toLong() and 0xFFFFFFFFL)
+
+        private fun encodeCoordinate(value: Double, offset: Double): Int =
+            ((value + offset) * COORDINATE_FACTOR + 0.5).toInt()
 
         public fun from(longitude: Double, latitude: Double, altitude: Double): Position =
             Position(

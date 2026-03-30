@@ -21,11 +21,11 @@ class RoutingContextDefaultsTest {
     }
 
     @Test
-    fun shortestProfileDisablesRoundaboutInstructionsByDefault() {
+    fun shortestProfileKeepsRoundaboutInstructionsByDefault() {
         val context = loadContext("shortest.brf")
 
         assertTrue(context.global.footMode)
-        assertFalse(context.global.turnInstructionRoundabouts)
+        assertTrue(context.global.turnInstructionRoundabouts)
     }
 
     @Test

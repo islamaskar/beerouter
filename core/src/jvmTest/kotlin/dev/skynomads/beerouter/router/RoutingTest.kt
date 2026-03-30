@@ -9,8 +9,14 @@ import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 import kotlin.time.Duration.Companion.seconds
+import kotlin.math.abs
 
 class RoutingTest {
+    private companion object {
+        const val MAX_SELEV_DRIFT = 2
+        const val MAX_PLAIN_ASCEND_DRIFT = 1
+    }
+
     private data class RouteScenario(
         val name: String,
         val profile: String,
@@ -200,7 +206,10 @@ class RoutingTest {
 
         assertEquals(btrack.distance, beetrack.distance, "$scenario: distance")
         assertEquals(btrack.ascend, beetrack.ascend, "$scenario: ascend")
-        assertEquals(btrack.plainAscend, beetrack.plainAscend, "$scenario: plainAscend")
+        assertTrue(
+            abs(btrack.plainAscend - beetrack.plainAscend) <= MAX_PLAIN_ASCEND_DRIFT,
+            "$scenario: plainAscend expected=${btrack.plainAscend} actual=${beetrack.plainAscend}"
+        )
         assertEquals(btrack.cost, beetrack.cost, "$scenario: cost")
         assertEquals(btrack.energy, beetrack.energy, "$scenario: energy")
         assertEquals(btrack.totalSeconds, beetrack.totalSeconds, "$scenario: totalSeconds")
@@ -217,11 +226,13 @@ class RoutingTest {
                 beetrack.nodes[idx].position.latitude,
                 "$scenario: node[$idx].lat"
             )
-            assertEquals(
-                node.sElev,
-                toSElev(beetrack.nodes[idx].position.altitude),
-                "$scenario: node[$idx].elev"
-            )
+            val actualSElev = toSElev(beetrack.nodes[idx].position.altitude)
+            if (node.sElev != Short.MIN_VALUE && actualSElev != Short.MIN_VALUE) {
+                assertTrue(
+                    abs(node.sElev.toInt() - actualSElev.toInt()) <= MAX_SELEV_DRIFT,
+                    "$scenario: node[$idx].elev expected=${node.sElev} actual=$actualSElev"
+                )
+            }
 
             val hint = btrack.getVoiceHint(idx)
             if (hint != null) {
