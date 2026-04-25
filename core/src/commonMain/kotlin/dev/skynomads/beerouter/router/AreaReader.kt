@@ -106,13 +106,15 @@ public class AreaReader {
 
         val list = tiles.entries.sortedBy { it.value }
 
-        val maxmem = rc.memoryclass * 1024L * 1024L // in MB
+        val memoryPolicy = rc.memoryPolicy
         val nodesCache =
             NodesCache(
                 rc.mapSource,
                 expctxWay,
                 rc.global.forceSecondaryData,
-                maxmem,
+                memoryPolicy.graphInitialBudgetBytes,
+                memoryPolicy.graphHardLimitBytes,
+                memoryPolicy.tileCacheBudgetBytes,
                 null,
                 false
             )

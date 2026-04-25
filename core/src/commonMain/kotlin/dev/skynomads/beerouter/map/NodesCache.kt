@@ -17,7 +17,9 @@ public class NodesCache(
     private val mapSource: MapSource,
     private val ctxWay: BExpressionContextWay,
     forceSecondaryData: Boolean,
-    maxmem: Long,
+    graphInitialBudgetBytes: Long,
+    graphHardLimitBytes: Long,
+    tileCacheBudgetBytes: Long,
     oldCache: NodesCache?,
     detailed: Boolean
 ) {
@@ -44,7 +46,8 @@ public class NodesCache(
     public var firstFileAccessName: String?
 
     private var cacheSum: Long = 0
-    private var maxmemtiles: Long = maxmem / 8
+    private val maxTileCacheBudgetBytes = tileCacheBudgetBytes
+    private var tileCacheLimitBytes: Long = tileCacheBudgetBytes
     private var detailed: Boolean // NOPMD used in constructor
 
     private var garbageCollectionEnabled = false
@@ -62,7 +65,7 @@ public class NodesCache(
     }
 
     init {
-        this.nodesMap.maxmem = (2L * maxmem) / 3L
+        this.nodesMap.configureMemoryBudget(graphInitialBudgetBytes, graphHardLimitBytes)
         this.lookupVersion = ctxWay.meta.lookupVersion.toInt()
         this.lookupMinorVersion = ctxWay.meta.lookupMinorVersion.toInt()
         this.forceSecondaryData = forceSecondaryData
@@ -109,7 +112,7 @@ public class NodesCache(
     // if the cache sum exceeded a threshold,
     // clean all ghosts and enable garbage collection
     private fun checkEnableCacheCleaning() {
-        if (cacheSum < maxmemtiles) {
+        if (cacheSum < tileCacheLimitBytes) {
             return
         }
 
@@ -126,7 +129,7 @@ public class NodesCache(
 
         if (garbageCollectionEnabled) {
             ghostCleaningDone = true
-            maxmemtiles *= 2
+            tileCacheLimitBytes = minOf(tileCacheLimitBytes * 2, maxTileCacheBudgetBytes)
         } else {
             cacheSumClean = cacheSum
             garbageCollectionEnabled = true

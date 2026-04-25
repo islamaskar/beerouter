@@ -1539,13 +1539,15 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
         if (nodesCache != null) {
             log("NodesCache status=${nodesCache!!.formatStatus()} before reset")
         }
-        val maxmem = routingContext.memoryclass * 1024L * 1024L // in MB
+        val memoryPolicy = routingContext.memoryPolicy
 
         nodesCache = NodesCache(
             routingContext.mapSource,
             routingContext.way,
             routingContext.global.forceSecondaryData,
-            maxmem,
+            memoryPolicy.graphInitialBudgetBytes,
+            memoryPolicy.graphHardLimitBytes,
+            memoryPolicy.tileCacheBudgetBytes,
             nodesCache,
             detailed
         )

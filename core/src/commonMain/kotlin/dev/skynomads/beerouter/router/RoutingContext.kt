@@ -27,13 +27,15 @@ public class RoutingContext(
     private val profileContent: String,
     private val lookupContent: String,
     public val mapSource: MapSource,
-    public val generateTurns: Boolean = true
+    public val generateTurns: Boolean = true,
+    public val memoryPolicy: RoutingMemoryPolicy = RoutingMemoryPolicy.default(),
 ) {
     public constructor(template: RoutingContext) : this(
         profileContent = template.profileContent,
         lookupContent = template.lookupContent,
         mapSource = template.mapSource,
-        generateTurns = template.generateTurns
+        generateTurns = template.generateTurns,
+        memoryPolicy = template.memoryPolicy,
     ) {
         rawTrackSourceFactory = template.rawTrackSourceFactory
         rawAreaSourceFactory = template.rawAreaSourceFactory
@@ -181,8 +183,6 @@ public class RoutingContext(
 
     public var geometryDecoder: GeometryDecoder = GeometryDecoder()
 
-    public var memoryclass: Int = 64
-
     public var ai: AreaInfo? = null
     public lateinit var pm: OsmPathModel
 
@@ -190,7 +190,7 @@ public class RoutingContext(
         val meta = BExpressionMetaData()
 
         node = BExpressionContextNode(0, meta)
-        way = BExpressionContextWay(memoryclass * 512, meta)
+        way = BExpressionContextWay(WAY_CACHE_SIZE, meta)
         node.setForeignContext(way)
 
         meta.readMetaData(lookupContent)
@@ -566,6 +566,8 @@ public class RoutingContext(
     }
 
     public companion object {
+        private const val WAY_CACHE_SIZE = 64 * 512
+
         public fun prepareNogoPoints(nogos: MutableList<OsmNodeNamed>) {
             for (nogo in nogos) {
                 if (nogo is OsmNogoPolygon) {

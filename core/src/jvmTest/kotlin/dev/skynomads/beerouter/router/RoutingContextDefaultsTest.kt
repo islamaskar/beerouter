@@ -56,4 +56,16 @@ class RoutingContextDefaultsTest {
         assertTrue(withTurns.voiceHints.isNotEmpty())
         assertEquals(0, withoutTurns.voiceHints.size)
     }
+
+    @Test
+    fun memoryPolicyCanBeConfiguredAtConstruction() {
+        val policy = RoutingMemoryPolicy.withTotalHardLimitMegabytes(256)
+        val context = routingContextFromFiles(
+            profile = profilePath("fastbike.brf"),
+            segmentDir = requireNotNull(testSegmentFile.parent),
+            memoryPolicy = policy,
+        )
+
+        assertEquals(policy, context.memoryPolicy)
+    }
 }

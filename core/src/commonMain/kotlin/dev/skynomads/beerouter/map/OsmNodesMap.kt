@@ -21,8 +21,8 @@ public class OsmNodesMap {
     public val byteArrayUnifier: ByteArrayUnifier = ByteArrayUnifier(16384, false)
 
     public var nodesCreated: Int = 0
-    public var maxmem: Long = 0
-    private var currentmaxmem: Long = 4000000 // start with 4 MB
+    public var maxMemoryBytes: Long = 0
+    private var currentMaxMemoryBytes: Long = 4000000 // start with 4 MB
     public var lastVisitID: Int = 1000
     public var baseID: Int = 1000
 
@@ -37,6 +37,16 @@ public class OsmNodesMap {
     public var endNode2: OsmNode? = null
 
     public var cleanupMode: CleanupMode = CleanupMode.COUNT_ONLY
+
+    internal fun configureMemoryBudget(initialBudgetBytes: Long, hardLimitBytes: Long) {
+        require(initialBudgetBytes > 0) { "initialBudgetBytes must be positive" }
+        require(hardLimitBytes > 0) { "hardLimitBytes must be positive" }
+        require(initialBudgetBytes <= hardLimitBytes) {
+            "initialBudgetBytes must not exceed hardLimitBytes"
+        }
+        currentMaxMemoryBytes = initialBudgetBytes
+        maxMemoryBytes = hardLimitBytes
+    }
 
     public fun cleanupAndCount(nodes: List<OsmNode>) {
         if (cleanupMode == CleanupMode.COUNT_ONLY) {
@@ -165,15 +175,15 @@ public class OsmNodesMap {
             total += 100000
 
             // when extending, try to have 1 MB  space
-            val delta = total + 1900000 - currentmaxmem
+            val delta = total + 1900000 - currentMaxMemoryBytes
             if (delta > 0) {
-                currentmaxmem += delta
-                if (currentmaxmem > maxmem) {
-                    currentmaxmem = maxmem
+                currentMaxMemoryBytes += delta
+                if (currentMaxMemoryBytes > maxMemoryBytes) {
+                    currentMaxMemoryBytes = maxMemoryBytes
                 }
             }
         }
-        return total <= currentmaxmem
+        return total <= currentMaxMemoryBytes
     }
 
     private val nodesToCheck: MutableList<OsmNode> = mutableListOf()

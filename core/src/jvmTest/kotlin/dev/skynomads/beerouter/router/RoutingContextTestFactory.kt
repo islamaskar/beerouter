@@ -9,7 +9,8 @@ import kotlinx.io.readString
 internal fun routingContextFromFiles(
     profile: Path,
     segmentDir: Path,
-    generateTurns: Boolean = true
+    generateTurns: Boolean = true,
+    memoryPolicy: RoutingMemoryPolicy = RoutingMemoryPolicy.default(),
 ): RoutingContext {
     require(SystemFileSystem.exists(profile)) { "profile exists $profile" }
     val segmentLookup = Path(segmentDir, "lookups.dat")
@@ -25,7 +26,8 @@ internal fun routingContextFromFiles(
                 profileContent = profileSource.readString(),
                 lookupContent = lookupSource.readString(),
                 mapSource = DefaultMapSource(segmentDir),
-                generateTurns = generateTurns
+                generateTurns = generateTurns,
+                memoryPolicy = memoryPolicy,
             )
         }
     }
