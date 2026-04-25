@@ -26,6 +26,42 @@ import kotlin.math.min
 import kotlin.math.roundToInt
 import kotlin.time.TimeSource
 
+internal class BorderLoadDeferralPolicy {
+    internal enum class OverBudgetAction {
+        DEFER_BORDER_LOADS,
+        MEMORY_LIMIT_REACHED,
+    }
+
+    internal var deferringBorderLoads: Boolean = false
+        private set
+
+    private var mustMakeProgressAfterDeferral: Boolean = false
+
+    internal fun onDeferredFrontierRequeued() {
+        deferringBorderLoads = false
+        mustMakeProgressAfterDeferral = true
+    }
+
+    internal fun onPathAcceptedForExpansion() {
+        mustMakeProgressAfterDeferral = false
+    }
+
+    internal fun onCleanupStillOverBudget(
+        maxTotalCost: Int,
+        fastPartialRecalc: Boolean,
+    ): OverBudgetAction {
+        if (maxTotalCost < UNBOUNDED_MAX_TOTAL_COST || mustMakeProgressAfterDeferral || fastPartialRecalc) {
+            return OverBudgetAction.MEMORY_LIMIT_REACHED
+        }
+        deferringBorderLoads = true
+        return OverBudgetAction.DEFER_BORDER_LOADS
+    }
+
+    internal companion object {
+        internal const val UNBOUNDED_MAX_TOTAL_COST: Int = 1000000000
+    }
+}
+
 public class RoutingEngine(private val routingContext: RoutingContext) {
     private var nodesCache: NodesCache? = null
     private val openSet = SortedHeap<OsmPath?>()
@@ -1641,8 +1677,12 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
 
         val currentGuideTrack = guideTrack
         var maxTotalCost =
-            if (currentGuideTrack != null) currentGuideTrack.cost + 5000 else 1000000000
-        var firstMatchCost = 1000000000
+            if (currentGuideTrack != null) {
+                currentGuideTrack.cost + 5000
+            } else {
+                BorderLoadDeferralPolicy.UNBOUNDED_MAX_TOTAL_COST
+            }
+        var firstMatchCost = BorderLoadDeferralPolicy.UNBOUNDED_MAX_TOTAL_COST
 
         if (costCuttingTrack != null && costCuttingTrack.cost > 0) {
             // Any previously found track for the same section is a valid upper bound.
@@ -1727,6 +1767,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
         addToOpenset(startPath2)
 
         val openBorderList = ArrayList<OsmPath>(4096)
+        val borderLoadDeferral = BorderLoadDeferralPolicy()
 
         // Pre-compute end position integer coordinates once to avoid repeated double→int conversions in the hot loop
         val endPosition = endPos?.position ?: Position.ZERO
@@ -1743,6 +1784,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
                     openSet.add(p.cost + (p.airdistance * airDistanceCostFactor).toInt(), p)
                 }
                 openBorderList.clear()
+                borderLoadDeferral.onDeferredFrontierRequeued()
                 continue
             }
 
@@ -1752,26 +1794,41 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
 
             val pathTargetNode = requireNotNull(path.targetNode)
             if (directWeaving && cache.hasHollowLinkTargets(pathTargetNode)) {
-                if (!cache.nodesMap.isInMemoryBounds(openSet.size, false)) {
-                    cache.nodesMap.collectOutreachers()
-                    while (true) {
-                        val p3: OsmPath? = openSet.popLowestKeyValue()
-                        if (p3 == null) break
-                        val p3TargetNode = p3.targetNode ?: continue
-                        if (p3.airdistance != -1 && cache.nodesMap.canEscape(p3TargetNode)) {
-                            openBorderList.add(p3)
+                if (!borderLoadDeferral.deferringBorderLoads) {
+                    if (!cache.nodesMap.isInMemoryBounds(openSet.size, false)) {
+                        cache.nodesMap.collectOutreachers()
+                        while (true) {
+                            val p3: OsmPath? = openSet.popLowestKeyValue()
+                            if (p3 == null) break
+                            val p3TargetNode = p3.targetNode ?: continue
+                            if (p3.airdistance != -1 && cache.nodesMap.canEscape(p3TargetNode)) {
+                                openBorderList.add(p3)
+                            }
+                        }
+                        cache.nodesMap.clearTemp()
+                        for (p in openBorderList) {
+                            openSet.add(
+                                p.cost + (p.airdistance * airDistanceCostFactor).toInt(),
+                                p
+                            )
+                        }
+                        openBorderList.clear()
+                        if (!cache.nodesMap.isInMemoryBounds(openSet.size, true)) {
+                            when (borderLoadDeferral.onCleanupStillOverBudget(maxTotalCost, fastPartialRecalc)) {
+                                BorderLoadDeferralPolicy.OverBudgetAction.DEFER_BORDER_LOADS -> Unit
+                                BorderLoadDeferralPolicy.OverBudgetAction.MEMORY_LIMIT_REACHED -> {
+                                    throw IllegalArgumentException("memory limit reached")
+                                }
+                            }
                         }
                     }
-                    cache.nodesMap.clearTemp()
-                    for (p in openBorderList) {
-                        openSet.add(
-                            p.cost + (p.airdistance * airDistanceCostFactor).toInt(),
-                            p
-                        )
-                    }
-                    openBorderList.clear()
+                }
+                if (borderLoadDeferral.deferringBorderLoads) {
+                    openBorderList.add(path)
+                    continue
                 }
             }
+            borderLoadDeferral.onPathAcceptedForExpansion()
 
 
             if (fastPartialRecalc && matchPath != null && costCuttingTrack != null && path.cost > 30L * firstMatchCost && !costCuttingTrack.isDirty) {
