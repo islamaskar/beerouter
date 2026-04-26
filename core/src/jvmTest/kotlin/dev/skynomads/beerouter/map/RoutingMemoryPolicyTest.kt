@@ -1,4 +1,4 @@
-package dev.skynomads.beerouter.router
+package dev.skynomads.beerouter.map
 
 import kotlin.test.Test
 import kotlin.test.assertEquals

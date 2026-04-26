@@ -38,14 +38,9 @@ public class OsmNodesMap {
 
     public var cleanupMode: CleanupMode = CleanupMode.COUNT_ONLY
 
-    internal fun configureMemoryBudget(initialBudgetBytes: Long, hardLimitBytes: Long) {
-        require(initialBudgetBytes > 0) { "initialBudgetBytes must be positive" }
-        require(hardLimitBytes > 0) { "hardLimitBytes must be positive" }
-        require(initialBudgetBytes <= hardLimitBytes) {
-            "initialBudgetBytes must not exceed hardLimitBytes"
-        }
-        currentMaxMemoryBytes = initialBudgetBytes
-        maxMemoryBytes = hardLimitBytes
+    internal fun configureMemoryPolicy(memoryPolicy: RoutingMemoryPolicy) {
+        currentMaxMemoryBytes = memoryPolicy.graphInitialBudgetBytes
+        maxMemoryBytes = memoryPolicy.graphHardLimitBytes
     }
 
     public fun cleanupAndCount(nodes: List<OsmNode>) {

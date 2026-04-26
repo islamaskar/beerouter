@@ -17,9 +17,7 @@ public class NodesCache(
     private val mapSource: MapSource,
     private val ctxWay: BExpressionContextWay,
     forceSecondaryData: Boolean,
-    graphInitialBudgetBytes: Long,
-    graphHardLimitBytes: Long,
-    tileCacheBudgetBytes: Long,
+    memoryPolicy: RoutingMemoryPolicy,
     oldCache: NodesCache?,
     detailed: Boolean
 ) {
@@ -46,8 +44,8 @@ public class NodesCache(
     public var firstFileAccessName: String?
 
     private var cacheSum: Long = 0
-    private val maxTileCacheBudgetBytes = tileCacheBudgetBytes
-    private var tileCacheLimitBytes: Long = tileCacheBudgetBytes
+    private val maxTileCacheBudgetBytes = memoryPolicy.tileCacheBudgetBytes
+    private var tileCacheLimitBytes: Long = memoryPolicy.tileCacheBudgetBytes
     private var detailed: Boolean // NOPMD used in constructor
 
     private var garbageCollectionEnabled = false
@@ -65,7 +63,7 @@ public class NodesCache(
     }
 
     init {
-        this.nodesMap.configureMemoryBudget(graphInitialBudgetBytes, graphHardLimitBytes)
+        this.nodesMap.configureMemoryPolicy(memoryPolicy)
         this.lookupVersion = ctxWay.meta.lookupVersion.toInt()
         this.lookupMinorVersion = ctxWay.meta.lookupMinorVersion.toInt()
         this.forceSecondaryData = forceSecondaryData

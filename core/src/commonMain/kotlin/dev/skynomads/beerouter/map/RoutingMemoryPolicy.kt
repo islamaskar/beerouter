@@ -1,4 +1,4 @@
-package dev.skynomads.beerouter.router
+package dev.skynomads.beerouter.map
 
 public data class RoutingMemoryPolicy public constructor(
     public val graphInitialBudgetBytes: Long,

@@ -16,6 +16,7 @@ import dev.skynomads.beerouter.map.MapSource
 import dev.skynomads.beerouter.map.MatchedWaypoint
 import dev.skynomads.beerouter.map.OsmLink
 import dev.skynomads.beerouter.map.OsmNode
+import dev.skynomads.beerouter.map.RoutingMemoryPolicy
 import kotlinx.io.Sink
 import kotlinx.io.Source
 import kotlin.math.abs
