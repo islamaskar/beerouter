@@ -9,14 +9,23 @@ import dev.skynomads.beerouter.geo.Position
  */
 public interface WaypointMatcher {
     public fun start(
-        start: Position,
-        target: Position,
+        startLon: Int,
+        startLat: Int,
+        targetLon: Int,
+        targetLat: Int,
         useAsStartWay: Boolean
     ): Boolean
 
-    public fun transferNode(position: Position)
+    public fun transferNode(lon: Int, lat: Int)
 
     public fun end()
 
-    public fun hasMatch(position: Position): Boolean
+    public fun hasMatch(lon: Int, lat: Int): Boolean
+
+    public fun start(start: Position, target: Position, useAsStartWay: Boolean): Boolean =
+        start(start.longitude, start.latitude, target.longitude, target.latitude, useAsStartWay)
+
+    public fun transferNode(position: Position): Unit = transferNode(position.longitude, position.latitude)
+
+    public fun hasMatch(position: Position): Boolean = hasMatch(position.longitude, position.latitude)
 }

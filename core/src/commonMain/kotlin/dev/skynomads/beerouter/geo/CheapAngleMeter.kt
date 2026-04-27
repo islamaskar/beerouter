@@ -5,23 +5,30 @@ import kotlin.math.abs
 import kotlin.math.atan2
 import kotlin.math.sqrt
 
-internal data class AngleMeasurement(
-    val angle: Double,
-    val cosAngle: Double,
+public data class AngleMeasurement(
+    public val angle: Double,
+    public val cosAngle: Double,
 )
 
 public object CheapAngleMeter {
     private const val RAD_TO_DEG = 180.0 / PI
 
-    internal fun turnAngle(p0: Position, p1: Position, p2: Position): AngleMeasurement {
-        val idx = cacheIndex(p1.latitude)
+    public fun turnAngle(
+        lon0: Int,
+        lat0: Int,
+        lon1: Int,
+        lat1: Int,
+        lon2: Int,
+        lat2: Int,
+    ): AngleMeasurement {
+        val idx = cacheIndex(lat1)
         val lon2m = kxCache[idx]
         val lat2m = kyCache[idx]
 
-        val dx10 = (p1.longitude - p0.longitude) * lon2m
-        val dy10 = (p1.latitude - p0.latitude) * lat2m
-        val dx21 = (p2.longitude - p1.longitude) * lon2m
-        val dy21 = (p2.latitude - p1.latitude) * lat2m
+        val dx10 = (lon1 - lon0) * lon2m
+        val dy10 = (lat1 - lat0) * lat2m
+        val dx21 = (lon2 - lon1) * lon2m
+        val dy21 = (lat2 - lat1) * lat2m
 
         val dd = sqrt((dx10 * dx10 + dy10 * dy10) * (dx21 * dx21 + dy21 * dy21))
         if (dd == 0.0) return AngleMeasurement(angle = 0.0, cosAngle = 1.0)
@@ -52,11 +59,17 @@ public object CheapAngleMeter {
         )
     }
 
-    public fun rawBearing(start: Position, end: Position): Double {
-        val xdiff = (end.latitude - start.latitude).toDouble()
-        val ydiff = (end.longitude - start.longitude).toDouble()
+    public fun turnAngle(p0: Position, p1: Position, p2: Position): AngleMeasurement =
+        turnAngle(p0.longitude, p0.latitude, p1.longitude, p1.latitude, p2.longitude, p2.latitude)
+
+    public fun rawBearing(startLon: Int, startLat: Int, endLon: Int, endLat: Int): Double {
+        val xdiff = (endLat - startLat).toDouble()
+        val ydiff = (endLon - startLon).toDouble()
         return atan2(ydiff, xdiff) * RAD_TO_DEG
     }
+
+    public fun rawBearing(start: Position, end: Position): Double =
+        rawBearing(start.longitude, start.latitude, end.longitude, end.latitude)
 
     public fun bearing(p1: Position, p2: Position): Double =
         normalizeAngle(rawBearing(p1, p2))
@@ -74,5 +87,5 @@ public object CheapAngleMeter {
     }
 
     public fun measureAngle(lon0: Int, lat0: Int, lon1: Int, lat1: Int, lon2: Int, lat2: Int): Double =
-        turnAngle(Position(lon0, lat0), Position(lon1, lat1), Position(lon2, lat2)).angle
+        turnAngle(lon0, lat0, lon1, lat1, lon2, lat2).angle
 }

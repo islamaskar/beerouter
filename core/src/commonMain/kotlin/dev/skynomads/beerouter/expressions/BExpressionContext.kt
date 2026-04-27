@@ -44,10 +44,11 @@ public abstract class BExpressionContext protected constructor(
 
     private var variableData: FloatArray? = null
 
-    private var cache: LruCache<ByteArrayKey, CacheNode>? = null
+    private var cache: LruCache<ByteArrayKeyBase, CacheNode>? = null
     private var identityCache: LruCache<ByteArray, CacheNode>? = null
 
     private val probeVarSet = VarWrapper()
+    private val byteArrayProbeKey = ProbeByteArrayKey()
 
     private var resultVarCache: LruCache<FloatArrayKey, VarWrapper>? = null
     private var expressionList: MutableList<BExpression?>? = null
@@ -262,12 +263,57 @@ public abstract class BExpressionContext protected constructor(
 
     private var lastCacheNode: CacheNode = CacheNode()
 
-    private data class ByteArrayKey(val hash: Int, val bytes: ByteArray) {
+    private sealed class ByteArrayKeyBase {
+        abstract val hash: Int
+
+        abstract fun contentEqualsStored(bytes: ByteArray): Boolean
+
         override fun hashCode(): Int = hash
+    }
+
+    private class StoredByteArrayKey(
+        override val hash: Int,
+        val bytes: ByteArray,
+    ) : ByteArrayKeyBase() {
         override fun equals(other: Any?): Boolean {
             if (this === other) return true
-            val o = other as? ByteArrayKey ?: return false
-            return hash == o.hash && bytes.contentEquals(o.bytes)
+            val o = other as? ByteArrayKeyBase ?: return false
+            return hash == o.hash && o.contentEqualsStored(bytes)
+        }
+
+        override fun contentEqualsStored(bytes: ByteArray): Boolean = this.bytes.contentEquals(bytes)
+    }
+
+    private class ProbeByteArrayKey : ByteArrayKeyBase() {
+        override var hash: Int = 0
+        private var bytes: ByteArray = ByteArray(0)
+        private var offset: Int = 0
+        private var len: Int = 0
+
+        fun reset(hash: Int, bytes: ByteArray, offset: Int, len: Int): ProbeByteArrayKey {
+            this.hash = hash
+            this.bytes = bytes
+            this.offset = offset
+            this.len = len
+            return this
+        }
+
+        override fun equals(other: Any?): Boolean {
+            if (this === other) return true
+            val stored = other as? StoredByteArrayKey ?: return false
+            if (hash != stored.hash || len != stored.bytes.size) return false
+            for (i in 0..<len) {
+                if (bytes[offset + i] != stored.bytes[i]) return false
+            }
+            return true
+        }
+
+        override fun contentEqualsStored(bytes: ByteArray): Boolean {
+            if (len != bytes.size) return false
+            for (i in 0..<len) {
+                if (this.bytes[offset + i] != bytes[i]) return false
+            }
+            return true
         }
     }
 
@@ -282,15 +328,14 @@ public abstract class BExpressionContext protected constructor(
 
     override fun unify(ab: ByteArray, offset: Int, len: Int): ByteArray? {
         val hash = crc(ab, offset, len)
-
-        val probe = ByteArray(len)
-        ab.copyInto(probe, 0, offset, offset + len)
         val cache = requireNotNull(cache)
-        val cn = cache[ByteArrayKey(hash, probe)]
+        val cn = cache[byteArrayProbeKey.reset(hash, ab, offset, len)]
         if (cn != null) {
             lastCacheNode = cn
             return cn.ab
         }
+        val probe = ByteArray(len)
+        ab.copyInto(probe, 0, offset, offset + len)
         return probe
     }
 
@@ -319,7 +364,7 @@ public abstract class BExpressionContext protected constructor(
                 identityHit
             } else {
                 val hash = crc(ab, 0, ab.size)
-                val key = ByteArrayKey(hash, ab)
+                val key = StoredByteArrayKey(hash, ab)
                 val existing = cache[key]
 
                 if (existing == null) {

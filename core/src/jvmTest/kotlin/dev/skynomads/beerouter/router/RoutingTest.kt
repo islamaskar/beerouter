@@ -75,6 +75,38 @@ class RoutingTest {
     }
 
     @Test
+    fun routesWhenPass1IsSkipped() {
+        val segmentDir = generatedTestSegmentDir
+        val profile = profilePathForSegments("trekking.brf", segmentDir)
+        val baseProfileContent = profile.toJavaFile().readText()
+        val pass1Line = "assign pass1coefficient -1"
+        val pass1Regex = Regex("(?m)^\\s*assign\\s+pass1coefficient\\s+(=\\s*)?[-0-9.]+.*$")
+        val profileContent = if (pass1Regex.containsMatchIn(baseProfileContent)) {
+            baseProfileContent.replace(pass1Regex, pass1Line)
+        } else {
+            baseProfileContent.replaceFirst(Regex("(?m)^---context:global.*$"), "$0\n$pass1Line")
+        }
+        val lookupContent = lookupPathForSegments(segmentDir).toJavaFile().readText()
+        val ctx = RoutingContext(
+            profileContent = profileContent,
+            lookupContent = lookupContent,
+            mapSource = dev.skynomads.beerouter.map.DefaultMapSource(segmentDir),
+        )
+        val engine = RoutingEngine(ctx)
+
+        val track = runBlocking {
+            engine.doRouting(
+                listOf(
+                    createWaypoint("Tuebingen", 48.5203263, 9.053596),
+                    createWaypoint("Horb am Neckar", 48.4421, 8.6849),
+                )
+            )
+        }
+
+        assertNotNull(track)
+    }
+
+    @Test
     fun routingParityTest() {
         val scenarios = listOf(
             // trekking profile: short / medium / long / via route

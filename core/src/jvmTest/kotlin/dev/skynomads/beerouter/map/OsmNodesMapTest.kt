@@ -1,13 +1,34 @@
 package dev.skynomads.beerouter.map
 
+import dev.skynomads.beerouter.geo.Position
 import kotlin.test.Test
-import kotlin.test.assertFails
+import kotlin.test.assertTrue
 
 class OsmNodesMapTest {
 
+    @Test
+    fun cleanupPeninsulasRemovesDeadSubtree() {
+        val map = OsmNodesMap()
+        map.cleanupMode = OsmNodesMap.CleanupMode.PENINSULAS
+        val a = node(180000000, 90000000)
+        val b = node(180000100, 90000000)
+        val c = node(180000200, 90000000)
+        val linkAB = OsmLink()
+        val linkBC = OsmLink()
+        a.addLink(linkAB, false, b)
+        b.addLink(linkBC, false, c)
+        a.visitID = 1
+        b.visitID = 0
+        c.visitID = 0
+
+        map.cleanupAndCount(listOf(a, b, c))
+
+        assertTrue(a.firstlink == null || a.firstlink!!.isLinkUnused)
+    }
+
     /**
-     * minVisitIdInSubtree is a recursive DFS. A deep linear graph causes
-     * StackOverflowError because each node in the chain adds a stack frame.
+     * minVisitIdInSubtree must remain iterative; a deep linear graph used to
+     * risk StackOverflowError when each node in the chain added a call frame.
      */
     @Test
     fun cleanupPeninsulasDoesNotStackOverflowOnDeepLinearGraph() {
@@ -27,4 +48,6 @@ class OsmNodesMapTest {
         map.cleanupMode = OsmNodesMap.CleanupMode.PENINSULAS
         map.cleanupAndCount(nodes)
     }
+
+    private fun node(lon: Int, lat: Int): OsmNode = OsmNode(Position(lon, lat)).apply { clearHollow() }
 }

@@ -27,7 +27,7 @@ public class DirectWeaver(
 
     init {
         val cellsize = 1000000 / divisor
-        id64Base = Position(lonIdx * cellsize, latIdx * cellsize).id
+        id64Base = Position.computeId(lonIdx * cellsize, latIdx * cellsize)
 
         val wayTagCoder = TagValueCoder(bc, dataBuffers, wayValidator)
         val nodeTagCoder = TagValueCoder(bc, dataBuffers, null)
@@ -63,8 +63,6 @@ public class DirectWeaver(
         for (n in 0..<size) { // loop over nodes
             val node = nodes[n]
             val nodePosition = node.position
-            
-            
 
             // future escapes (turn restrictions?)
             var trExceptions: Short = 0
@@ -82,8 +80,12 @@ public class DirectWeaver(
                         val exceptions = trExceptions
                         trExceptions = 0
                         val isPositive = bc.decodeBit()
-                        val fromId = Position(nodePosition.longitude + bc.decodeNoisyDiff(10), nodePosition.latitude + bc.decodeNoisyDiff(10)).id
-                        val toId = Position(nodePosition.longitude + bc.decodeNoisyDiff(10), nodePosition.latitude + bc.decodeNoisyDiff(10)).id
+                        val fromLon = nodePosition.longitude + bc.decodeNoisyDiff(10)
+                        val fromLat = nodePosition.latitude + bc.decodeNoisyDiff(10)
+                        val toLon = nodePosition.longitude + bc.decodeNoisyDiff(10)
+                        val toLat = nodePosition.latitude + bc.decodeNoisyDiff(10)
+                        val fromId = Position.computeId(fromLon, fromLat)
+                        val toId = Position.computeId(toLon, toLat)
                         node.addTurnRestriction(
                             TurnRestriction(
                                 isPositive = isPositive,
@@ -102,7 +104,7 @@ public class DirectWeaver(
 
             selev += nodeEleDiff.decodeSignedValue()
             node.clearHollow()
-            node.position = node.position.copy(altitude = selev.toShort().takeUnless { it == Short.MIN_VALUE })
+            node.altitude = selev.toShort()
             val nodeTags = nodeTagCoder.decodeTagValueSet()
             node.nodeDescription = nodeTags?.data // TODO: unified?
 
@@ -137,7 +139,7 @@ public class DirectWeaver(
                     if (matcher != null) {
                         val useAsStartWay =
                             wayTags == null || wayValidator.checkStartWay(wayTags.data)
-                        if (!matcher.start(Position(nodePosition.longitude, nodePosition.latitude), Position(ilontarget, ilattarget), useAsStartWay)) {
+                        if (!matcher.start(nodePosition.longitude, nodePosition.latitude, ilontarget, ilattarget, useAsStartWay)) {
                             matcher = null
                         }
                     }
@@ -157,7 +159,7 @@ public class DirectWeaver(
                             writeVarLengthSigned(elediff)
                         }
 
-                        matcher?.transferNode(Position(ilontarget - dlonRemaining, ilattarget - dlatRemaining))
+                        matcher?.transferNode(ilontarget - dlonRemaining, ilattarget - dlatRemaining)
                     }
                     matcher?.end()
                 }

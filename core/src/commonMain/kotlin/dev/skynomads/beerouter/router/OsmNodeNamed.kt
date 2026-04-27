@@ -25,7 +25,7 @@ public open class OsmNodeNamed : OsmNode {
 
     public constructor(position: Position) : super(position)
 
-    public constructor(n: OsmNode) : super(n.position)
+    public constructor(n: OsmNode) : super(Position(n.position.longitude, n.position.latitude, n.altitude))
 
     override fun toString(): String =
         if (nogoWeight.isNaN()) "${position.longitude},${position.latitude},$name"

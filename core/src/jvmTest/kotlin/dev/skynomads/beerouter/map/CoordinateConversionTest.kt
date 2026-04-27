@@ -1,14 +1,16 @@
 package dev.skynomads.beerouter.map
 
 import dev.skynomads.beerouter.geo.Position
-import dev.skynomads.beerouter.geo.toAltitude
+import dev.skynomads.beerouter.geo.clampEncodedAltitude
+import dev.skynomads.beerouter.geo.encodedAltitudeToMeters
+import dev.skynomads.beerouter.geo.encodeAltitudeMeters
 import dev.skynomads.beerouter.geo.toDoubleLatitude
 import dev.skynomads.beerouter.geo.toDoubleLongitude
 import dev.skynomads.beerouter.geo.toIntLatitude
 import dev.skynomads.beerouter.geo.toIntLongitude
-import dev.skynomads.beerouter.geo.toSElev
 import kotlin.test.Test
 import kotlin.test.assertEquals
+import kotlin.test.assertFailsWith
 
 class CoordinateConversionTest {
 
@@ -197,43 +199,40 @@ class CoordinateConversionTest {
     }
 
     @Test
-    fun testPositionStoresAltitudeInQuarterMeters() {
-        val position = Position(12.0, 34.0, 123.25)
+    fun testPositionStoresEncodedElevationAsPrimitiveShort() {
+        val position = Position.fromDegrees(12.0, 34.0, encodeAltitudeMeters(123.25))
 
         assertEquals(493.toShort(), position.altitude)
-        assertEquals(123.25, position.altitudeMeters)
-        assertEquals(null, Position(12.0, 34.0).altitude)
-        assertEquals(null, Position(12.0, 34.0).altitudeMeters)
+        assertEquals(Short.MIN_VALUE, Position(12.0, 34.0).altitude)
     }
 
-
     @Test
-    fun testAltitudeBoundaryDoesNotCollideWithUnsetSentinel() {
-        val position = Position(12.0, 34.0, -8192.0)
+    fun testUnsetElevationUsesSentinel() {
+        val position = Position(12.0, 34.0)
 
         assertEquals(Short.MIN_VALUE, position.altitude)
-        assertEquals(-8192.0, position.altitudeMeters)
     }
 
     @Test
     fun testOutOfRangeAltitudeIsClampedInsteadOfWrapping() {
-        val high = Position(12.0, 34.0, 8849.0)
-        val low = Position(12.0, 34.0, -9000.0)
+        val high = encodeAltitudeMeters(8849.0)
+        val low = encodeAltitudeMeters(-9000.0)
 
-        assertEquals(32767.toShort(), high.altitude)
-        assertEquals(8191.75, high.altitudeMeters)
-        assertEquals(Short.MIN_VALUE, low.altitude)
-        assertEquals(-8192.0, low.altitudeMeters)
+        assertEquals(Short.MAX_VALUE, high)
+        assertEquals((Short.MIN_VALUE + 1).toShort(), low)
     }
 
     @Test
-    fun testToSElevClampsToRepresentableRange() {
-        val high = toSElev(8849.0)
-        val low = toSElev(-9000.0)
+    fun testAlreadyEncodedAltitudeIsClampedWithoutScalingAgain() {
+        assertEquals(493.toShort(), clampEncodedAltitude(493.0))
+        assertEquals(Short.MAX_VALUE, clampEncodedAltitude(40000.0))
+        assertEquals((Short.MIN_VALUE + 1).toShort(), clampEncodedAltitude(-40000.0))
+    }
 
-        assertEquals(32767.toShort(), high)
-        assertEquals(8191.75, high.toAltitude())
-        assertEquals((-32767).toShort(), low)
-        assertEquals(-8191.75, low.toAltitude())
+    @Test
+    fun testUnsetElevationCannotBeDecodedAsMeters() {
+        assertFailsWith<IllegalArgumentException> {
+            encodedAltitudeToMeters(Short.MIN_VALUE)
+        }
     }
 }

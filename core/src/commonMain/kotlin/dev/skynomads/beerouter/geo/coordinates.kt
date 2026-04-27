@@ -6,7 +6,6 @@ private const val COORDINATE_SCALE = 1e-6
 private const val LONGITUDE_OFFSET = 180.0
 private const val LATITUDE_OFFSET = 90.0
 private const val ELEVATION_SCALE = 4.0
-private const val UNSET_ELEVATION: Short = Short.MIN_VALUE
 private const val MIN_ENCODED_ELEVATION: Int = Short.MIN_VALUE.toInt() + 1
 private const val MAX_ENCODED_ELEVATION: Int = Short.MAX_VALUE.toInt()
 
@@ -18,17 +17,26 @@ public fun Int.toDoubleLongitude(): Double = (this * COORDINATE_SCALE) - LONGITU
 
 public fun Int.toDoubleLatitude(): Double = (this * COORDINATE_SCALE) - LATITUDE_OFFSET
 
-public fun toSElev(altitude: Short?): Short = altitude ?: Short.MIN_VALUE
-
-public fun toSElev(altitude: Double?): Short =
-    if (altitude == null || altitude.isNaN()) {
+public fun encodeAltitudeMeters(altitudeMeters: Double): Short =
+    if (altitudeMeters.isNaN()) {
         UNSET_ELEVATION
     } else {
-        altitude.times(ELEVATION_SCALE)
+        altitudeMeters.times(ELEVATION_SCALE)
             .toInt()
             .coerceIn(MIN_ENCODED_ELEVATION, MAX_ENCODED_ELEVATION)
             .toShort()
     }
 
-public fun Short.toAltitude(): Double? =
-    if (this == UNSET_ELEVATION) null else this / ELEVATION_SCALE
+public fun clampEncodedAltitude(encodedAltitude: Double): Short =
+    if (encodedAltitude.isNaN()) {
+        UNSET_ELEVATION
+    } else {
+        encodedAltitude.toInt()
+            .coerceIn(MIN_ENCODED_ELEVATION, MAX_ENCODED_ELEVATION)
+            .toShort()
+    }
+
+public fun encodedAltitudeToMeters(altitude: Short): Double {
+    require(altitude != UNSET_ELEVATION) { "unset elevation cannot be decoded as meters" }
+    return altitude / ELEVATION_SCALE
+}

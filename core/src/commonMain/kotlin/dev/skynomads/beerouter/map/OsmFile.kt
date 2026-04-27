@@ -80,9 +80,11 @@ public class OsmFile(
         return microCaches != null
     }
 
-    public fun getMicroCache(position: Position): MicroCache? {
-        val lonIdx = position.longitude / cellsize
-        val latIdx = position.latitude / cellsize
+    public fun getMicroCache(position: Position): MicroCache? = getMicroCache(position.longitude, position.latitude)
+
+    public fun getMicroCache(lon: Int, lat: Int): MicroCache? {
+        val lonIdx = lon / cellsize
+        val latIdx = lat / cellsize
         val subIdx = (latIdx - divisor * latDegree) * divisor + (lonIdx - divisor * lonDegree)
         return microCaches!![subIdx]
     }
@@ -93,9 +95,18 @@ public class OsmFile(
         wayValidator: TagValueValidator?,
         waypointMatcher: WaypointMatcher?,
         hollowNodes: OsmNodesMap?
+    ): MicroCache = createMicroCache(position.longitude, position.latitude, dataBuffers, wayValidator, waypointMatcher, hollowNodes)
+
+    public fun createMicroCache(
+        lon: Int,
+        lat: Int,
+        dataBuffers: DataBuffers,
+        wayValidator: TagValueValidator?,
+        waypointMatcher: WaypointMatcher?,
+        hollowNodes: OsmNodesMap?
     ): MicroCache {
-        val lonIdx = position.longitude / cellsize
-        val latIdx = position.latitude / cellsize
+        val lonIdx = lon / cellsize
+        val latIdx = lat / cellsize
         val segment = createMicroCacheForCell(
             lonIdx, latIdx, dataBuffers, wayValidator, waypointMatcher, hollowNodes
         )

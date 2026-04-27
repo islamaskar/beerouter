@@ -1,6 +1,7 @@
 package dev.skynomads.beerouter.map.generator
 
 import dev.skynomads.beerouter.geo.Position
+import dev.skynomads.beerouter.geo.encodeAltitudeMeters
 import dev.skynomads.beerouter.util.ReducedMedianFilter
 import kotlin.math.cos
 
@@ -34,7 +35,7 @@ public class ElevationRaster {
                 wrow * (1.0 - wcol) * get(row + 1, col) +
                 (1.0 - wrow) * wcol * get(row, col + 1) +
                 wrow * wcol * get(row + 1, col + 1)
-        return if (missingData) Short.MIN_VALUE else (eval * 4).toInt().toShort()
+        return if (missingData) Short.MIN_VALUE else encodeAltitudeMeters(eval)
     }
 
     private fun get(r: Int, c: Int): Short {
@@ -74,7 +75,7 @@ public class ElevationRaster {
                 w10 * getElevation(w1[gx + 1][gy], row, col) +
                 w11 * getElevation(w1[gx + 1][gy + 1], row, col)
         if (missingData) return Short.MIN_VALUE
-        return (((1.0 - wlat) * m0 + wlat * m1) * 2).toInt().toShort()
+        return encodeAltitudeMeters(((1.0 - wlat) * m0 + wlat * m1) / 2.0)
     }
 
     private fun getElevation(weights: Weights, row: Int, col: Int): Double {

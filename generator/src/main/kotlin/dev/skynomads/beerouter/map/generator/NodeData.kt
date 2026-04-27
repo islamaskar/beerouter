@@ -1,6 +1,7 @@
 package dev.skynomads.beerouter.map.generator
 
 import dev.skynomads.beerouter.geo.Position
+import dev.skynomads.beerouter.geo.UNSET_ELEVATION
 
 public class NodeData : GeneratorBase {
     public var nid: Long
@@ -23,7 +24,7 @@ public class NodeData : GeneratorBase {
             description = ByteArray(dlen)
             dis.readFully(description)
         }
-        var selev: Short? = null
+        var selev = UNSET_ELEVATION
         if ((mode and 2) != 0) {
             selev = dis.readShort()
         }
@@ -36,7 +37,7 @@ public class NodeData : GeneratorBase {
         dos.writeDiffed(position.longitude.toLong(), 1)
         dos.writeDiffed(position.latitude.toLong(), 2)
         val mode = (if (description == null) 0 else 1) or
-                (if (position.altitude == null) 0 else 2) or
+                (if (position.altitude == UNSET_ELEVATION) 0 else 2) or
                 (if (retainWithoutLinks) 4 else 0)
         dos.writeByte(mode)
         if ((mode and 1) != 0) {
@@ -44,7 +45,7 @@ public class NodeData : GeneratorBase {
             dos.write(description)
         }
         if ((mode and 2) != 0) {
-            dos.writeShort(position.altitude!!.toInt())
+            dos.writeShort(position.altitude.toInt())
         }
     }
 }

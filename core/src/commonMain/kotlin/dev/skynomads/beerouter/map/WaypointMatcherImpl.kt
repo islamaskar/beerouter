@@ -3,6 +3,8 @@ package dev.skynomads.beerouter.map
 import dev.skynomads.beerouter.codec.WaypointMatcher
 import dev.skynomads.beerouter.geo.CheapAngleMeter.bearing
 import dev.skynomads.beerouter.geo.CheapAngleMeter.bearingDifference
+import dev.skynomads.beerouter.geo.CheapAngleMeter.normalizeAngle
+import dev.skynomads.beerouter.geo.CheapAngleMeter.rawBearing
 import dev.skynomads.beerouter.geo.Position
 import dev.skynomads.beerouter.geo.coordinateScaleAt
 import kotlin.math.abs
@@ -24,10 +26,13 @@ public class WaypointMatcherImpl(
     private val waypoints: MutableList<MatchedWaypoint>
     private val islandPairs: OsmNodePairSet
 
-    private var startPosition: Position = Position.ZERO
-    private var targetPosition: Position = Position.ZERO
+    private var startLon: Int = 0
+    private var startLat: Int = 0
+    private var targetLon: Int = 0
+    private var targetLat: Int = 0
     private var anyUpdate = false
-    private var lastPosition: Position = Position.ZERO
+    private var lastLon: Int = 0
+    private var lastLat: Int = 0
     public var useAsStartWay: Boolean = true
     private var maxDistance: Double
     public var useDynamicRange: Boolean = false
@@ -70,15 +75,15 @@ public class WaypointMatcherImpl(
         }
     }
 
-    private fun checkSegment(start: Position, end: Position) {
+    private fun checkSegment(startLon: Int, startLat: Int, endLon: Int, endLat: Int) {
         // todo: bounding-box pre-filter
 
-        val scale = coordinateScaleAt((start.latitude + end.latitude) shr 1)
+        val scale = coordinateScaleAt((startLat + endLat) shr 1)
         val dlon2m = scale.longitudeToMeters
         val dlat2m = scale.latitudeToMeters
 
-        val dx = (end.longitude - start.longitude) * dlon2m
-        val dy = (end.latitude - start.latitude) * dlat2m
+        val dx = (endLon - startLon) * dlon2m
+        val dy = (endLat - startLat) * dlat2m
         val d = sqrt(dy * dy + dx * dx)
 
         if (d == 0.0) return
@@ -102,10 +107,10 @@ public class WaypointMatcherImpl(
 
             val wp = mwp.waypoint!!
             val waypointPosition = wp.position
-            val x1 = (start.longitude - waypointPosition.longitude) * dlon2m
-            val y1 = (start.latitude - waypointPosition.latitude) * dlat2m
-            val x2 = (end.longitude - waypointPosition.longitude) * dlon2m
-            val y2 = (end.latitude - waypointPosition.latitude) * dlat2m
+            val x1 = (startLon - waypointPosition.longitude) * dlon2m
+            val y1 = (startLat - waypointPosition.latitude) * dlat2m
+            val x2 = (endLon - waypointPosition.longitude) * dlon2m
+            val y2 = (endLat - waypointPosition.latitude) * dlat2m
             val r12 = x1 * x1 + y1 * y1
             val r22 = x2 * x2 + y2 * y2
             var radius = abs(if (r12 < r22) y1 * dx - x1 * dy else y2 * dx - x2 * dy) / d
@@ -139,39 +144,43 @@ public class WaypointMatcherImpl(
                     val newLat = (ym / dlat2m + waypointPosition.latitude).toInt()
                     cp.position = Position(newLon, newLat)
                 } else if (s1 > s2) {
-                    cp.position = end
+                    cp.position = Position(endLon, endLat)
                 } else {
-                    cp.position = start
+                    cp.position = Position(startLon, startLat)
                 }
             }
         }
     }
 
-    override public fun start(start: Position, target: Position, useAsStartWay: Boolean): Boolean {
+    override public fun start(startLon: Int, startLat: Int, targetLon: Int, targetLat: Int, useAsStartWay: Boolean): Boolean {
         if (islandPairs.size != 0) {
-            if (islandPairs.hasPair(start.id, target.id)) {
+            if (islandPairs.hasPair(Position.computeId(startLon, startLat), Position.computeId(targetLon, targetLat))) {
                 return false
             }
         }
-        startPosition = start
-        lastPosition = start
-        targetPosition = target
+        this.startLon = startLon
+        this.startLat = startLat
+        lastLon = startLon
+        lastLat = startLat
+        this.targetLon = targetLon
+        this.targetLat = targetLat
         anyUpdate = false
         this.useAsStartWay = useAsStartWay
         return true
     }
 
-    override public fun transferNode(position: Position) {
-        checkSegment(lastPosition, position)
-        lastPosition = position
+    override public fun transferNode(lon: Int, lat: Int) {
+        checkSegment(lastLon, lastLat, lon, lat)
+        lastLon = lon
+        lastLat = lat
     }
 
     override public fun end() {
-        checkSegment(lastPosition, targetPosition)
+        checkSegment(lastLon, lastLat, targetLon, targetLat)
         if (anyUpdate) {
             for (mwp in waypoints) {
                 if (mwp.hasUpdate) {
-                    var angle = bearing(startPosition, targetPosition)
+                    var angle = normalizeAngle(rawBearing(startLon, startLat, targetLon, targetLat))
                     var diff = bearingDifference(mwp.directionToNext, angle)
 
                     mwp.hasUpdate = false
@@ -182,8 +191,8 @@ public class WaypointMatcherImpl(
                     var mw = MatchedWaypoint()
                     mw.waypoint = OsmNode().also { it.position = waypointPos }
                     mw.crosspoint = OsmNode().also { it.position = crosspointPos }
-                    mw.node1 = OsmNode(startPosition)
-                    mw.node2 = OsmNode(targetPosition)
+                    mw.node1 = OsmNode(startLon, startLat)
+                    mw.node2 = OsmNode(targetLon, targetLat)
                     mw.name = mwp.name + "_w_" + mwp.crosspoint.hashCode()
                     mw.radius = mwp.radius
                     mw.directionDiff = diff
@@ -192,13 +201,13 @@ public class WaypointMatcherImpl(
                     updateWayList(mwp.wayNearest, mw)
 
                     // revers
-                    angle = bearing(targetPosition, startPosition)
+                    angle = normalizeAngle(rawBearing(targetLon, targetLat, startLon, startLat))
                     diff = bearingDifference(mwp.directionToNext, angle)
                     mw = MatchedWaypoint()
                     mw.waypoint = OsmNode().also { it.position = waypointPos }
                     mw.crosspoint = OsmNode().also { it.position = crosspointPos }
-                    mw.node1 = OsmNode(targetPosition)
-                    mw.node2 = OsmNode(startPosition)
+                    mw.node1 = OsmNode(targetLon, targetLat)
+                    mw.node2 = OsmNode(startLon, startLat)
                     mw.name = mwp.name + "_w2_" + mwp.crosspoint.hashCode()
                     mw.radius = mwp.radius
                     mw.directionDiff = diff
@@ -217,10 +226,11 @@ public class WaypointMatcherImpl(
         }
     }
 
-    override public fun hasMatch(position: Position): Boolean {
+    override public fun hasMatch(lon: Int, lat: Int): Boolean {
+        val positionId = Position.computeId(lon, lat)
         for (mwp in waypoints) {
             val wpPos = mwp.waypoint?.position ?: continue
-            if (wpPos.id == position.id &&
+            if (wpPos.id == positionId &&
                 (mwp.radius < this.maxDistance || mwp.crosspoint != null)
             ) {
                 return true

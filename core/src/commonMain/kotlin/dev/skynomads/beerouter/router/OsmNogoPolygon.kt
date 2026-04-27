@@ -123,7 +123,7 @@ public class OsmNogoPolygon(public val isClosed: Boolean) : OsmNodeNamed() {
             iMax = -1
         } while (true)
 
-        position = Position(cx, cy, 0.0)
+        position = Position(cx, cy)
         radius =
             rad * 1.001 + 1.0 // ensure the outside-of-enclosing-circle test in RoutingContext.distanceBetween() is not passed by segments ending very close to the radius due to limited numerical precision
     }

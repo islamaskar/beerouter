@@ -5,8 +5,6 @@
  */
 package dev.skynomads.beerouter.map
 
-import dev.skynomads.beerouter.geo.Position
-import dev.skynomads.beerouter.geo.toSElev
 import dev.skynomads.beerouter.util.ByteDataReader
 
 public class GeometryDecoder {
@@ -34,14 +32,14 @@ public class GeometryDecoder {
         r.reset(geometry)
         var olon = startnode.position.longitude
         var olat = startnode.position.latitude
-        var oselev = toSElev(startnode.position.altitude).toInt()
+        var oselev = startnode.altitude.toInt()
         var idx = 0
         while (r.hasMoreData()) {
             val trans = cachedNodes.getOrNull(idx++) ?: OsmTransferNode()
             val lon = olon + r.readVarLengthSigned()
             val lat = olat + r.readVarLengthSigned()
             val selev = (oselev + r.readVarLengthSigned()).toShort()
-            trans.position = Position(lon, lat, selev.takeUnless { it == Short.MIN_VALUE })
+            trans.set(lon, lat, selev)
             olon = lon
             olat = lat
             oselev = selev.toInt()

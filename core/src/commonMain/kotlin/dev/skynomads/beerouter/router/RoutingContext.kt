@@ -429,12 +429,15 @@ public class RoutingContext(
         isEndpoint = false
     }
 
-    public fun distanceBetween(start: Position, end: Position): Int {
-        var lon1 = start.longitude
-        var lat1 = start.latitude
-        var lon2 = end.longitude
-        var lat2 = end.latitude
-        val scale = coordinateScaleAt((start.latitude + end.latitude) shr 1)
+    public fun distanceBetween(start: Position, end: Position): Int =
+        distanceBetween(start.longitude, start.latitude, end.longitude, end.latitude)
+
+    public fun distanceBetween(startLon: Int, startLat: Int, endLon: Int, endLat: Int): Int {
+        var lon1 = startLon
+        var lat1 = startLat
+        var lon2 = endLon
+        var lat2 = endLat
+        val scale = coordinateScaleAt((startLat + endLat) shr 1)
         val dlon2m = scale.longitudeToMeters
         val dlat2m = scale.latitudeToMeters
         var dx = (lon2 - lon1) * dlon2m

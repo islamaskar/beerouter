@@ -134,15 +134,19 @@ public class NodesCache(
         }
     }
 
-    public fun loadSegmentFor(position: Position): Int {
-        val mc = getSegmentFor(position)
+    public fun loadSegmentFor(position: Position): Int = loadSegmentFor(position.longitude, position.latitude)
+
+    public fun loadSegmentFor(lon: Int, lat: Int): Int {
+        val mc = getSegmentFor(lon, lat)
         return mc?.size ?: 0
     }
 
-    public fun getSegmentFor(position: Position): MicroCache? {
+    public fun getSegmentFor(position: Position): MicroCache? = getSegmentFor(position.longitude, position.latitude)
+
+    public fun getSegmentFor(lon: Int, lat: Int): MicroCache? {
         try {
-            val lonDegree = position.longitude / 1000000
-            val latDegree = position.latitude / 1000000
+            val lonDegree = lon / 1000000
+            val latDegree = lat / 1000000
             var osmf: OsmFile? =
                 if (lonDegree == lastLonDegree && latDegree == lastLatDegree) {
                     lastOsmFile
@@ -156,7 +160,7 @@ public class NodesCache(
                 if (osmf == null) {
                     val fileRow = fileRows[latDegree]
                     val ndegrees = fileRow?.size ?: 0
-                    osmf = fileForSegment(Position(lonDegree, latDegree))
+                    osmf = fileForSegment(lonDegree, latDegree)
                     val newFileRow = arrayOfNulls<OsmFile>(ndegrees + 1)
                     for (i in 0..<ndegrees) {
                         newFileRow[i] = fileRow!![i]
@@ -176,12 +180,13 @@ public class NodesCache(
                 return null
             }
 
-            var segment = osmf.getMicroCache(position)
+            var segment = osmf.getMicroCache(lon, lat)
             // needed for a second chance
             if (segment == null || (waypointMatcher != null && (waypointMatcher as WaypointMatcherImpl).useDynamicRange)) {
                 checkEnableCacheCleaning()
                 segment = osmf.createMicroCache(
-                    position,
+                    lon,
+                    lat,
                     dataBuffers,
                     ctxWay,
                     waypointMatcher,
@@ -212,7 +217,7 @@ public class NodesCache(
         if (!node.isHollow) return true
 
         val nodeId = node.idFromPos
-        val segment = getSegmentFor(Position(nodeId.longitudeFromId(), nodeId.latitudeFromId()))
+        val segment = getSegmentFor(nodeId.longitudeFromId(), nodeId.latitudeFromId())
         if (segment == null) {
             return false
         }
@@ -349,17 +354,15 @@ public class NodesCache(
         while (scale < maxscale) {
             for (idxLat in -scale..scale) for (idxLon in -scale..scale) {
                 if (idxLon != 0 || idxLat != 0) {
-                    loadSegmentFor(Position(n.position.longitude + d * idxLon, n.position.latitude + d * idxLat))
+                    loadSegmentFor(n.position.longitude + d * idxLon, n.position.latitude + d * idxLat)
                 }
             }
-            if (bUseDynamicRange && waypointMatcher!!.hasMatch(n.position)) break
+            if (bUseDynamicRange && waypointMatcher!!.hasMatch(n.position.longitude, n.position.latitude)) break
             scale++
         }
     }
 
-    private fun fileForSegment(tileDegree: Position): OsmFile {
-        val lonDegree = tileDegree.longitude
-        val latDegree = tileDegree.latitude
+    private fun fileForSegment(lonDegree: Int, latDegree: Int): OsmFile {
         val lonMod5 = lonDegree % 5
         val latMod5 = latDegree % 5
 

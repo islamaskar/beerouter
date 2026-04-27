@@ -6,8 +6,22 @@
 package dev.skynomads.beerouter.map
 
 import dev.skynomads.beerouter.geo.Position
+import dev.skynomads.beerouter.geo.UNSET_ELEVATION
 
-public data class OsmTransferNode(
-    public var next: OsmTransferNode? = null,
-    public var position: Position = Position.ZERO
-)
+public class OsmTransferNode {
+    public var next: OsmTransferNode? = null
+    public var longitude: Int = 0
+    public var latitude: Int = 0
+    public var altitude: Short = UNSET_ELEVATION
+
+    public val idFromPos: Long
+        get() = Position.computeId(longitude, latitude)
+
+    public fun set(longitude: Int, latitude: Int, altitude: Short): Unit {
+        this.longitude = longitude
+        this.latitude = latitude
+        this.altitude = altitude
+    }
+
+    public fun toPosition(): Position = Position(longitude, latitude, altitude)
+}

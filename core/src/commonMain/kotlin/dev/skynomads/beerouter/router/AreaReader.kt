@@ -3,6 +3,8 @@ package dev.skynomads.beerouter.router
 import dev.skynomads.beerouter.codec.DataBuffers
 import dev.skynomads.beerouter.expressions.BExpressionContextWay
 import dev.skynomads.beerouter.geo.Position
+import dev.skynomads.beerouter.geo.UNSET_ELEVATION
+import dev.skynomads.beerouter.geo.encodedAltitudeToMeters
 import dev.skynomads.beerouter.geo.latitudeFromId
 import dev.skynomads.beerouter.geo.longitudeFromId
 import dev.skynomads.beerouter.map.MatchedWaypoint
@@ -223,7 +225,10 @@ public class AreaReader {
                                     if (ai.polygon!!.isWithin(lon.toLong(), lat.toLong())) {
                                         ai.checkAreaInfo(
                                             expctxWay,
-                                            node.position.altitudeMeters ?: 0.0,
+                                            node.altitude
+                                                .takeUnless { it == UNSET_ELEVATION }
+                                                ?.let(::encodedAltitudeToMeters)
+                                                ?: 0.0,
                                             nextNode.firstlink!!.descriptionBitmap!!
                                         )
                                         break

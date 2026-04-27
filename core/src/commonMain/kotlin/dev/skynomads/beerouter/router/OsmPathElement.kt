@@ -16,6 +16,9 @@ import kotlin.math.roundToInt
 public class OsmPathElement protected constructor() : OsmPos {
     public override var position: Position = Position.ZERO
 
+    public override val altitude: Short
+        get() = position.altitude
+
     public var message: MessageData? = null // description
 
     public var cost: Int = 0
@@ -58,7 +61,7 @@ public class OsmPathElement protected constructor() : OsmPos {
     public fun writeToStream(sink: Sink) {
         sink.writeInt(position.latitude)
         sink.writeInt(position.longitude)
-        sink.writeShort(position.altitude ?: Short.MIN_VALUE)
+        sink.writeShort(position.altitude)
         sink.writeInt(cost)
     }
 
@@ -75,13 +78,13 @@ public class OsmPathElement protected constructor() : OsmPos {
             ilat: Int,
             selev: Short,
             origin: OsmPathElement?
-        ): OsmPathElement = create(Position(ilon, ilat, selev.takeUnless { it == Short.MIN_VALUE }), origin)
+        ): OsmPathElement = create(Position(ilon, ilat, selev), origin)
 
         public fun readFromStream(source: Source): OsmPathElement {
             val lat = source.readInt()
             val lon = source.readInt()
             val encodedAltitude = source.readShort()
-            val position = Position(lon, lat, encodedAltitude.takeUnless { it == Short.MIN_VALUE })
+            val position = Position(lon, lat, encodedAltitude)
             return OsmPathElement().apply {
                 this.position = position
                 _idFromPos = position.id

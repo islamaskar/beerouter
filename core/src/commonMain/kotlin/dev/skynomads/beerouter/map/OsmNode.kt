@@ -4,6 +4,7 @@ import dev.skynomads.beerouter.codec.MicroCache
 import dev.skynomads.beerouter.codec.MicroCache2
 import dev.skynomads.beerouter.geo.CheapRuler.distance
 import dev.skynomads.beerouter.geo.Position
+import dev.skynomads.beerouter.geo.UNSET_ELEVATION
 import dev.skynomads.beerouter.geo.latitudeFromId
 import dev.skynomads.beerouter.geo.longitudeFromId
 import dev.skynomads.beerouter.util.IByteArrayUnifier
@@ -20,6 +21,9 @@ public open class OsmNode : OsmLink, OsmPos {
      * The position
      */
     override var position: Position = Position.ZERO
+        internal set
+
+    override var altitude: Short = UNSET_ELEVATION
         internal set
 
     /**
@@ -63,7 +67,8 @@ public open class OsmNode : OsmLink, OsmPos {
     }
 
     public constructor(position: Position) {
-        this.position = position
+        this.position = Position(position.longitude, position.latitude)
+        this.altitude = position.altitude
         _idFromPos = position.id
     }
 
@@ -90,9 +95,10 @@ public open class OsmNode : OsmLink, OsmPos {
     }
 
     override fun distanceTo(p: OsmPos): Int {
+        val other = p.position
         return max(
             1,
-            distance(position, p.position).roundToInt()
+            distance(position.longitude, position.latitude, other.longitude, other.latitude).roundToInt()
         )
     }
 
@@ -112,7 +118,7 @@ public open class OsmNode : OsmLink, OsmPos {
         }
 
         val readSElev = mc.readShort()
-        position = position.copy(altitude = readSElev.takeUnless { it == Short.MIN_VALUE })
+        altitude = readSElev
         hollow = false
         val nodeDescSize = mc.readVarLengthUnsigned()
         nodeDescription = if (nodeDescSize == 0) null else mc.readUnified(nodeDescSize, unifier)
@@ -141,7 +147,7 @@ public open class OsmNode : OsmLink, OsmPos {
         }
 
         val readSElev = mc.readShort()
-        position = position.copy(altitude = readSElev.takeUnless { it == Short.MIN_VALUE })
+        altitude = readSElev
         hollow = false
         val nodeDescSize = mc.readVarLengthUnsigned()
         nodeDescription = if (nodeDescSize == 0) null else mc.readUnified(nodeDescSize, abUnifier)

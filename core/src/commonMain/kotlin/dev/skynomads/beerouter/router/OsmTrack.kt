@@ -6,10 +6,10 @@
 package dev.skynomads.beerouter.router
 
 import androidx.collection.MutableLongObjectMap
+import dev.skynomads.beerouter.geo.UNSET_ELEVATION
 import dev.skynomads.beerouter.map.MatchedWaypoint
 import dev.skynomads.beerouter.map.MatchedWaypoint.Companion.readFromStream
 import dev.skynomads.beerouter.map.OsmPos
-import dev.skynomads.beerouter.geo.toSElev
 import kotlinx.io.EOFException
 import kotlinx.io.Sink
 import kotlinx.io.Source
@@ -141,7 +141,7 @@ public class OsmTrack {
         val e0 = if (ourSize > 0) nodes[ourSize - 1].energy else 0f
         val c0 = if (ourSize > 0) nodes[ourSize - 1].cost else 0
         for ((index, element) in t.nodes.withIndex()) {
-            if (index == 0 && ourSize > 0 && toSElev(nodes[ourSize - 1].position.altitude) == Short.MIN_VALUE) {
+            if (index == 0 && ourSize > 0 && nodes[ourSize - 1].position.altitude == UNSET_ELEVATION) {
                 nodes[ourSize - 1].position = nodes[ourSize - 1].position.copy(altitude = element.position.altitude)
             }
             if (index > 0 || ourSize == 0) {

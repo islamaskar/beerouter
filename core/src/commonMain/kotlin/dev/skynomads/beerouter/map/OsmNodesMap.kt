@@ -70,31 +70,48 @@ public class OsmNodesMap {
         }
     }
 
-    private class DfsFrame(
-        val source: OsmNode?,
-        val n: OsmNode,
-        var l: OsmLink?,
-        var minId: Int,
-        var pendingLink: OsmLink? = null,
-        var pendingTarget: OsmNode? = null,
-        var pendingNodesCreated: Int = 0,
-    )
+    private class DfsFrame {
+        var source: OsmNode? = null
+        lateinit var n: OsmNode
+        var l: OsmLink? = null
+        var minId: Int = 0
+        var pendingLink: OsmLink? = null
+        var pendingTarget: OsmNode? = null
+        var pendingNodesCreated: Int = 0
+
+        fun reset(source: OsmNode?, n: OsmNode, minId: Int): DfsFrame {
+            this.source = source
+            this.n = n
+            this.l = n.firstlink
+            this.minId = minId
+            pendingLink = null
+            pendingTarget = null
+            pendingNodesCreated = 0
+            return this
+        }
+    }
 
     private fun minVisitIdInSubtree(source: OsmNode?, n: OsmNode): Int {
-        val stack = ArrayDeque<DfsFrame>()
+        val stack = ArrayList<DfsFrame>(256)
+        var depth = 0
 
-        fun initNode(src: OsmNode?, node: OsmNode): DfsFrame {
+        fun frameAt(index: Int): DfsFrame {
+            while (stack.size <= index) stack.add(DfsFrame())
+            return stack[index]
+        }
+
+        fun push(src: OsmNode?, node: OsmNode) {
             if (node.visitID == 1) node.visitID = baseID // border node
             else node.visitID = lastVisitID++
             nodesCreated++
-            return DfsFrame(src, node, node.firstlink, node.visitID)
+            frameAt(depth++).reset(src, node, node.visitID)
         }
 
-        stack.addLast(initNode(source, n))
+        push(source, n)
         var childResult = 0
 
-        while (stack.isNotEmpty()) {
-            val frame = stack.last()
+        while (depth > 0) {
+            val frame = stack[depth - 1]
 
             // Apply the result of the child that just completed
             if (frame.pendingLink != null) {
@@ -136,7 +153,7 @@ public class OsmNodesMap {
                         frame.pendingTarget = t
                         frame.pendingNodesCreated = nodesCreated
                         frame.l = nextLink
-                        stack.addLast(initNode(frame.n, t))
+                        push(frame.n, t)
                         pushed = true
                         break
                     }
@@ -154,7 +171,7 @@ public class OsmNodesMap {
             if (!pushed) {
                 // All links processed — pop and report result to parent
                 childResult = frame.minId
-                stack.removeLast()
+                depth--
             }
         }
 

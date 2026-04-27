@@ -2,6 +2,7 @@ package dev.skynomads.beerouter.map.generator
 
 import androidx.collection.MutableLongSet
 import dev.skynomads.beerouter.geo.Position
+import dev.skynomads.beerouter.geo.UNSET_ELEVATION
 import java.io.BufferedInputStream
 import java.io.DataInputStream
 import java.io.EOFException
@@ -60,7 +61,7 @@ public class PosUnifier : GeneratorBase() {
 
     public override fun nextNode(data: NodeData) {
         val srtm = srtmForNode(data.position)
-        val selev = srtm?.getElevation(data.position)
+        val selev = srtm?.getElevation(data.position) ?: UNSET_ELEVATION
         data.position = data.position.copy(altitude = selev)
         findUniquePos(data)
         data.writeTo(nodesOutStream)

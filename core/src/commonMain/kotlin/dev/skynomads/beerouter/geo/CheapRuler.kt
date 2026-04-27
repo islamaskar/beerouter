@@ -56,18 +56,24 @@ public fun coordinateScaleAt(ilat: Int): CoordinateScale {
 public object CheapRuler {
     public const val DEG_TO_RAD: Double = kotlin.math.PI / 180.0
 
-    public fun distance(p1: Position, p2: Position): Double {
-        val idx = cacheIndex((p1.latitude + p2.latitude) shr 1)
-        val dlon = (p1.longitude - p2.longitude) * kxCache[idx]
-        val dlat = (p1.latitude - p2.latitude) * kyCache[idx]
+    public fun distance(lon1: Int, lat1: Int, lon2: Int, lat2: Int): Double {
+        val idx = cacheIndex((lat1 + lat2) shr 1)
+        val dlon = (lon1 - lon2) * kxCache[idx]
+        val dlat = (lat1 - lat2) * kyCache[idx]
         return sqrt(dlat * dlat + dlon * dlon)
     }
 
-    public fun destination(origin: Position, distance: Double, angle: Double): Position {
-        val idx = cacheIndex(origin.latitude)
+    public fun distance(p1: Position, p2: Position): Double =
+        distance(p1.longitude, p1.latitude, p2.longitude, p2.latitude)
+
+    public fun destination(originLon: Int, originLat: Int, distance: Double, angle: Double): Position {
+        val idx = cacheIndex(originLat)
         val radAngle = (90.0 - angle) * DEG_TO_RAD
-        val longitude = (0.5 + origin.longitude + cos(radAngle) * distance / kxCache[idx]).toInt()
-        val latitude = (0.5 + origin.latitude + sin(radAngle) * distance / kyCache[idx]).toInt()
+        val longitude = (0.5 + originLon + cos(radAngle) * distance / kxCache[idx]).toInt()
+        val latitude = (0.5 + originLat + sin(radAngle) * distance / kyCache[idx]).toInt()
         return Position(longitude, latitude)
     }
+
+    public fun destination(origin: Position, distance: Double, angle: Double): Position =
+        destination(origin.longitude, origin.latitude, distance, angle)
 }

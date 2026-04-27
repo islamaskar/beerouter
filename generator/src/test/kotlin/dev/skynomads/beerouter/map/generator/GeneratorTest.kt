@@ -1,6 +1,7 @@
 package dev.skynomads.beerouter.map.generator
 
 import dev.skynomads.beerouter.geo.Position
+import dev.skynomads.beerouter.geo.UNSET_ELEVATION
 import dev.skynomads.beerouter.map.MapSource
 import dev.skynomads.beerouter.map.PoiFinder
 import dev.skynomads.beerouter.map.PoiQuery
@@ -21,6 +22,24 @@ import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
 public class GeneratorTest {
+    @Test
+    public fun elevationRasterClampsEncodedElevation() {
+        fun rasterWithElevation(elevationMeters: Short): ElevationRaster = ElevationRaster().apply {
+            ncols = 2
+            nrows = 2
+            xllcorner = 0.0
+            yllcorner = 0.0
+            cellsize = 1.0
+            eval_array = ShortArray(4) { elevationMeters }
+        }
+
+        val position = Position(0.5, 0.5)
+
+        assertEquals(Short.MAX_VALUE, rasterWithElevation(8849).getElevation(position))
+        assertEquals((Short.MIN_VALUE + 1).toShort(), rasterWithElevation((-9000).toShort()).getElevation(position))
+        assertEquals(UNSET_ELEVATION, rasterWithElevation(UNSET_ELEVATION).getElevation(position))
+    }
+
     @Test
     public fun generatorTest() {
         System.setProperty("avoidMapPolling", "true")
