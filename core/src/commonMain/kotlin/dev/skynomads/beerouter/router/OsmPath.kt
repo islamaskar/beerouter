@@ -9,6 +9,7 @@ import dev.skynomads.beerouter.geo.CheapAngleMeter.turnAngle
 import dev.skynomads.beerouter.geo.CheapRuler.DEG_TO_RAD
 import dev.skynomads.beerouter.geo.Position
 import dev.skynomads.beerouter.geo.coordinateScaleAt
+import dev.skynomads.beerouter.geo.withAltitude
 import dev.skynomads.beerouter.map.OsmLink
 import dev.skynomads.beerouter.map.OsmLinkHolder
 import dev.skynomads.beerouter.map.OsmNode
@@ -35,6 +36,8 @@ public abstract class OsmPath : OsmLinkHolder {
         protected set
     public var originElement: OsmPathElement? = null
     public var myElement: OsmPathElement? = null
+    private var deferredOriginPath: OsmPath? = null
+    internal var originCost: Int = 0
 
     public var treedepth: Int = 0
 
@@ -78,17 +81,13 @@ public abstract class OsmPath : OsmLinkHolder {
         detailMode: Boolean,
         rc: RoutingContext
     ) {
-        if (origin.myElement == null) {
-            val n = requireNotNull(origin.targetNode)
-            origin.myElement = OsmPathElement.create(
-                Position(n.position.longitude, n.position.latitude, n.altitude),
-                origin.originElement
-            ).also {
-                it.cost = origin.cost
-                it.message = origin.message
-            }
+        if (detailMode) {
+            origin.materializeMyElement()
+            this.originElement = origin.myElement
+        } else {
+            deferOriginElement(origin)
         }
-        this.originElement = origin.myElement
+        originCost = origin.cost
         this.link = link
         this.sourceNode = origin.targetNode
         this.targetNode = link.getTarget(sourceNode)
@@ -104,6 +103,80 @@ public abstract class OsmPath : OsmLinkHolder {
     protected abstract fun init(orig: OsmPath?)
 
     protected abstract fun resetState()
+
+    internal fun resetForReuse() {
+        cost = 0
+        selev = 0
+        airdistance = 0
+        sourceNode = null
+        targetNode = null
+        link = null
+        originElement = null
+        myElement = null
+        originCost = 0
+        treedepth = 0
+        originPosition = null
+        lastClassifier = 0f
+        lastInitialCost = 0f
+        priorityclassifier = 0
+        bitfield = PathFlag.PATH_START.bit
+        message = null
+        nextForLink = null
+        deferredOriginPath = null
+        resetState()
+    }
+
+    internal fun exportSearchState(): OsmPathSearchState = OsmPathSearchState(
+        lastClassifier = lastClassifier,
+        lastInitialCost = lastInitialCost,
+        priorityclassifier = priorityclassifier,
+        bitfield = bitfield,
+    )
+
+    internal fun importSearchState(state: OsmPathSearchState) {
+        lastClassifier = state.lastClassifier
+        lastInitialCost = state.lastInitialCost
+        priorityclassifier = state.priorityclassifier
+        bitfield = state.bitfield
+    }
+
+    internal fun importSearchState(
+        lastClassifier: Float,
+        lastInitialCost: Float,
+        priorityclassifier: Int,
+        bitfield: Int,
+    ) {
+        this.lastClassifier = lastClassifier
+        this.lastInitialCost = lastInitialCost
+        this.priorityclassifier = priorityclassifier
+        this.bitfield = bitfield
+    }
+
+    internal fun deferOriginElement(origin: OsmPath) {
+        deferredOriginPath = origin
+        originElement = null
+    }
+
+    internal fun materializeOriginElement() {
+        val origin = deferredOriginPath ?: return
+        origin.materializeMyElement()
+        originElement = origin.myElement
+        deferredOriginPath = null
+    }
+
+    private fun materializeMyElement() {
+        materializeOriginElement()
+        if (myElement == null) {
+            val n = requireNotNull(targetNode)
+            myElement = OsmPathElement(
+                n.positionWithAltitude(),
+                originElement
+            ).also {
+                it.cost = cost
+                it.message = message
+            }
+        }
+    }
 
     protected fun addAddionalPenalty(
         refTrack: OsmTrack?,
@@ -140,10 +213,9 @@ public abstract class OsmPath : OsmLinkHolder {
         var previousId = initialPreviousPosition?.id ?: 0L
         var hasPreviousPosition = initialPreviousPosition != null
 
-        val sourcePosition = sourceNode!!.position
-        var currentLon = sourcePosition.longitude
-        var currentLat = sourcePosition.latitude
-        var currentPositionForState: Position? = sourcePosition
+        var currentLon = sourceNode!!.longitude
+        var currentLat = sourceNode!!.latitude
+        var currentPositionForState: Position? = sourceNode!!.position
         var ele1 = origin.selev
 
         var linkdisttotal = 0
@@ -226,11 +298,10 @@ public abstract class OsmPath : OsmLinkHolder {
 
             if (transferNode == null) {
                 val target = requireNotNull(targetNode)
-                val targetPosition = target.position
                 originEle2 = target.altitude
-                nextLon = targetPosition.longitude
-                nextLat = targetPosition.latitude
-                nextId = targetPosition.id
+                nextLon = target.longitude
+                nextLat = target.latitude
+                nextId = target.idFromPos
             } else {
                 nextLon = transferNode.longitude
                 nextLat = transferNode.latitude
@@ -289,7 +360,7 @@ public abstract class OsmPath : OsmLinkHolder {
                         val shortestPosition = requireNotNull(rc.shortestPosition)
                         if (rc.wayfraction > 0.0) {
                             ele1 = interpolateEle(ele1, ele2, 1.0 - rc.wayfraction)
-                            originElement = OsmPathElement.create(
+                            originElement = OsmPathElement(
                                 Position(
                                     shortestPosition.longitude,
                                     shortestPosition.latitude,
@@ -400,7 +471,7 @@ public abstract class OsmPath : OsmLinkHolder {
             if (stopAtEndpoint) {
                 if (recordTransferNodes) {
                     val shortestPosition = requireNotNull(rc.shortestPosition)
-                    originElement = OsmPathElement.create(
+                    originElement = OsmPathElement(
                         Position(
                             shortestPosition.longitude,
                             shortestPosition.latitude,
@@ -437,7 +508,7 @@ public abstract class OsmPath : OsmLinkHolder {
 
             if (recordTransferNodes) {
                 originElement =
-                    OsmPathElement.create(
+                    OsmPathElement(
                         Position(
                             nextLon,
                             nextLat,
@@ -515,13 +586,18 @@ public abstract class OsmPath : OsmLinkHolder {
         get() = 0.0
 
     public companion object {
+        internal const val PATH_START_BIT: Int = 1
+        internal const val CAN_LEAVE_DESTINATION_BIT: Int = 2
+        internal const val IS_ON_DESTINATION_BIT: Int = 4
+        internal const val HAD_DESTINATION_START_BIT: Int = 8
+
         public var seg: Int = 1
     }
 
     private enum class PathFlag(public val bit: Int) {
-        PATH_START(1),
-        CAN_LEAVE_DESTINATION(2),
-        IS_ON_DESTINATION(4),
-        HAD_DESTINATION_START(8),
+        PATH_START(PATH_START_BIT),
+        CAN_LEAVE_DESTINATION(CAN_LEAVE_DESTINATION_BIT),
+        IS_ON_DESTINATION(IS_ON_DESTINATION_BIT),
+        HAD_DESTINATION_START(HAD_DESTINATION_START_BIT),
     }
 }

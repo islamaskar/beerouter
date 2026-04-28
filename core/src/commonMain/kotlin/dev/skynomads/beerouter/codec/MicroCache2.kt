@@ -53,7 +53,7 @@ public class MicroCache2 : MicroCache {
         latBase = latIdx * cellsize
 
         val wayTagCoder = TagValueCoder(bc, dataBuffers, wayValidator)
-        val nodeTagCoder = TagValueCoder(bc, dataBuffers, null)
+        val nodeTagCoder = TagValueCoder.rawDataDecoder(bc, dataBuffers, null)
         val nodeIdxDiff = NoisyDiffCoder(bc)
         val nodeEleDiff = NoisyDiffCoder(bc)
         val extLonDiff = NoisyDiffCoder(bc)
@@ -131,8 +131,8 @@ public class MicroCache2 : MicroCache {
 
             selev += nodeEleDiff.decodeSignedValue()
             writeShort(selev.toShort().toInt())
-            val nodeTags = nodeTagCoder.decodeTagValueSet()
-            writeVarBytes(nodeTags?.data)
+            val nodeTags = nodeTagCoder.decodeTagValueData()
+            writeVarBytes(nodeTags)
             if (nodeTags != null) {
                 validBits[n shr 5] = validBits[n shr 5] or (1 shl n)
             }
@@ -185,8 +185,10 @@ public class MicroCache2 : MicroCache {
                     if (matcher != null) {
                         val useAsStartWay = wayValidator!!.checkStartWay(wayTags!!.data)
                         if (!matcher.start(
-                                Position(ilon, ilat),
-                                Position(ilontarget, ilattarget),
+                                ilon,
+                                ilat,
+                                ilontarget,
+                                ilattarget,
                                 useAsStartWay
                             )
                         ) {
@@ -210,12 +212,7 @@ public class MicroCache2 : MicroCache {
                             writeVarLengthSigned(elediff)
                         }
 
-                        matcher?.transferNode(
-                            Position(
-                                ilontarget - dlonRemaining,
-                                ilattarget - dlatRemaining
-                            )
-                        )
+                        matcher?.transferNode(ilontarget - dlonRemaining, ilattarget - dlatRemaining)
                     }
                     matcher?.end()
                 }
@@ -293,7 +290,7 @@ public class MicroCache2 : MicroCache {
         val lon32 = lonBase + dlon
         val lat32 = latBase + dlat
 
-        return Position(lon32, lat32).id
+        return Position.computeId(lon32, lat32)
     }
 
     public override fun shrinkId(id64: Long): Int {
@@ -441,7 +438,7 @@ public class MicroCache2 : MicroCache {
                         readFully(description)
                     }
 
-                    val link64 = Position(ilonlink, ilatlink).id
+                    val link64 = Position.computeId(ilonlink, ilatlink)
                     val idx = idMap[link64]
                     val isInternal = idx != null
 

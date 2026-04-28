@@ -58,3 +58,6 @@ public fun Long.longitudeFromId(): Int = (this shr 32).toInt()
 public fun Long.latitudeFromId(): Int = (this and 0xffffffffL).toInt()
 
 public fun Long.toPosition(): Position = Position(longitudeFromId(), latitudeFromId())
+
+public fun Position.withAltitude(altitude: Short): Position =
+    if (this.altitude == altitude) this else Position(longitude, latitude, altitude)

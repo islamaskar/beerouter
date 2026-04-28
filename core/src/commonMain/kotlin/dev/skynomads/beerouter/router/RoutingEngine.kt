@@ -11,6 +11,7 @@ import dev.skynomads.beerouter.geo.UNSET_ELEVATION
 import dev.skynomads.beerouter.geo.clampEncodedAltitude
 import dev.skynomads.beerouter.geo.encodedAltitudeToMeters
 import dev.skynomads.beerouter.geo.encodeAltitudeMeters
+import dev.skynomads.beerouter.geo.withAltitude
 import dev.skynomads.beerouter.map.MatchedWaypoint
 import dev.skynomads.beerouter.map.NodesCache
 import dev.skynomads.beerouter.map.OsmLink
@@ -181,20 +182,10 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
 
         guideTrack = OsmTrack().apply {
             addNode(
-                OsmPathElement.create(
-                    wpt1.node2!!.position.longitude,
-                    wpt1.node2!!.position.latitude,
-                    0.toShort(),
-                    null
-                )
+                OsmPathElement(wpt1.node2!!.position.withAltitude(0), null)
             )
             addNode(
-                OsmPathElement.create(
-                    wpt1.node1!!.position.longitude,
-                    wpt1.node1!!.position.latitude,
-                    0.toShort(),
-                    null
-                )
+                OsmPathElement(wpt1.node1!!.position.withAltitude(0), null)
             )
         }
 
@@ -1672,6 +1663,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
             guideTrack != null && routingContext.generateTurns
 
         val currentGuideTrack = guideTrack
+        val useAcceptedStdSearch = currentGuideTrack == null && routingContext.isStdModel()
         var maxTotalCost =
             if (currentGuideTrack != null) {
                 currentGuideTrack.cost + 5000
@@ -1734,10 +1726,18 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
             log("using start direction ${routingContext.startDirection}")
         }
 
-        val startPath1 = getStartPath(start1, start2, startWp, endPos, sameSegmentSearch)
-        val startPath2 = getStartPath(start2, start1, startWp, endPos, sameSegmentSearch)
+        var startPath1 = getStartPath(start1, start2, startWp, endPos, sameSegmentSearch)
+        var startPath2 = getStartPath(start2, start1, startWp, endPos, sameSegmentSearch)
         if (startPath1 == null) return null
         if (startPath2 == null) return null
+        if (useAcceptedStdSearch) {
+            startPath1 = routingContext.toAcceptedStartPath(startPath1)
+            startPath2 = routingContext.toAcceptedStartPath(startPath2)
+            requireNotNull(startPath1.link).setFirstLinkHolder(null, startPath1.sourceNode)
+            requireNotNull(startPath2.link).setFirstLinkHolder(null, startPath2.sourceNode)
+            requireNotNull(startPath1.link).addLinkHolder(startPath1, startPath1.sourceNode)
+            requireNotNull(startPath2.link).addLinkHolder(startPath2, startPath2.sourceNode)
+        }
 
         // check for an INITIAL match with the cost-cutting-track
         if (costCuttingTrack != null) {
@@ -1764,6 +1764,8 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
 
         val openBorderList = ArrayList<OsmPath>(4096)
         val borderLoadDeferral = BorderLoadDeferralPolicy()
+        var testCandidate = StdPathCandidate()
+        var bestCandidate = StdPathCandidate()
 
         // Pre-compute end position integer coordinates once to avoid repeated double→int conversions in the hot loop
         val endPosition = endPos?.position ?: Position.ZERO
@@ -1885,9 +1887,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
                     val pe = costCuttingTrack.getLink(sourceNodeId, currentNodeId)
                     if (pe != null) {
                         // remember first match cost for fast termination of partial recalcs
-                        val originElement = path.originElement
-                        var parentcost =
-                            if (originElement == null) 0 else originElement.cost
+                        var parentcost = path.originCost
 
                         // hitting start-element of costCuttingTrack?
                         val c = path.cost - parentcost - pe.cost
@@ -1899,7 +1899,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
                                 + path.elevationCorrection()
                                 + (costCuttingTrack.cost - pe.cost))
                         if (costEstimate <= maxTotalCost) {
-                            matchPath = path.toPathElement()
+                            matchPath = PathTraceBuilder.toMatchPathElement(path)
                         }
                         if (costEstimate < maxTotalCost) {
                             log("maxcost $maxTotalCost -> $costEstimate")
@@ -1989,15 +1989,17 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
                             if (detour.cost >= 0.0 && nextId != startNodeId1 && nextId != startNodeId2) {
                                 currentGuideTrack.registerDetourForId(
                                     currentNode.idFromPos,
-                                    detour.toPathElement()
+                                    PathTraceBuilder.toDetourElement(detour)
                                 )
                             }
+                            routingContext.recyclePath(detour)
                         }
                         continue
                     }
                 }
 
                 var bestPath: OsmPath? = null
+                var hasBestCandidate = false
 
                 var isFinalLink = false
                 val targetNodeId = nextNode.idFromPos
@@ -2017,18 +2019,41 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
                                 1.5 // 1.5 meters is the upper limit that will not change the unit-test result..
                             routingContext.setWaypoint(finalEndPos, true)
                         }
-                        val testPath = routingContext.createPath(
-                            otherPath,
-                            candidateLink,
-                            refTrack,
-                            currentGuideTrack != null
-                        )
-                        if (testPath.cost >= 0 && (bestPath == null || testPath.cost < bestPath.cost) &&
+                        val testPath = if (useAcceptedStdSearch) {
+                            val accepted = routingContext.evaluateStdCandidateScratch(
+                                testCandidate,
+                                otherPath as AcceptedPath,
+                                currentNode,
+                                nextNode,
+                                candidateLink,
+                                refTrack,
+                            )
+                            if (accepted && (!hasBestCandidate || testCandidate.cost < bestCandidate.cost) &&
+                                currentNode.idFromPos != nextNode.idFromPos
+                            ) {
+                                val swap = bestCandidate
+                                bestCandidate = testCandidate
+                                testCandidate = swap
+                                hasBestCandidate = true
+                            }
+                            null
+                        } else {
+                            routingContext.createPath(
+                                otherPath,
+                                candidateLink,
+                                refTrack,
+                                currentGuideTrack != null
+                            )
+                        }
+                        if (testPath != null && testPath.cost >= 0 && (bestPath == null || testPath.cost < bestPath.cost) &&
                             (requireNotNull(testPath.sourceNode).idFromPos != requireNotNull(
                                 testPath.targetNode
                             ).idFromPos)
                         ) {
+                            bestPath?.let { routingContext.recyclePath(it) }
                             bestPath = testPath
+                        } else {
+                            testPath?.let { routingContext.recyclePath(it) }
                         }
                     } finally {
                         if (isFinalLink) {
@@ -2037,7 +2062,34 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
                     }
                     linkHolder = linkHolder.nextForLink
                 }
-                if (bestPath != null) {
+                if (useAcceptedStdSearch && hasBestCandidate) {
+                    bestCandidate.airdistance = if (isFinalLink) 0 else {
+                        max(1, distance(nextNode.position, endPosition).roundToInt())
+                    }
+
+                    val inRadius = boundary == null || boundary!!.isInBoundary(nextNode, bestCandidate.cost)
+
+                    if (inRadius && (isFinalLink || bestCandidate.cost + bestCandidate.airdistance <= (if (lastAirDistanceCostFactor != 0.0) maxTotalCost * lastAirDistanceCostFactor else maxTotalCost.toDouble()) + addDiff)) {
+                        var dominator = candidateLink.getFirstLinkHolder(currentNode)
+                        while (dominator != null) {
+                            val dp = dominator as AcceptedPath
+                            if (dp.airdistance != -1 && bestCandidate.definitlyWorseThan(dp)) {
+                                break
+                            }
+                            dominator = dominator.nextForLink
+                        }
+
+                        if (dominator == null) {
+                            val acceptedPath = bestCandidate.snapshotAccepted(includeOriginCost = fastPartialRecalc)
+                            acceptedPath.treedepth = path.treedepth + 1
+                            if (routingContext.pm is StdModel) {
+                                (routingContext.pm as StdModel).recordAcceptedPathSnapshot()
+                            }
+                            candidateLink.addLinkHolder(acceptedPath, currentNode)
+                            addToOpenset(acceptedPath)
+                        }
+                    }
+                } else if (bestPath != null) {
                     bestPath.airdistance = if (isFinalLink) 0 else {
                         max(1, distance(nextNode.position, endPosition).roundToInt())
                     }
@@ -2058,9 +2110,16 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
 
                         if (dominator == null) {
                             bestPath.treedepth = path.treedepth + 1
+                            if (routingContext.pm is StdModel) {
+                                (routingContext.pm as StdModel).recordAcceptedPathSnapshot()
+                            }
                             candidateLink.addLinkHolder(bestPath, currentNode)
                             addToOpenset(bestPath)
+                        } else {
+                            routingContext.recyclePath(bestPath)
                         }
+                    } else {
+                        routingContext.recyclePath(bestPath)
                     }
                 }
             }
@@ -2079,21 +2138,8 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
         }
     }
 
-    private fun OsmPath.toPathElement(): OsmPathElement {
-        val n = requireNotNull(targetNode)
-        return OsmPathElement.create(
-            n.position.longitude,
-            n.position.latitude,
-            n.altitude,
-            originElement
-        ).also {
-            it.cost = cost
-            it.message = message
-        }
-    }
-
     private fun compileTrack(path: OsmPath, verbose: Boolean): OsmTrack {
-        var element: OsmPathElement? = path.toPathElement()
+        var element: OsmPathElement? = PathTraceBuilder.toFinalTrackElement(path)
 
         // for final track, cut endnode
         if (guideTrack != null && requireNotNull(element).origin != null) {

@@ -38,6 +38,8 @@ public class OsmNodesMap {
 
     public var cleanupMode: CleanupMode = CleanupMode.COUNT_ONLY
 
+    private val dfsFrames: ArrayList<DfsFrame> = ArrayList(256)
+
     internal fun configureMemoryPolicy(memoryPolicy: RoutingMemoryPolicy) {
         currentMaxMemoryBytes = memoryPolicy.graphInitialBudgetBytes
         maxMemoryBytes = memoryPolicy.graphHardLimitBytes
@@ -51,9 +53,26 @@ public class OsmNodesMap {
         }
     }
 
+    internal fun cleanupAndCount(nodes: Array<Any?>, size: Int) {
+        if (cleanupMode == CleanupMode.COUNT_ONLY) {
+            justCount(nodes, size)
+        } else {
+            cleanupPeninsulas(nodes, size)
+        }
+    }
+
     private fun justCount(nodes: List<OsmNode>) {
         for (n in nodes) {
             if (n.firstlink != null) {
+                nodesCreated++
+            }
+        }
+    }
+
+    private fun justCount(nodes: Array<Any?>, size: Int) {
+        for (i in 0..<size) {
+            val node = nodes[i] as? OsmNode ?: continue
+            if (node.firstlink != null) {
                 nodesCreated++
             }
         }
@@ -70,9 +89,21 @@ public class OsmNodesMap {
         }
     }
 
+    private fun cleanupPeninsulas(nodes: Array<Any?>, size: Int) {
+        baseID = lastVisitID++
+        for (i in 0..<size) { // loop over nodes again just for housekeeping
+            val n = nodes[i] as? OsmNode ?: continue
+            if (n.firstlink != null) {
+                if (n.visitID == 1) {
+                    minVisitIdInSubtree(null, n)
+                }
+            }
+        }
+    }
+
     private class DfsFrame {
         var source: OsmNode? = null
-        lateinit var n: OsmNode
+        var n: OsmNode? = null
         var l: OsmLink? = null
         var minId: Int = 0
         var pendingLink: OsmLink? = null
@@ -89,15 +120,24 @@ public class OsmNodesMap {
             pendingNodesCreated = 0
             return this
         }
+
+        fun clear() {
+            source = null
+            n = null
+            l = null
+            pendingLink = null
+            pendingTarget = null
+            pendingNodesCreated = 0
+        }
     }
 
     private fun minVisitIdInSubtree(source: OsmNode?, n: OsmNode): Int {
-        val stack = ArrayList<DfsFrame>(256)
         var depth = 0
+        var maxDepth = 0
 
         fun frameAt(index: Int): DfsFrame {
-            while (stack.size <= index) stack.add(DfsFrame())
-            return stack[index]
+            while (dfsFrames.size <= index) dfsFrames.add(DfsFrame())
+            return dfsFrames[index]
         }
 
         fun push(src: OsmNode?, node: OsmNode) {
@@ -105,21 +145,23 @@ public class OsmNodesMap {
             else node.visitID = lastVisitID++
             nodesCreated++
             frameAt(depth++).reset(src, node, node.visitID)
+            if (depth > maxDepth) maxDepth = depth
         }
 
         push(source, n)
         var childResult = 0
 
         while (depth > 0) {
-            val frame = stack[depth - 1]
+            val frame = dfsFrames[depth - 1]
+            val frameNode = requireNotNull(frame.n)
 
             // Apply the result of the child that just completed
             if (frame.pendingLink != null) {
                 val pl = frame.pendingLink!!
                 val pt = frame.pendingTarget!!
-                if (childResult > frame.n.visitID) { // peninsula?
+                if (childResult > frameNode.visitID) { // peninsula?
                     nodesCreated = frame.pendingNodesCreated
-                    frame.n.unlinkLink(pl)
+                    frameNode.unlinkLink(pl)
                     pt.unlinkLink(pl)
                 } else if (childResult < frame.minId) {
                     frame.minId = childResult
@@ -132,8 +174,8 @@ public class OsmNodesMap {
             var pushed = false
             while (frame.l != null) {
                 val l = frame.l!!
-                val nextLink = l.getNext(frame.n)
-                val t = requireNotNull(l.getTarget(frame.n))
+                val nextLink = l.getNext(frameNode)
+                val t = requireNotNull(l.getTarget(frameNode))
 
                 if (t === frame.source) {
                     frame.l = nextLink
@@ -153,7 +195,7 @@ public class OsmNodesMap {
                         frame.pendingTarget = t
                         frame.pendingNodesCreated = nodesCreated
                         frame.l = nextLink
-                        push(frame.n, t)
+                        push(frameNode, t)
                         pushed = true
                         break
                     }
@@ -175,6 +217,7 @@ public class OsmNodesMap {
             }
         }
 
+        for (i in 0..<maxDepth) dfsFrames[i].clear()
         return childResult
     }
 
@@ -301,6 +344,8 @@ public class OsmNodesMap {
     public fun get(id: Long): OsmNode? = hmap[id]
 
     public fun get(position: Position): OsmNode? = hmap[position.id]
+
+    internal fun get(longitude: Int, latitude: Int): OsmNode? = hmap[Position.computeId(longitude, latitude)]
 
 
 

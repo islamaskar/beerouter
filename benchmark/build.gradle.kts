@@ -59,3 +59,16 @@ benchmark {
         register("linuxX64")
     }
 }
+
+tasks.register<JavaExec>("singleRoutePerformance") {
+    description = "Runs route 9 gravel c=1.5 for focused performance checks"
+    group = "verification"
+    dependsOn("jvmMainClasses")
+    mainClass.set("dev.skynomads.beerouter.benchmark.SingleRoutePerformance")
+    val jvmCompilation = kotlin.targets.getByName("jvm").compilations.getByName("main")
+    classpath = files(jvmCompilation.output.allOutputs, jvmCompilation.runtimeDependencyFiles)
+    project.findProperty("profileArgs")?.toString()?.split(' ')?.let { args = it }
+    project.findProperty("jfrFile")?.toString()?.let { jfrFile ->
+        jvmArgs("-XX:StartFlightRecording=filename=$jfrFile,settings=profile,dumponexit=true")
+    }
+}

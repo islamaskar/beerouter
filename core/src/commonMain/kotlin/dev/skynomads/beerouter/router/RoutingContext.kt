@@ -429,6 +429,28 @@ public class RoutingContext(
         isEndpoint = false
     }
 
+    internal fun snapshotEvaluationState(): RoutingEvaluationState = RoutingEvaluationState(
+        nogopoints = nogopoints,
+        keepnogopoints = keepnogopoints,
+        pendingEndpoint = pendingEndpoint,
+        nogoCost = nogoCost,
+        isEndpoint = isEndpoint,
+        shortestmatch = shortestmatch,
+        wayfraction = wayfraction,
+        shortestPosition = shortestPosition,
+    )
+
+    internal fun restoreEvaluationState(state: RoutingEvaluationState) {
+        nogopoints = state.nogopoints
+        keepnogopoints = state.keepnogopoints
+        pendingEndpoint = state.pendingEndpoint
+        nogoCost = state.nogoCost
+        isEndpoint = state.isEndpoint
+        shortestmatch = state.shortestmatch
+        wayfraction = state.wayfraction
+        shortestPosition = state.shortestPosition
+    }
+
     public fun distanceBetween(start: Position, end: Position): Int =
         distanceBetween(start.longitude, start.latitude, end.longitude, end.latitude)
 
@@ -567,6 +589,88 @@ public class RoutingContext(
         val p = pm.createPath()
         p.init(origin, link, refTrack, detailMode, this)
         return p
+    }
+
+    internal fun isStdModel(): Boolean = pm is StdModel
+
+    internal inline fun <T> evaluateStdCompatibilityCandidate(block: () -> T?): T? {
+        val state = snapshotEvaluationState()
+        val result = block()
+        if (result == null) {
+            restoreEvaluationState(state)
+        }
+        return result
+    }
+
+    internal fun evaluateStdCandidate(
+        candidate: StdPathCandidate,
+        origin: AcceptedPath,
+        sourceNode: OsmNode,
+        targetNode: OsmNode,
+        link: OsmLink,
+        refTrack: OsmTrack?,
+    ): AcceptedPath? = evaluateStdCompatibilityCandidate {
+        candidate.resetFrom(origin, sourceNode, targetNode, link)
+        if (candidate.evaluate(this, refTrack)) candidate.snapshotAccepted() else null
+    }
+
+    internal inline fun evaluateStdCandidateTransaction(block: () -> Boolean): Boolean {
+        val nogopointsBefore = nogopoints
+        val keepnogopointsBefore = keepnogopoints
+        val pendingEndpointBefore = pendingEndpoint
+        val nogoCostBefore = nogoCost
+        val isEndpointBefore = isEndpoint
+        val shortestmatchBefore = shortestmatch
+        val wayfractionBefore = wayfraction
+        val shortestPositionBefore = shortestPosition
+        val result = block()
+        if (!result) {
+            nogopoints = nogopointsBefore
+            keepnogopoints = keepnogopointsBefore
+            pendingEndpoint = pendingEndpointBefore
+            nogoCost = nogoCostBefore
+            isEndpoint = isEndpointBefore
+            shortestmatch = shortestmatchBefore
+            wayfraction = wayfractionBefore
+            shortestPosition = shortestPositionBefore
+        }
+        return result
+    }
+
+    internal fun evaluateStdCandidateScratch(
+        candidate: StdPathCandidate,
+        origin: AcceptedPath,
+        sourceNode: OsmNode,
+        targetNode: OsmNode,
+        link: OsmLink,
+        refTrack: OsmTrack?,
+    ): Boolean = evaluateStdCandidateTransaction {
+        candidate.resetFrom(origin, sourceNode, targetNode, link)
+        candidate.evaluate(this, refTrack)
+    }
+
+    internal fun toAcceptedStartPath(path: OsmPath): AcceptedPath {
+        val stdPath = path as StdPath
+        val source = stdPath.sourceNode
+        return AcceptedPath(
+            parent = source?.let { AcceptedPath(targetNode = it) },
+            sourceNode = stdPath.sourceNode,
+            targetNode = stdPath.targetNode,
+            link = stdPath.link,
+            cost = stdPath.cost,
+            originCost = 0,
+            airdistance = stdPath.airdistance,
+            treedepth = stdPath.treedepth,
+            originPosition = stdPath.originPosition,
+            selev = stdPath.selev,
+            stdState = stdPath.exportStdState(),
+            searchState = stdPath.exportSearchState(),
+            message = stdPath.message,
+        )
+    }
+
+    public fun recyclePath(path: OsmPath) {
+        pm.recyclePath(path)
     }
 
     public companion object {

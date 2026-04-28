@@ -7,6 +7,7 @@ import dev.skynomads.beerouter.geo.Position
 import dev.skynomads.beerouter.geo.UNSET_ELEVATION
 import dev.skynomads.beerouter.geo.latitudeFromId
 import dev.skynomads.beerouter.geo.longitudeFromId
+import dev.skynomads.beerouter.geo.withAltitude
 import dev.skynomads.beerouter.util.IByteArrayUnifier
 import kotlin.math.max
 import kotlin.math.roundToInt
@@ -17,14 +18,32 @@ import kotlin.math.roundToInt
  * @author ab
  */
 public open class OsmNode : OsmLink, OsmPos {
-    /**
-     * The position
-     */
-    override var position: Position = Position.ZERO
-        internal set
+    public var longitude: Int = 0
+        private set
+
+    public var latitude: Int = 0
+        private set
+
+    private var cachedPosition: Position? = Position.ZERO
+
+    override var position: Position
+        get() {
+            cachedPosition?.let { return it }
+            return Position(longitude, latitude).also { cachedPosition = it }
+        }
+        internal set(value) {
+            longitude = value.longitude
+            latitude = value.latitude
+            _idFromPos = value.id
+            cachedPosition = value.withAltitude(UNSET_ELEVATION)
+            positionWithAltitude = null
+        }
 
     override var altitude: Short = UNSET_ELEVATION
-        internal set
+        internal set(value) {
+            field = value
+            positionWithAltitude = null
+        }
 
     /**
      * The node-tags, if any
@@ -51,25 +70,34 @@ public open class OsmNode : OsmLink, OsmPos {
 
     private var hollow: Boolean = false
 
-    // Cached id computed from lon/lat — stable because lon/lat never change after construction
-    private var _idFromPos: Long = position.id
+    // Cached id computed from lon/lat — stable because lon/lat rarely change after construction
+    private var _idFromPos: Long = Position.ZERO.id
+    private var positionWithAltitude: Position? = null
+
+    public fun positionWithAltitude(): Position {
+        positionWithAltitude?.let { return it }
+        return position.withAltitude(altitude).also { positionWithAltitude = it }
+    }
 
     public constructor()
 
     public constructor(ilon: Int, ilat: Int) {
-        position = Position(ilon, ilat)
-        _idFromPos = position.id
+        longitude = ilon
+        latitude = ilat
+        _idFromPos = Position.computeId(ilon, ilat)
+        cachedPosition = null
     }
 
     public constructor(id: Long) {
-        this.position = Position(id.longitudeFromId(), id.latitudeFromId())
+        longitude = id.longitudeFromId()
+        latitude = id.latitudeFromId()
         _idFromPos = id
+        cachedPosition = null
     }
 
     public constructor(position: Position) {
-        this.position = Position(position.longitude, position.latitude)
+        this.position = position.withAltitude(UNSET_ELEVATION)
         this.altitude = position.altitude
-        _idFromPos = position.id
     }
 
 
@@ -140,8 +168,10 @@ public open class OsmNode : OsmLink, OsmPos {
                 TurnRestriction.create(
                     exceptions = mc.readShort(),
                     isPositive = mc.readBoolean(),
-                    from = Position(mc.readInt(), mc.readInt()),
-                    to = Position(mc.readInt(), mc.readInt())
+                    fromLongitude = mc.readInt(),
+                    fromLatitude = mc.readInt(),
+                    toLongitude = mc.readInt(),
+                    toLatitude = mc.readInt(),
                 )
             )
         }
@@ -155,10 +185,8 @@ public open class OsmNode : OsmLink, OsmPos {
         while (mc.hasMoreData()) {
             // read link data
             val endPointer = mc.endPointer
-            val targetPosition = Position(
-                longitude = position.longitude + mc.readVarLengthSigned(),
-                latitude = position.latitude + mc.readVarLengthSigned()
-            )
+            val targetLongitude = position.longitude + mc.readVarLengthSigned()
+            val targetLatitude = position.latitude + mc.readVarLengthSigned()
             val sizecode = mc.readVarLengthUnsigned()
             val isReverse = (sizecode and 1) != 0
             var description: ByteArray? = null
@@ -168,7 +196,7 @@ public open class OsmNode : OsmLink, OsmPos {
             }
             val geometry = mc.readDataUntil(endPointer)
 
-            addLink(targetPosition, description, geometry, hollowNodes, isReverse)
+            addLink(targetLongitude, targetLatitude, description, geometry, hollowNodes, isReverse)
         }
         hollowNodes.remove(this)
     }
@@ -180,7 +208,18 @@ public open class OsmNode : OsmLink, OsmPos {
         hollowNodes: OsmNodesMap,
         isReverse: Boolean
     ) {
-        if (targetPosition.longitude == position.longitude && targetPosition.latitude == position.latitude) {
+        addLink(targetPosition.longitude, targetPosition.latitude, description, geometry, hollowNodes, isReverse)
+    }
+
+    public fun addLink(
+        targetLongitude: Int,
+        targetLatitude: Int,
+        description: ByteArray?,
+        geometry: ByteArray?,
+        hollowNodes: OsmNodesMap,
+        isReverse: Boolean
+    ) {
+        if (targetLongitude == position.longitude && targetLatitude == position.latitude) {
             return  // skip self-ref
         }
 
@@ -192,7 +231,7 @@ public open class OsmNode : OsmLink, OsmPos {
         while (l != null) {
             val t = l.getTarget(this)
             val tId = t!!.idFromPos
-            if (tId.longitudeFromId() == targetPosition.longitude && tId.latitudeFromId() == targetPosition.latitude) {
+            if (tId.longitudeFromId() == targetLongitude && tId.latitudeFromId() == targetLatitude) {
                 tn = t
                 if (isReverse || (l.descriptionBitmap == null && !l.isReverse(this))) {
                     link = l // the correct one that needs our data
@@ -202,9 +241,9 @@ public open class OsmNode : OsmLink, OsmPos {
             l = l.getNext(this)
         }
         if (tn == null) { // .. not found, then check the hollow nodes
-            tn = hollowNodes.get(targetPosition.id) // target node
+            tn = hollowNodes.get(targetLongitude, targetLatitude) // target node
             if (tn == null) { // node not yet known, create a new hollow proxy
-                tn = OsmNode(targetPosition)
+                tn = OsmNode(targetLongitude, targetLatitude)
                 tn.setHollow()
                 hollowNodes.put(tn)
                 addLink(

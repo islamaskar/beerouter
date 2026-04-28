@@ -46,6 +46,26 @@ internal class StdPath : OsmPath() {
         elevation_buffer = 0f
     }
 
+    internal fun exportStdState(): StdPathState = StdPathState(
+        ehbd = ehbd,
+        ehbu = ehbu,
+        totalTime = totalTime,
+        totalEnergy = totalEnergy,
+        elevationBuffer = elevation_buffer,
+        uphillcostdiv = uphillcostdiv,
+        downhillcostdiv = downhillcostdiv,
+    )
+
+    internal fun importStdState(state: StdPathState) {
+        ehbd = state.ehbd
+        ehbu = state.ehbu
+        totalTime = state.totalTime
+        totalEnergy = state.totalEnergy
+        elevation_buffer = state.elevationBuffer
+        uphillcostdiv = state.uphillcostdiv
+        downhillcostdiv = state.downhillcostdiv
+    }
+
     override fun processWaySection(
         rc: RoutingContext,
         dist: Double,
@@ -217,26 +237,12 @@ internal class StdPath : OsmPath() {
     }
 
     override fun elevationCorrection(): Int {
-        return ((if (downhillcostdiv > 0) ehbd / downhillcostdiv else 0)
-                + (if (uphillcostdiv > 0) ehbu / uphillcostdiv else 0))
+        return exportStdState().elevationCorrection()
     }
 
     override fun definitlyWorseThan(p: OsmPath?): Boolean {
         val path = p as StdPath
-
-        var c = path.cost
-        if (path.downhillcostdiv > 0) {
-            val delta =
-                path.ehbd / path.downhillcostdiv - (if (downhillcostdiv > 0) ehbd / downhillcostdiv else 0)
-            if (delta > 0) c += delta
-        }
-        if (path.uphillcostdiv > 0) {
-            val delta =
-                path.ehbu / path.uphillcostdiv - (if (uphillcostdiv > 0) ehbu / uphillcostdiv else 0)
-            if (delta > 0) c += delta
-        }
-
-        return cost > c
+        return exportStdState().isDefinitelyWorseThan(cost, path.cost, path.exportStdState())
     }
 
     private fun computeIncline(dist: Double): Double {

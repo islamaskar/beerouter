@@ -76,11 +76,27 @@ public data class TurnRestriction(
             exceptions: Short,
             from: Position,
             to: Position
+        ): TurnRestriction = create(
+            isPositive = isPositive,
+            exceptions = exceptions,
+            fromLongitude = from.longitude,
+            fromLatitude = from.latitude,
+            toLongitude = to.longitude,
+            toLatitude = to.latitude,
+        )
+
+        public fun create(
+            isPositive: Boolean,
+            exceptions: Short,
+            fromLongitude: Int,
+            fromLatitude: Int,
+            toLongitude: Int,
+            toLatitude: Int,
         ): TurnRestriction = TurnRestriction(
             isPositive = isPositive,
             exceptions = exceptions,
-            fromId = from.id,
-            toId = to.id
+            fromId = Position.computeId(fromLongitude, fromLatitude),
+            toId = Position.computeId(toLongitude, toLatitude)
         )
     }
 }

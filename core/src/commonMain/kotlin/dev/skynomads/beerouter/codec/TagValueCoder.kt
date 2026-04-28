@@ -74,74 +74,102 @@ public class TagValueCoder {
         this.bc = bc
     }
 
-    public constructor(bc: BitCoderContext, buffers: DataBuffers, validator: TagValueValidator?) {
-        tree = decodeTree(bc, buffers, validator)
+    public constructor(
+        bc: BitCoderContext,
+        buffers: DataBuffers,
+        validator: TagValueValidator?
+    ) {
+        tree = decodeTree(bc, buffers, validator) { data ->
+            val accessType = validator?.accessType(data) ?: 2
+            if (accessType > 0) TagValueWrapper(data, accessType) else null
+        }
         this.bc = bc
     }
 
     public constructor()
 
-    private fun decodeTree(
+    public class RawDataDecoder internal constructor(
         bc: BitCoderContext,
         buffers: DataBuffers,
         validator: TagValueValidator?
-    ): Any? {
-        val isNode = bc.decodeBit()
-        if (isNode) {
-            return TreeNode(
-                child1 = decodeTree(bc, buffers, validator),
-                child2 = decodeTree(bc, buffers, validator)
-            )
-        }
+    ) {
+        private val tree: Any? = decodeTree(bc, buffers, validator) { data -> data }
+        private val bc: BitCoderContext = bc
 
-        val buffer = buffers.tagbuf1
-        val ctx = buffers.bctx1
-        ctx.reset(buffer)
-
-        var inum = 0
-        var lastEncodedInum = 0
-
-        var hasdata = false
-        while (true) {
-            val delta = bc.decodeVarBits()
-            if (!hasdata) {
-                if (delta == 0) {
-                    return null
-                }
+        public fun decodeTagValueData(): ByteArray? {
+            var node = tree
+            while (node is TreeNode) {
+                val tn = node
+                val nextBit = bc.decodeBit()
+                node = if (nextBit) tn.child2 else tn.child1
             }
-            if (delta == 0) {
-                ctx.encodeVarBits(0)
-                break
-            }
-            inum += delta
-
-            val data = bc.decodeVarBits()
-
-            if (validator == null || validator.isLookupIdxUsed(inum)) {
-                hasdata = true
-                ctx.encodeVarBits(inum - lastEncodedInum)
-                ctx.encodeVarBits(data)
-                lastEncodedInum = inum
-            }
+            return node as ByteArray?
         }
-
-        val res: ByteArray?
-        val len = ctx.closeAndGetEncodedLength()
-        if (validator == null) {
-            res = ByteArray(len)
-            buffer.copyInto(res, 0, 0, len)
-        } else {
-            res = validator.unify(buffer, 0, len)
-        }
-
-        val accessType = validator?.accessType(res) ?: 2
-        if (accessType > 0) {
-            return TagValueWrapper(res, accessType)
-        }
-        return null
     }
 
     public data class TreeNode(public val child1: Any?, public val child2: Any?)
+
+    public companion object {
+        public fun rawDataDecoder(
+            bc: BitCoderContext,
+            buffers: DataBuffers,
+            validator: TagValueValidator?
+        ): RawDataDecoder = RawDataDecoder(bc, buffers, validator)
+
+        private fun decodeTree(
+            bc: BitCoderContext,
+            buffers: DataBuffers,
+            validator: TagValueValidator?,
+            leaf: (ByteArray?) -> Any?
+        ): Any? {
+            val isNode = bc.decodeBit()
+            if (isNode) {
+                return TreeNode(
+                    child1 = decodeTree(bc, buffers, validator, leaf),
+                    child2 = decodeTree(bc, buffers, validator, leaf)
+                )
+            }
+
+            val buffer = buffers.tagbuf1
+            val ctx = buffers.bctx1
+            ctx.reset(buffer)
+
+            var inum = 0
+            var lastEncodedInum = 0
+
+            var hasdata = false
+            while (true) {
+                val delta = bc.decodeVarBits()
+                if (!hasdata) {
+                    if (delta == 0) {
+                        return null
+                    }
+                }
+                if (delta == 0) {
+                    ctx.encodeVarBits(0)
+                    break
+                }
+                inum += delta
+
+                val data = bc.decodeVarBits()
+
+                if (validator == null || validator.isLookupIdxUsed(inum)) {
+                    hasdata = true
+                    ctx.encodeVarBits(inum - lastEncodedInum)
+                    ctx.encodeVarBits(data)
+                    lastEncodedInum = inum
+                }
+            }
+
+            val len = ctx.closeAndGetEncodedLength()
+            val res = if (validator == null) {
+                ByteArray(len).also { buffer.copyInto(it, 0, 0, len) }
+            } else {
+                validator.unify(buffer, 0, len)
+            }
+            return leaf(res)
+        }
+    }
 
     public class TagValueSet(
         private val id: Int

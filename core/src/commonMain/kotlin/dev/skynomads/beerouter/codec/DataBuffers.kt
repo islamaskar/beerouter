@@ -14,6 +14,7 @@ public class DataBuffers(public val iobuffer: ByteArray = ByteArray(IO_BUFFER_SI
     public val ibuf3: IntArray = IntArray(SMALL_INT_BUFFER_SIZE)
     public val alon: IntArray = IntArray(SMALL_INT_BUFFER_SIZE)
     public val alat: IntArray = IntArray(SMALL_INT_BUFFER_SIZE)
+    public var objectBuffer1: Array<Any?> = arrayOfNulls(SMALL_INT_BUFFER_SIZE)
 
     private companion object {
         private const val IO_BUFFER_SIZE = 65636

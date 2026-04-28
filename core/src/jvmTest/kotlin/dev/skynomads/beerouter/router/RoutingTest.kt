@@ -1,6 +1,7 @@
 package dev.skynomads.beerouter.router
 
 import dev.skynomads.beerouter.geo.Position
+import dev.skynomads.beerouter.map.DefaultMapSource
 import kotlinx.coroutines.runBlocking
 import kotlinx.io.files.SystemFileSystem
 import kotlin.test.BeforeTest
@@ -79,18 +80,12 @@ class RoutingTest {
         val segmentDir = generatedTestSegmentDir
         val profile = profilePathForSegments("trekking.brf", segmentDir)
         val baseProfileContent = profile.toJavaFile().readText()
-        val pass1Line = "assign pass1coefficient -1"
-        val pass1Regex = Regex("(?m)^\\s*assign\\s+pass1coefficient\\s+(=\\s*)?[-0-9.]+.*$")
-        val profileContent = if (pass1Regex.containsMatchIn(baseProfileContent)) {
-            baseProfileContent.replace(pass1Regex, pass1Line)
-        } else {
-            baseProfileContent.replaceFirst(Regex("(?m)^---context:global.*$"), "$0\n$pass1Line")
-        }
+        val profileContent = forcePass1Coefficient(baseProfileContent, "-1")
         val lookupContent = lookupPathForSegments(segmentDir).toJavaFile().readText()
         val ctx = RoutingContext(
             profileContent = profileContent,
             lookupContent = lookupContent,
-            mapSource = dev.skynomads.beerouter.map.DefaultMapSource(segmentDir),
+            mapSource = DefaultMapSource(segmentDir),
         )
         val engine = RoutingEngine(ctx)
 
@@ -104,6 +99,30 @@ class RoutingTest {
         }
 
         assertNotNull(track)
+    }
+
+    @Test
+    fun generatedTrekkingAdjacentRouteRemainsStable() {
+        val segmentDir = generatedTestSegmentDir
+        val profile = profilePathForSegments("trekking.brf", segmentDir)
+        val ctx = routingContextFromFiles(profile, segmentDir)
+        val engine = RoutingEngine(ctx)
+
+        val track = runBlocking {
+            engine.doRouting(
+                listOf(
+                    createWaypoint("Tübingen A", 48.520272, 9.053658),
+                    createWaypoint("Tübingen B", 48.520189, 9.053500),
+                )
+            )
+        }
+
+        assertNotNull(track)
+        assertEquals(15, track.distance)
+        assertEquals(
+            listOf(811979274142721743, 811978599832856189),
+            track.nodes.map { it.idFromPos }
+        )
     }
 
     @Test
@@ -352,4 +371,14 @@ class RoutingTest {
         altitude?.times(4.0)?.toInt()?.toShort() ?: Short.MIN_VALUE
 
     private fun toSElev(altitude: Short?): Short = altitude ?: Short.MIN_VALUE
+
+    private fun forcePass1Coefficient(profile: String, coefficient: String): String {
+        val line = "assign pass1coefficient $coefficient"
+        val regex = Regex("(?m)^\\s*assign\\s+pass1coefficient\\s+(=\\s*)?[-0-9.]+.*$")
+        return if (regex.containsMatchIn(profile)) {
+            profile.replace(regex, line)
+        } else {
+            profile.replaceFirst(Regex("(?m)^---context:global.*$"), "$0\n$line")
+        }
+    }
 }

@@ -30,8 +30,8 @@ public class GeometryDecoder {
         var lastTransferNode: OsmTransferNode? = null
         val startnode: OsmNode = if (reverseLink) targetNode else requireNotNull(sourceNode)
         r.reset(geometry)
-        var olon = startnode.position.longitude
-        var olat = startnode.position.latitude
+        var olon = startnode.longitude
+        var olat = startnode.latitude
         var oselev = startnode.altitude.toInt()
         var idx = 0
         while (r.hasMoreData()) {

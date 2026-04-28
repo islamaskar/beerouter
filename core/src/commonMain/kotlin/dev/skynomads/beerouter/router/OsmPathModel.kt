@@ -13,6 +13,9 @@ public abstract class OsmPathModel {
 
     public abstract fun createPath(): OsmPath
 
+    public open fun recyclePath(path: OsmPath) {
+    }
+
     public abstract fun init(
         expctxWay: BExpressionContextWay?,
         expctxNode: BExpressionContextNode?,

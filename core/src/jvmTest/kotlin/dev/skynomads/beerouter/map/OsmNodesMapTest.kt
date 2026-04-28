@@ -2,6 +2,7 @@ package dev.skynomads.beerouter.map
 
 import dev.skynomads.beerouter.geo.Position
 import kotlin.test.Test
+import kotlin.test.assertEquals
 import kotlin.test.assertTrue
 
 class OsmNodesMapTest {
@@ -24,6 +25,30 @@ class OsmNodesMapTest {
         map.cleanupAndCount(listOf(a, b, c))
 
         assertTrue(a.firstlink == null || a.firstlink!!.isLinkUnused)
+    }
+
+    @Test
+    fun cleanupAndCountAcceptsNodeArrayPrefix() {
+        val map = OsmNodesMap()
+        val active = node(180000000, 90000000)
+        val inactive = node(180000100, 90000000)
+        val ignored = node(180000200, 90000000)
+        active.addLink(OsmLink(), false, inactive)
+
+        map.cleanupAndCount(arrayOf<Any?>(active, inactive, ignored), 2)
+
+        assertTrue(map.nodesCreated == 2)
+    }
+
+    @Test
+    fun cleanupAndCountIgnoresUnmaterializedNodeSlots() {
+        val map = OsmNodesMap()
+        val active = node(180000000, 90000000)
+        active.addLink(OsmLink(), false, node(180000100, 90000000))
+
+        map.cleanupAndCount(arrayOf<Any?>(null, active, null), 3)
+
+        assertEquals(1, map.nodesCreated)
     }
 
     /**

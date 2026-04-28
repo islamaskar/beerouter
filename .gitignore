@@ -22,3 +22,5 @@ misc/customprofiles
 !/.idea/runConfigurations
 .kotlin
 .code/agents/
+.worktrees/
+*.jfr
