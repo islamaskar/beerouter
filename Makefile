@@ -16,3 +16,7 @@ opencode: image
 		-v .:/root/src:z -w /root/src \
 		--net host \
 		$(IMAGE) opencode $(ARGS)
+
+.PHONY: patch
+patch:
+	./gradlew patchRelease :core:publishAndReleaseToMavenCentral
