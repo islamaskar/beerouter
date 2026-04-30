@@ -12,6 +12,7 @@ internal fun routingContextFromFiles(
     segmentDir: Path,
     generateTurns: Boolean = true,
     memoryPolicy: RoutingMemoryPolicy = RoutingMemoryPolicy.default(),
+    profileOverrides: Map<String, String> = emptyMap(),
 ): RoutingContext {
     require(SystemFileSystem.exists(profile)) { "profile exists $profile" }
     val segmentLookup = Path(segmentDir, "lookups.dat")
@@ -29,6 +30,7 @@ internal fun routingContextFromFiles(
                 mapSource = DefaultMapSource(segmentDir),
                 generateTurns = generateTurns,
                 memoryPolicy = memoryPolicy,
+                profileOverrides = profileOverrides,
             )
         }
     }

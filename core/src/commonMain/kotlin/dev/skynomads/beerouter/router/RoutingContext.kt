@@ -30,6 +30,7 @@ public class RoutingContext(
     public val mapSource: MapSource,
     public val generateTurns: Boolean = true,
     public val memoryPolicy: RoutingMemoryPolicy = RoutingMemoryPolicy.default(),
+    public val profileOverrides: Map<String, String> = emptyMap(),
 ) {
     public constructor(template: RoutingContext) : this(
         profileContent = template.profileContent,
@@ -37,6 +38,7 @@ public class RoutingContext(
         mapSource = template.mapSource,
         generateTurns = template.generateTurns,
         memoryPolicy = template.memoryPolicy,
+        profileOverrides = template.profileOverrides,
     ) {
         rawTrackSourceFactory = template.rawTrackSourceFactory
         rawAreaSourceFactory = template.rawAreaSourceFactory
@@ -172,7 +174,7 @@ public class RoutingContext(
 
     public var profileTimestamp: Long = 0
 
-    public var keyValues: MutableMap<String, String> = mutableMapOf()
+    public var keyValues: MutableMap<String, String> = profileOverrides.toMutableMap()
 
     public var rawTrackSourceFactory: (() -> Source)? = null
     public var rawAreaSourceFactory: (() -> Source)? = null

@@ -28,7 +28,7 @@ internal fun Path.toJavaFile(): File = File(toString())
 internal fun ensureTestSegmentFile() {
     if (SystemFileSystem.exists(testSegmentFile)) return
 
-    val url = URI("https://brouter.de/brouter/segments4/E5_N45.rd5").toURL()
+    val url = URI("https://segments.skynomads.dev/v10/E5_N45.rd5").toURL()
     url.openStream().use { source ->
         SystemFileSystem.sink(testSegmentFile).buffered().use { sink ->
             val buffer = ByteArray(DEFAULT_BUFFER_SIZE)

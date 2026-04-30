@@ -69,4 +69,19 @@ class RoutingContextDefaultsTest {
 
         assertEquals(policy, context.memoryPolicy)
     }
+
+    @Test
+    fun profileOverridesCanSetRoutingPassCoefficients() {
+        val context = routingContextFromFiles(
+            profile = profilePath("fastbike.brf"),
+            segmentDir = requireNotNull(testSegmentFile.parent),
+            profileOverrides = mapOf(
+                "pass1coefficient" to "-1",
+                "pass2coefficient" to "2.25",
+            ),
+        )
+
+        assertEquals(-1.0, context.global.pass1coefficient)
+        assertEquals(2.25, context.global.pass2coefficient)
+    }
 }
