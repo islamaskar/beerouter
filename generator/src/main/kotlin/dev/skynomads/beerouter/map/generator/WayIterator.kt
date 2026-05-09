@@ -38,7 +38,7 @@ public class WayIterator(
             di.close()
         }
         listener.wayFileEnd(wayfile)
-        if (deleteAfterReading && System.getProperty("deletetmpfiles") == "true") {
+        if (deleteAfterReading) {
             wayfile.delete()
         }
     }

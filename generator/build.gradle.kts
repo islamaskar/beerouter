@@ -233,12 +233,6 @@ tasks.register<JavaExec>("generatePlanetRd5") {
     val defaultWorkDir = layout.buildDirectory.dir("planet/work")
     val defaultOutputDir = layout.buildDirectory.dir("planet/segments4")
 
-    systemProperty("avoidMapPolling", "true")
-    systemProperty(
-        "deletetmpfiles",
-        providers.gradleProperty("generator.deleteTmpFiles").orElse("true").get(),
-    )
-
     doFirst {
         val planetFile = configuredFileProperty(
             "generator.planetFile",
@@ -295,12 +289,6 @@ tasks.register<JavaExec>("generateCountryRd5") {
     classpath = mainSourceSet.runtimeClasspath
     mainClass.set("dev.skynomads.beerouter.map.generator.PlanetRd5Generator")
 
-    systemProperty("avoidMapPolling", "true")
-    systemProperty(
-        "deletetmpfiles",
-        providers.gradleProperty("generator.deleteTmpFiles").orElse("true").get(),
-    )
-
     doFirst {
         val extractPath = geofabrikExtractPathProperty("generator.country")
         val extractSlug = geofabrikExtractSlug(extractPath)
@@ -350,9 +338,9 @@ tasks.register<JavaExec>("generateCountryRd5") {
     }
 }
 
-tasks.register<JavaExec>("generateRoutingTestRd5") {
+tasks.register<JavaExec>("generateRoutingTestRd5WithPois") {
     group = "generator"
-    description = "Generate the fixed Beerouter rd5 extract used by routing parity tests."
+    description = "Generate the fixed Beerouter rd5 extract used by routing parity tests, with POIs."
 
     dependsOn("classes", "downloadRoutingTestCountryOsmPbf")
 
@@ -372,9 +360,6 @@ tasks.register<JavaExec>("generateRoutingTestRd5") {
     inputs.file(defaultPoiConfig)
     outputs.dir(defaultOutputDir)
 
-    systemProperty("avoidMapPolling", "true")
-    systemProperty("deletetmpfiles", "true")
-
     doFirst {
         val profileDir = rootProject.file("misc/profiles2")
         args = listOf(
@@ -389,6 +374,44 @@ tasks.register<JavaExec>("generateRoutingTestRd5") {
         )
         logger.lifecycle(
             "Generating routing test rd5 from Geofabrik extract $routingTestExtractPath into ${defaultOutputDir.get().asFile.absolutePath} with POIs from ${defaultPoiConfig.absolutePath}",
+        )
+    }
+}
+
+tasks.register<JavaExec>("generateRoutingTestRd5NoPois") {
+    group = "generator"
+    description = "Generate the fixed Beerouter rd5 extract used by routing parity tests, without POIs."
+
+    dependsOn("classes", "downloadRoutingTestCountryOsmPbf")
+
+    classpath = mainSourceSet.runtimeClasspath
+    mainClass.set("dev.skynomads.beerouter.map.generator.PlanetRd5Generator")
+
+    val defaultCountryFile = rootProject.layout.buildDirectory.file(
+        "routing-test/$routingTestExtractSlug/${routingTestExtractSlug}-latest.osm.pbf",
+    )
+    val defaultWorkDir =
+        rootProject.layout.buildDirectory.dir("routing-test/$routingTestExtractSlug/work-no-pois")
+    val defaultOutputDir =
+        rootProject.layout.buildDirectory.dir("routing-test/$routingTestExtractSlug/segments4-no-pois")
+
+    inputs.file(defaultCountryFile)
+    outputs.dir(defaultOutputDir)
+
+    doFirst {
+        val profileDir = rootProject.file("misc/profiles2")
+        args = listOf(
+            defaultCountryFile.get().asFile.absolutePath,
+            defaultWorkDir.get().asFile.absolutePath,
+            defaultOutputDir.get().asFile.absolutePath,
+            profileDir.absolutePath,
+            "",
+            "",
+            "",
+            "",
+        )
+        logger.lifecycle(
+            "Generating routing test rd5 from Geofabrik extract $routingTestExtractPath into ${defaultOutputDir.get().asFile.absolutePath} without POIs",
         )
     }
 }

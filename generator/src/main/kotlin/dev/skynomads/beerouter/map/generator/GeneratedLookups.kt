@@ -35,12 +35,20 @@ internal object GeneratedLookups {
         val missingByKey = linkedMapOf<String, MutableSet<String>>()
         val addedEntries = linkedSetOf<PoiRule>()
         for (rule in config.rules.sortedWith(compareBy(PoiRule::key, PoiRule::value))) {
-            val existingValues = existingValuesByKey[rule.key]
-            if (existingValues?.contains(rule.value) == true) {
-                continue
+            val ruleEntries = buildList {
+                add(PoiRule(rule.key, rule.value, emptyMap()))
+                for ((tagKey, tagValue) in rule.additionalTags) {
+                    add(PoiRule(tagKey, tagValue, emptyMap()))
+                }
             }
-            missingByKey.getOrPut(rule.key) { linkedSetOf() }.add(rule.value)
-            addedEntries += rule
+            for (entry in ruleEntries) {
+                val existingValues = existingValuesByKey[entry.key]
+                if (existingValues?.contains(entry.value) == true) {
+                    continue
+                }
+                missingByKey.getOrPut(entry.key) { linkedSetOf() }.add(entry.value)
+                addedEntries += entry
+            }
         }
 
         if (missingByKey.isEmpty()) {

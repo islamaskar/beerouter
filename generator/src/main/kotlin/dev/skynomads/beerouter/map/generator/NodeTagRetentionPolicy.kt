@@ -18,6 +18,12 @@ internal data class NodeTagRetentionPolicy(
         }
         for (rule in poiConfig.matchingRules(tags)) {
             retained[rule.key] = rule.value
+            for ((tagKey, tagValue) in rule.additionalTags) {
+                val actualValue = tags[tagKey]
+                if (actualValue != null) {
+                    retained[tagKey] = actualValue
+                }
+            }
         }
         return retained
     }

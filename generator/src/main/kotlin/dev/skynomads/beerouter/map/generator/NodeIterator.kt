@@ -32,7 +32,7 @@ public class NodeIterator(
             di.close()
         }
         listener.nodeFileEnd(nodefile)
-        if (deleteAfterReading && System.getProperty("deletetmpfiles") == "true") {
+        if (deleteAfterReading) {
             nodefile.delete()
         }
     }

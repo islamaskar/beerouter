@@ -25,45 +25,18 @@ public class OsmParser : GeneratorBase() {
 
         println("*** PBF Parsing: $mapFile")
         var rawBlobCount = 0
-        var bytesRead = 0L
-        val avoidMapPolling = java.lang.Boolean.getBoolean("avoidMapPolling")
-        if (!avoidMapPolling) {
-            while (!mapFile.exists()) {
-                println("--- waiting for $mapFile to become available")
-                Thread.sleep(10_000)
-            }
-        }
-        var currentSize = mapFile.length()
-        var currentSizeTime = System.currentTimeMillis()
         val dis = DataInputStream(BufferedInputStream(FileInputStream(mapFile)))
         while (true) {
-            if (!avoidMapPolling) {
-                while (currentSize - bytesRead < 100_000_000L) {
-                    val newSize = mapFile.length()
-                    if (newSize != currentSize) {
-                        currentSize = newSize
-                        currentSizeTime = System.currentTimeMillis()
-                    } else if (System.currentTimeMillis() - currentSizeTime > 120_000L) {
-                        break
-                    }
-                    if (currentSize - bytesRead < 100_000_000L) {
-                        println("--- waiting for more data, currentSize=$currentSize bytesRead=$bytesRead")
-                        Thread.sleep(10_000)
-                    }
-                }
-            }
             val headerLength = try {
-                dis.readInt().also { bytesRead += 4 }
+                dis.readInt()
             } catch (_: EOFException) {
                 break
             }
             val headerBuffer = ByteArray(headerLength)
             dis.readFully(headerBuffer)
-            bytesRead += headerLength
             val blobHeader = Fileformat.BlobHeader.parseFrom(headerBuffer)
             val blobData = ByteArray(blobHeader.datasize)
             dis.readFully(blobData)
-            bytesRead += blobData.size
             BPbfBlobDecoder(blobHeader.type, blobData, this).process()
             rawBlobCount++
         }

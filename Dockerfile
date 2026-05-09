@@ -7,8 +7,7 @@ RUN apt update && apt upgrade -y && apt install default-jdk ripgrep python3-pip 
     libwayland-client0 libwayland-egl1 \
     -y
 
-RUN curl -fsSL https://claude.ai/install.sh | bash && \
-    python3 -m pip install --break-system-packages desloppify && \
-    npm install -g @openai/codex opencode-ai
+RUN python3 -m pip install --break-system-packages desloppify && \
+    npm install -g opencode-ai
 
 ENV PATH="/root/.local/bin:${PATH}"

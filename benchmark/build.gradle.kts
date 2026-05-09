@@ -58,6 +58,30 @@ benchmark {
         register("jvm")
         register("linuxX64")
     }
+
+    configurations {
+        register("poiPerformance") {
+            include("PoiPerformanceBenchmark")
+            iterations = 3
+            warmups = 1
+            params["poiMode"] = mutableListOf("with-pois", "no-pois")
+        }
+    }
+}
+
+val routingTestSegmentsBase =
+    rootProject.layout.buildDirectory.dir("routing-test/tuebingen-regbez")
+
+afterEvaluate {
+    tasks.named("jvmPoiPerformanceBenchmark") {
+        dependsOn(
+            ":generator:generateRoutingTestRd5WithPois",
+            ":generator:generateRoutingTestRd5NoPois",
+        )
+        if (this is JavaExec) {
+            systemProperty("beerouter.routingTestSegmentsBase", routingTestSegmentsBase.get().asFile.absolutePath)
+        }
+    }
 }
 
 tasks.register<JavaExec>("singleRoutePerformance") {

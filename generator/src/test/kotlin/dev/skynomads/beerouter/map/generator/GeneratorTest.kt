@@ -42,8 +42,6 @@ public class GeneratorTest {
 
     @Test
     public fun generatorTest() {
-        System.setProperty("avoidMapPolling", "true")
-
         val mapFile = testResourceFile("/dreieich.pbf")
         val workingDir = requireNotNull(mapFile.parentFile)
         val profileDir = findProfileDir()
@@ -60,8 +58,6 @@ public class GeneratorTest {
 
     @Test
     public fun rd5MatchesUpstreamBrouter() {
-        System.setProperty("avoidMapPolling", "true")
-
         val mapFile = testResourceFile("/dreieich.pbf")
         val workingDir = requireNotNull(mapFile.parentFile)
         val profileDir = findProfileDir()
@@ -85,8 +81,6 @@ public class GeneratorTest {
 
     @Test
     public fun poiFinderReturnsConfiguredToilets() {
-        System.setProperty("avoidMapPolling", "true")
-
         val mapFile = testResourceFile("/dreieich.pbf")
         val osmFile = testResourceFile("/dreieich.osm.gz")
         val workingDir = requireNotNull(mapFile.parentFile)
@@ -129,8 +123,6 @@ public class GeneratorTest {
 
     @Test
     public fun poiFinderDeduplicatesAcrossRd5Boundaries() {
-        System.setProperty("avoidMapPolling", "true")
-
         val mapFile = testResourceFile("/dreieich.pbf")
         val osmFile = testResourceFile("/dreieich.osm.gz")
         val workingDir = requireNotNull(mapFile.parentFile)
@@ -182,8 +174,6 @@ public class GeneratorTest {
 
     @Test
     public fun poiFinderRejectsLookupMismatch() {
-        System.setProperty("avoidMapPolling", "true")
-
         val mapFile = testResourceFile("/dreieich.pbf")
         val workingDir = requireNotNull(mapFile.parentFile)
         val profileDir = findProfileDir()
