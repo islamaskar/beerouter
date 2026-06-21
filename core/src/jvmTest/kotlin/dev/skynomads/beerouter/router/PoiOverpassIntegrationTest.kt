@@ -20,7 +20,7 @@ import kotlin.test.assertEquals
 
 class PoiOverpassIntegrationTest {
     private companion object {
-        const val EXPECTED_TOILET_COUNT = 25
+        const val EXPECTED_TOILET_COUNT = 10
     }
 
     @BeforeTest
@@ -43,13 +43,15 @@ class PoiOverpassIntegrationTest {
             mapSource = DefaultMapSource(segmentDir),
             lookupContent = lookupContent,
         )
+        // Filter matches the pois.conf rule: amenity=toilets[access=yes]
+        // (only access=yes toilets are indexed in the rd5)
         val beerouterCount = finder.find(
             PoiQuery(
                 minLon = Position(bbox.west, bbox.south).longitude,
                 minLat = Position(bbox.west, bbox.south).latitude,
                 maxLon = Position(bbox.east, bbox.north).longitude,
                 maxLat = Position(bbox.east, bbox.north).latitude,
-                requiredTags = mapOf("amenity" to setOf("toilets")),
+                requiredTags = mapOf("amenity" to setOf("toilets"), "access" to setOf("yes")),
             ),
         ).size
         finder.close()
@@ -75,7 +77,7 @@ class PoiOverpassIntegrationTest {
     private fun fetchOverpassToiletCount(bbox: BoundingBox): Int {
         val query = """
             [out:json][timeout:25];
-            node["amenity"="toilets"](${bbox.south},${bbox.west},${bbox.north},${bbox.east});
+            node["amenity"="toilets"]["access"="yes"](${bbox.south},${bbox.west},${bbox.north},${bbox.east});
             out ids;
         """.trimIndent()
         val requestBody = "data=" + URLEncoder.encode(query, StandardCharsets.UTF_8)

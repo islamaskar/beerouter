@@ -64,7 +64,9 @@ internal object GeneratedLookups {
                 val mergedValues = (parsed.values + missingValues).distinct()
                 lines[lineIndex] = "${parsed.key};${parsed.histogram} ${mergedValues.joinToString(" ")}"
             } else {
-                lines.add(nodeContextEnd, "$key;0000000000 ${missingValues.joinToString(" ")}")
+                for (value in missingValues) {
+                    lines.add(nodeContextEnd, "$key;0000000000 $value")
+                }
             }
         }
 

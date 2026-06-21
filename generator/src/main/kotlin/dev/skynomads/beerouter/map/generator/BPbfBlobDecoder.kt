@@ -85,7 +85,7 @@ public class BPbfBlobDecoder(
                 node.id,
                 tags,
                 fieldDecoder.decodeLatitude(node.lat),
-                fieldDecoder.decodeLatitude(node.lon)
+                fieldDecoder.decodeLongitude(node.lon),
             )
         }
     }
