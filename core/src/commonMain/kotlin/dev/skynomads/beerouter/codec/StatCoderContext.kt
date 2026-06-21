@@ -29,6 +29,7 @@ public class StatCoderContext(ab: ByteArray) : BitCoderContext(ab) {
      * considered noisy
      *
      * @see .decodeNoisyNumber
+     * @throws IllegalArgumentException if value is negative
      */
     public fun encodeNoisyNumber(value: Int, noisybits: Int) {
         var value = value
@@ -46,6 +47,7 @@ public class StatCoderContext(ab: ByteArray) : BitCoderContext(ab) {
      * considered noisy
      *
      * @see .encodeNoisyNumber
+     * @throws IllegalStateException if decoding fails due to buffer underflow
      */
     public fun decodeNoisyNumber(noisybits: Int): Int {
         val value = decodeBits(noisybits)
@@ -57,6 +59,7 @@ public class StatCoderContext(ab: ByteArray) : BitCoderContext(ab) {
      * noisy
      *
      * @see .decodeNoisyDiff
+     * @throws IllegalStateException if encoding fails due to buffer overflow
      */
     public fun encodeNoisyDiff(value: Int, noisybits: Int) {
         var value = value
@@ -77,6 +80,7 @@ public class StatCoderContext(ab: ByteArray) : BitCoderContext(ab) {
      * noisy
      *
      * @see .encodeNoisyDiff
+     * @throws IllegalStateException if decoding fails due to buffer underflow
      */
     public fun decodeNoisyDiff(noisybits: Int): Int {
         var value = 0
@@ -97,6 +101,7 @@ public class StatCoderContext(ab: ByteArray) : BitCoderContext(ab) {
      * predicted value
      *
      * @see .decodePredictedValue
+     * @throws IllegalArgumentException if internal encoding produces invalid values
      */
     public fun encodePredictedValue(value: Int, predictor: Int) {
         var p = if (predictor < 0) -predictor else predictor
@@ -114,6 +119,7 @@ public class StatCoderContext(ab: ByteArray) : BitCoderContext(ab) {
      * predicted value
      *
      * @see .encodePredictedValue
+     * @throws IllegalStateException if decoding fails due to buffer underflow
      */
     public fun decodePredictedValue(predictor: Int): Int {
         var p = if (predictor < 0) -predictor else predictor
@@ -127,6 +133,8 @@ public class StatCoderContext(ab: ByteArray) : BitCoderContext(ab) {
 
     /**
      * encode an integer-array making use of the fact that it is sorted.
+     *
+     * @throws IllegalStateException if encoding fails due to buffer overflow
      */
     public fun encodeSortedArray(values: IntArray, offset: Int, subsize: Int, nextbit: Int, mask: Int) {
         var nextbit = nextbit
@@ -165,6 +173,11 @@ public class StatCoderContext(ab: ByteArray) : BitCoderContext(ab) {
         }
     }
 
+    /**
+     * Decode an integer-array making use of the fact that it is sorted.
+     *
+     * @throws IllegalStateException if decoding fails due to buffer underflow
+     */
     public fun decodeSortedArray(
         values: IntArray,
         offset: Int,

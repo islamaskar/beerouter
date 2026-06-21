@@ -21,8 +21,10 @@ import dev.skynomads.beerouter.map.OsmNodesMap
 import dev.skynomads.beerouter.map.OsmPos
 import dev.skynomads.beerouter.router.OsmTrack.OsmPathElementHolder
 import dev.skynomads.beerouter.util.SortedHeap
+import dev.skynomads.beerouter.router.exceptions.RoutingException
 import kotlinx.coroutines.currentCoroutineContext
 import kotlinx.coroutines.ensureActive
+import kotlinx.io.IOException
 import kotlinx.io.buffered
 import kotlin.math.abs
 import kotlin.math.max
@@ -106,6 +108,16 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
         // Hot path: keep routing output silent by default.
     }
 
+    /**
+     * Performs routing for the given waypoints.
+     *
+     * @param waypoints list of waypoints to route through
+     * @return the calculated track, or null if only info is requested
+     * @throws RoutingException if no route can be found for the requested waypoints
+     * @throws RoutingIslandException if the routing graph is disconnected (routing island)
+     * @throws IllegalStateException if the routing engine encounters an invalid internal state
+     * @throws IllegalArgumentException if a waypoint cannot be matched to the map data
+     */
     public suspend fun doRouting(waypoints: List<OsmNodeNamed>): OsmTrack? {
         linksProcessed = 0
         val waypoints = waypoints.toMutableList()
@@ -163,6 +175,16 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
         }
     }
 
+    /**
+     * Retrieves routing information for the given waypoints without computing a full track.
+     *
+     * @param waypoints list of waypoints to query info for
+     * @return track with info, or null if unavailable
+     * @throws RoutingException if routing fails
+     * @throws RoutingIslandException if the routing graph is disconnected (routing island)
+     * @throws IllegalArgumentException if a waypoint cannot be matched to the map data
+     * @throws IllegalStateException if the routing engine encounters an invalid internal state
+     */
     public suspend fun doGetInfo(waypoints: List<OsmNodeNamed>): OsmTrack? {
         routingContext.freeNoWays()
 
@@ -249,6 +271,16 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
         return t
     }
 
+    /**
+     * Performs a round-trip routing for the given waypoints.
+     *
+     * @param waypoints list of waypoints to route through
+     * @return the calculated round-trip track
+     * @throws RoutingException if no route can be found for the requested waypoints
+     * @throws RoutingIslandException if the routing graph is disconnected (routing island)
+     * @throws IllegalArgumentException if a waypoint cannot be matched to the map data
+     * @throws IllegalStateException if the routing engine encounters an invalid internal state
+     */
     public suspend fun doRoundTrip(waypoints: List<OsmNodeNamed>): OsmTrack? {
         val waypoints = waypoints.toMutableList()
         routingContext.global.useDynamicDistance = true
@@ -411,8 +443,8 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
                     sinkFactory().buffered().use { sink ->
                         areareader.writeAreaInfo(sink, wpt1, ais)
                     }
-                } catch (e: Exception) {
-                    // Silently ignore exceptions
+                } catch (_: IOException) {
+                    // Silently ignore I/O errors writing area info
                 }
             }
             rc.ai = null
@@ -1452,19 +1484,19 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
             routingContext.global.pass2coefficient
         )
         var isDirty = false
-        var dirtyMessage: IllegalArgumentException? = null
+        var dirtyMessage: RoutingException? = null
 
         if (nearbyTrack != null) {
             airDistanceCostFactor = 0.0
             try {
                 track = findTrack(startWp, endWp, nearbyTrack, refTrack, true)
-            } catch (iae: IllegalArgumentException) {
+            } catch (re: RoutingException) {
                 // fast partial recalcs: if that timed out, but we had a match,
                 // build the concatenation from the partial and the nearby track
                 if (matchPath != null) {
                     track = mergeTrack(matchPath!!, nearbyTrack)
                     isDirty = true
-                    dirtyMessage = iae
+                    dirtyMessage = re
                     log("using fast partial recalc")
                 }
             }
@@ -1491,7 +1523,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
                 if (t != null) {
                     track = t
                 } else {
-                    throw IllegalArgumentException("no track found at pass=$cfi")
+                    throw RoutingException("no track found at pass=$cfi")
                 }
             }
         }
@@ -1815,7 +1847,7 @@ public class RoutingEngine(private val routingContext: RoutingContext) {
                             when (borderLoadDeferral.onCleanupStillOverBudget(maxTotalCost, fastPartialRecalc)) {
                                 BorderLoadDeferralPolicy.OverBudgetAction.DEFER_BORDER_LOADS -> Unit
                                 BorderLoadDeferralPolicy.OverBudgetAction.MEMORY_LIMIT_REACHED -> {
-                                    throw IllegalArgumentException("memory limit reached")
+                                    throw RoutingException("memory limit reached")
                                 }
                             }
                         }

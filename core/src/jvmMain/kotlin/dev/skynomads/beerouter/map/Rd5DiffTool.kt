@@ -10,6 +10,7 @@ import dev.skynomads.beerouter.codec.MicroCache
 import dev.skynomads.beerouter.codec.MicroCache2
 import dev.skynomads.beerouter.codec.StatCoderContext
 import dev.skynomads.beerouter.util.Crc32.crc
+import dev.skynomads.beerouter.router.exceptions.DataCorruptionException
 import kotlinx.io.EOFException
 import kotlinx.io.Sink
 import kotlinx.io.Source
@@ -312,7 +313,7 @@ public class Rd5DiffTool {
                                     }
                                     val newTargetSize = ab1?.size ?: 0
                                     if (targetSize != newTargetSize) {
-                                        throw RuntimeException("size mismatch at $subFileIdx/$tileIdx $targetSize!=$newTargetSize")
+                                        throw DataCorruptionException("size mismatch at $subFileIdx/$tileIdx $targetSize!=$newTargetSize")
                                     }
                                     continue
                                 }
@@ -324,7 +325,7 @@ public class Rd5DiffTool {
 
                                 if (mc.size == 0) {
                                     if (targetSize != 0) {
-                                        throw RuntimeException("size mismatch at $subFileIdx/$tileIdx $targetSize>0")
+                                        throw DataCorruptionException("size mismatch at $subFileIdx/$tileIdx $targetSize>0")
                                     }
                                     continue
                                 }
@@ -333,7 +334,7 @@ public class Rd5DiffTool {
                                 sink.write(abBuf1, 0, len)
                                 sink.writeInt(crc(abBuf1, 0, len) xor 2)
                                 if (targetSize != len + 4) {
-                                    throw RuntimeException("size mismatch at $subFileIdx/$tileIdx $targetSize<>${len + 4}")
+                                    throw DataCorruptionException("size mismatch at $subFileIdx/$tileIdx $targetSize<>${len + 4}")
                                 }
                             }
                             mcIn.finish()

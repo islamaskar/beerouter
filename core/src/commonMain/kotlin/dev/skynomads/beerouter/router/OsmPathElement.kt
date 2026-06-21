@@ -63,6 +63,9 @@ public class OsmPathElement(
         return _idFromPos == e._idFromPos
     }
 
+    /**
+     * @throws IOException if an I/O error occurs while writing to the sink
+     */
     public fun writeToStream(sink: Sink) {
         sink.writeInt(position.latitude)
         sink.writeInt(position.longitude)
@@ -71,6 +74,10 @@ public class OsmPathElement(
     }
 
     public companion object {
+        /**
+         * @throws IOException if an I/O error occurs while reading from the source
+         * @throws IllegalArgumentException if the stream contains invalid data
+         */
         public fun readFromStream(source: Source): OsmPathElement {
             val lat = source.readInt()
             val lon = source.readInt()

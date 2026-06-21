@@ -1,5 +1,7 @@
 package dev.skynomads.beerouter.expressions
 
+import dev.skynomads.beerouter.router.exceptions.ExpressionParseException
+
 internal class BExpression {
     private var typ: ExprType = ExprType.NUMBER
     private var op1: BExpression? = null
@@ -119,6 +121,15 @@ internal class BExpression {
 
     companion object {
         // Parse the expression and all subexpression
+        /**
+         * Parse the expression and all subexpressions.
+         *
+         * @param ctx the expression context
+         * @param level the nesting level
+         * @return the parsed expression, or null if nothing to parse
+         * @throws ExpressionParseException if parsing fails or unexpected end of file is encountered
+         * @throws IllegalArgumentException if expression syntax is invalid
+         */
         @Throws(Exception::class)
         fun parse(ctx: BExpressionContext, level: Int): BExpression? {
             return parse(ctx, level, null)
@@ -186,7 +197,7 @@ internal class BExpression {
 
             if (operator == null) {
                 if (level == 0) return null
-                else throw IllegalArgumentException("unexpected end of file")
+                else throw ExpressionParseException("unexpected end of file")
             }
 
             if (level == 0) {
@@ -288,7 +299,7 @@ internal class BExpression {
                                 exp.numberValue = operator.toFloat()
                                 exp.typ = ExprType.NUMBER
                             } catch (nfe: NumberFormatException) {
-                                throw IllegalArgumentException("unknown expression: $operator")
+                                throw IllegalArgumentException("unknown expression: $operator", nfe)
                             }
                         }
                     }

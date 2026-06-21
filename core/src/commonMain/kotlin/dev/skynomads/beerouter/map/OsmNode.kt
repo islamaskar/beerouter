@@ -134,8 +134,11 @@ public open class OsmNode : OsmLink, OsmPos {
         return "n_${position.longitude - 180000000}_${position.latitude - 90000000}"
     }
 
+    /**
+     * @throws IllegalStateException if the cache version is not supported
+     */
     public fun parseNodeTags(mc: MicroCache, unifier: IByteArrayUnifier): ByteArray? {
-        if (mc !is MicroCache2) throw IllegalArgumentException("unknown cache version: " + mc::class.simpleName)
+        if (mc !is MicroCache2) throw IllegalStateException("unknown cache version: " + mc::class.simpleName)
 
         // skip turn restrictions
         while (mc.readBoolean()) {
@@ -153,10 +156,13 @@ public open class OsmNode : OsmLink, OsmPos {
         return nodeDescription
     }
 
+    /**
+     * @throws IllegalStateException if the cache version is not supported
+     */
     public fun parseNodeBody(mc: MicroCache, hollowNodes: OsmNodesMap, expCtxWay: IByteArrayUnifier) {
         if (mc is MicroCache2) {
             parseNodeBody2(mc, hollowNodes, expCtxWay)
-        } else throw IllegalArgumentException("unknown cache version: " + mc::class.simpleName)
+        } else throw IllegalStateException("unknown cache version: " + mc::class.simpleName)
     }
 
     public fun parseNodeBody2(mc: MicroCache2, hollowNodes: OsmNodesMap, expCtxWay: IByteArrayUnifier) {
@@ -319,7 +325,7 @@ public open class OsmNode : OsmLink, OsmPos {
                 }
                 l = nl
             } else {
-                throw IllegalArgumentException("unlinkLink: unknown source")
+                throw IllegalStateException("unlinkLink: unknown source")
             }
         }
     }

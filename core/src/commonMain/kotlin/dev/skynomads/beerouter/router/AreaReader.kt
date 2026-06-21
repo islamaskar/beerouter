@@ -14,12 +14,16 @@ import dev.skynomads.beerouter.map.OsmFile
 import dev.skynomads.beerouter.map.OsmNode
 import dev.skynomads.beerouter.map.OsmNodesMap
 import dev.skynomads.beerouter.map.PhysicalFile
+import kotlinx.io.IOException
 import kotlinx.io.Sink
 import kotlinx.io.Source
 import kotlin.math.abs
 import kotlin.math.roundToInt
 
 public class AreaReader {
+    /**
+     * @throws IOException if an I/O error occurs while reading map data
+     */
     public fun getDirectAllData(
         rc: RoutingContext,
         wp: OsmNodeNamed,
@@ -152,8 +156,9 @@ public class AreaReader {
                     used++
                 }
             }
-        } catch (e: Exception) {
-            println("AreaReader error after used=$used / count=$count: ${e.message}")
+        } catch (e: IOException) {
+            // I/O failure while scanning area info is non-fatal; clear results and continue.
+            println("AreaReader I/O error after used=$used / count=$count: ${e.message}")
             ais.clear()
         } finally {
             runCatching { currentPhysicalFile?.close() }
@@ -161,6 +166,9 @@ public class AreaReader {
         }
     }
 
+    /**
+     * @throws IOException if an I/O error occurs while reading map data
+     */
     public fun getDirectData(
         pf: PhysicalFile,
         dataBuffers: DataBuffers,
@@ -242,7 +250,7 @@ public class AreaReader {
                 }
                 return true
             }
-        } catch (e: Exception) {
+        } catch (e: IOException) {
             println("AreaReader: ${e.message}")
         }
         return false
@@ -267,6 +275,9 @@ public class AreaReader {
                 searchRect.isWithin(end.longitude.toLong(), end.latitude.toLong())
     }
 
+    /**
+     * @throws IOException if an I/O error occurs while writing to the sink
+     */
     public fun writeAreaInfo(sink: Sink, wp: MatchedWaypoint, ais: MutableList<AreaInfo>) {
         wp.writeToStream(sink)
         for (ai in ais) {
@@ -300,7 +311,7 @@ public class AreaReader {
                 ai.elev50 = source.readInt()
                 ais.add(ai)
             }
-        } catch (_: Exception) {
+        } catch (_: IOException) {
             ais.clear()
         }
     }

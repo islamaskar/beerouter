@@ -16,6 +16,9 @@ public class GeometryDecoder {
     private var lastReverse = false
     private var lastGeometry: ByteArray? = null
 
+    /**
+     * @throws IllegalArgumentException if [sourceNode] is null and [reverseLink] is false
+     */
     public fun decodeGeometry(
         geometry: ByteArray,
         sourceNode: OsmNode?,

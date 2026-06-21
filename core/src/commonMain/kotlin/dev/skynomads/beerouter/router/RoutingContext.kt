@@ -1,8 +1,3 @@
-/**
- * Container for routig configs
- *
- * @author ab
- */
 package dev.skynomads.beerouter.router
 
 import dev.skynomads.beerouter.expressions.BExpressionContext
@@ -24,6 +19,11 @@ import kotlin.math.max
 import kotlin.math.roundToInt
 import kotlin.math.sqrt
 
+/**
+ * Container for routing configs.
+ *
+ * @author ab
+ */
 public class RoutingContext(
     private val profileContent: String,
     private val lookupContent: String,
@@ -281,6 +281,9 @@ public class RoutingContext(
         nogopoints = nogos
     }
 
+    /**
+     * @throws IllegalArgumentException if a matched waypoint is inside a nogo area in an invalid configuration
+     */
     public fun checkMatchedWaypointAgainstNogos(matchedWaypoints: MutableList<MatchedWaypoint>) {
         if (nogopoints.isEmpty()) return
         val theSize = matchedWaypoints.size
@@ -337,6 +340,9 @@ public class RoutingContext(
         }
     }
 
+    /**
+     * @throws IllegalArgumentException if a waypoint is inside a nogo area in an invalid configuration
+     */
     public fun allInOneNogo(waypoints: MutableList<OsmNode>): Boolean {
         if (nogopoints.isEmpty()) return false
         var allInTotal = false
@@ -377,10 +383,16 @@ public class RoutingContext(
             return cs
         }
 
+    /**
+     * @throws IllegalArgumentException if wp is null
+     */
     public fun setWaypoint(wp: OsmNodeNamed?, endpoint: Boolean) {
         setWaypoint(wp, null, endpoint)
     }
 
+    /**
+     * @throws IllegalArgumentException if wp is null
+     */
     public fun setWaypoint(wp: OsmNodeNamed?, pendingEndpoint: OsmNodeNamed?, endpoint: Boolean) {
         val waypoint = requireNotNull(wp)
         keepnogopoints = nogopoints
@@ -397,7 +409,7 @@ public class RoutingContext(
             when (normalizeModelName(className)) {
                 "StdModel" -> StdModel()
                 "KinematicModel" -> KinematicModel()
-                else -> throw RuntimeException("Cannot create path-model: unsupported model '$className'")
+                else -> throw IllegalArgumentException("Cannot create path-model: unsupported model '$className'")
             }
         }
         model.init(way, node, keyValues)
@@ -456,6 +468,9 @@ public class RoutingContext(
     public fun distanceBetween(start: Position, end: Position): Int =
         distanceBetween(start.longitude, start.latitude, end.longitude, end.latitude)
 
+    /**
+     * @throws IllegalStateException if [nogopoints] contains an invalid OsmNogoPolygon
+     */
     public fun distanceBetween(startLon: Int, startLat: Int, endLon: Int, endLat: Int): Int {
         var lon1 = startLon
         var lat1 = startLat
@@ -570,18 +585,27 @@ public class RoutingContext(
         return max(1.0, d.roundToInt().toDouble()).toInt()
     }
 
+    /**
+     * @throws IllegalStateException if the path model is in an invalid state
+     */
     public fun createPrePath(origin: OsmPath, link: OsmLink): OsmPrePath? {
         val p = pm.createPrePath()
         p?.init(origin, link, this)
         return p
     }
 
+    /**
+     * @throws IllegalStateException if the path model is in an invalid state
+     */
     public fun createPath(link: OsmLink): OsmPath {
         val p = pm.createPath()
         p.init(link)
         return p
     }
 
+    /**
+     * @throws IllegalStateException if the path model is in an invalid state
+     */
     public fun createPath(
         origin: OsmPath,
         link: OsmLink,
@@ -690,7 +714,7 @@ public class RoutingContext(
                 if (s.length > 4) {
                     try {
                         ir = s.substring(4).toInt()
-                    } catch (e: Exception) { /* ignore */
+                    } catch (_: NumberFormatException) { /* ignore */
                     }
                 }
                 // Radius of the nogo point in meters

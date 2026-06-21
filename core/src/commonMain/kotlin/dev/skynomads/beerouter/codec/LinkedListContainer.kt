@@ -29,6 +29,7 @@ public class LinkedListContainer(nlists: Int, defaultbuffer: IntArray?) {
      *
      * @param listNr the list to add the data to
      * @param data   the data value
+     * @throws IndexOutOfBoundsException if listNr is out of bounds
      */
     public fun addDataElement(listNr: Int, data: Int) {
         if (size + 2 > ia.size) {

@@ -89,6 +89,9 @@ public class OsmFile(
         return microCaches!![subIdx]
     }
 
+    /**
+     * @throws IOException if an I/O error occurs or the data is corrupt
+     */
     public fun createMicroCache(
         position: Position,
         dataBuffers: DataBuffers,
@@ -97,6 +100,9 @@ public class OsmFile(
         hollowNodes: OsmNodesMap?
     ): MicroCache = createMicroCache(position.longitude, position.latitude, dataBuffers, wayValidator, waypointMatcher, hollowNodes)
 
+    /**
+     * @throws IOException if an I/O error occurs or the data is corrupt
+     */
     public fun createMicroCache(
         lon: Int,
         lat: Int,
@@ -119,6 +125,10 @@ public class OsmFile(
         return if (idx == -1) indexsize else posIdx[idx]
     }
 
+    /**
+     * @throws IllegalArgumentException if this file has no data
+     * @throws IOException if an I/O error occurs while reading the file
+     */
     public fun getDataInputForSubIdx(subIdx: Int, iobuffer: ByteArray): Int {
         val startPos = getPosIdx(subIdx - 1)
         val endPos = getPosIdx(subIdx)
@@ -133,6 +143,9 @@ public class OsmFile(
         return size
     }
 
+    /**
+     * @throws IOException if an I/O error occurs or the data is corrupt
+     */
     public fun createMicroCacheForCell(
         lonIdx: Int, latIdx: Int, dataBuffers: DataBuffers, wayValidator: TagValueValidator?,
         waypointMatcher: WaypointMatcher?, hollowNodes: OsmNodesMap?

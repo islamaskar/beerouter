@@ -43,12 +43,21 @@ public open class MicroCache protected constructor(ab: ByteArray = ByteArray(0))
         while (p2size > size) p2size = p2size shr 1
     }
 
+    /**
+     * Finish a node and add it to the cache.
+     *
+     * @param id the node id
+     * @throws UnsupportedOperationException if the id cannot be shrunk (base implementation)
+     */
     public fun finishNode(id: Long) {
         fapos[size] = aboffset
         faid[size] = shrinkId(id)
         size++
     }
 
+    /**
+     * Discard the current node by resetting the offset.
+     */
     public fun discardNode() {
         aboffset = startPos(size)
     }
@@ -71,6 +80,7 @@ public open class MicroCache protected constructor(ab: ByteArray = ByteArray(0))
      * = already consumed) the RunException should be re-enabled
      *
      * @return true if id was found
+     * @throws UnsupportedOperationException if id cannot be shrunk (base implementation)
      */
     public fun getAndClear(id64: Long): Boolean {
         if (size == 0) {
@@ -108,6 +118,12 @@ public open class MicroCache protected constructor(ab: ByteArray = ByteArray(0))
         return if (n > 0) fapos[n - 1] and 0x7fffffff else 0
     }
 
+    /**
+     * Collect garbage from the cache, removing deleted nodes.
+     *
+     * @param threshold the maximum number of deleted nodes allowed before collection
+     * @return the number of bytes deleted
+     */
     public fun collect(threshold: Int): Int {
         if (delcount <= threshold) {
             return 0
@@ -148,6 +164,9 @@ public open class MicroCache protected constructor(ab: ByteArray = ByteArray(0))
         return deleted
     }
 
+    /**
+     * Un-ghost the cache, clearing deleted flags.
+     */
     public fun unGhost() {
         ghost = false
         delcount = 0
@@ -159,6 +178,7 @@ public open class MicroCache protected constructor(ab: ByteArray = ByteArray(0))
 
     /**
      * @return the 64-bit global id for the given cache-position
+     * @throws UnsupportedOperationException if the id cannot be expanded (base implementation)
      */
     public fun getIdForIndex(i: Int): Long {
         val id32 = faid[i]
@@ -169,25 +189,28 @@ public open class MicroCache protected constructor(ab: ByteArray = ByteArray(0))
      * expand a 32-bit micro-cache-internal id into a 64-bit (lon|lat) global-id
      *
      * @see .shrinkId
+     * @throws UnsupportedOperationException base implementation always throws
      */
     public open fun expandId(id32: Int): Long {
-        throw IllegalArgumentException("expandId for empty cache")
+        throw UnsupportedOperationException("expandId for empty cache")
     }
 
     /**
      * shrink a 64-bit (lon|lat) global-id into a a 32-bit micro-cache-internal id
      *
      * @see .expandId
+     * @throws UnsupportedOperationException base implementation always throws
      */
     public open fun shrinkId(id64: Long): Int {
-        throw IllegalArgumentException("shrinkId for empty cache")
+        throw UnsupportedOperationException("shrinkId for empty cache")
     }
 
     /**
      * @return true if the given lon/lat position is internal for that micro-cache
+     * @throws UnsupportedOperationException base implementation always throws
      */
     public open fun isInternal(position: Position): Boolean {
-        throw IllegalArgumentException("isInternal for empty cache")
+        throw UnsupportedOperationException("isInternal for empty cache")
     }
 
     /**
@@ -195,15 +218,17 @@ public open class MicroCache protected constructor(ab: ByteArray = ByteArray(0))
      *
      * @param buffer byte array to encode into (considered big enough)
      * @return the size of the encoded data
+     * @throws UnsupportedOperationException base implementation always throws
      */
     public open fun encodeMicroCache(buffer: ByteArray): Int {
-        throw IllegalArgumentException("encodeMicroCache for empty cache")
+        throw UnsupportedOperationException("encodeMicroCache for empty cache")
     }
 
     /**
      * Compare the content of this microcache to another
      *
      * @return null if equals, else a diff-report
+     * @throws IndexOutOfBoundsException if internal arrays are accessed out of bounds
      */
     public fun compareWith(mc: MicroCache): String? {
         val msg = _compareWith(mc)
@@ -253,6 +278,12 @@ public open class MicroCache protected constructor(ab: ByteArray = ByteArray(0))
         return null
     }
 
+    /**
+     * Build a delta between two micro-caches.
+     *
+     * @param mc1 the first micro-cache
+     * @param mc2 the second micro-cache
+     */
     public fun buildDelta(mc1: MicroCache, mc2: MicroCache) {
         var idx1 = 0
         var idx2 = 0
@@ -294,6 +325,13 @@ public open class MicroCache protected constructor(ab: ByteArray = ByteArray(0))
         }
     }
 
+    /**
+     * Add a delta to this micro-cache.
+     *
+     * @param mc1 the base micro-cache
+     * @param mc2 the delta micro-cache
+     * @param keepEmptyNodes whether to keep empty nodes
+     */
     public fun addDelta(mc1: MicroCache, mc2: MicroCache, keepEmptyNodes: Boolean) {
         var idx1 = 0
         var idx2 = 0
@@ -330,6 +368,11 @@ public open class MicroCache protected constructor(ab: ByteArray = ByteArray(0))
             emptyNonVirgin.virgin = false
         }
 
+        /**
+         * Returns an empty micro-cache.
+         *
+         * @return an empty micro-cache
+         */
         public fun emptyCache(): MicroCache {
             return MicroCache() // TODO: singleton?
         }

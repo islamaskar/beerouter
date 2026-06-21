@@ -5,6 +5,7 @@ import dev.skynomads.beerouter.geo.latitudeFromId
 import dev.skynomads.beerouter.geo.longitudeFromId
 import dev.skynomads.beerouter.util.ByteDataReader
 import dev.skynomads.beerouter.util.IByteArrayUnifier
+import dev.skynomads.beerouter.router.exceptions.CacheStateException
 
 /**
  * MicroCache2 is the new format that uses statistical encoding and
@@ -33,6 +34,14 @@ public class MicroCache2 : MicroCache {
         latBase = latIdx * cellsize
     }
 
+    /**
+     * Read a unified byte array from the cache.
+     *
+     * @param len the length to read
+     * @param u the byte array unifier
+     * @return the unified byte array, or null if not unified
+     * @throws IndexOutOfBoundsException if reading beyond the buffer bounds
+     */
     public fun readUnified(len: Int, u: IByteArrayUnifier): ByteArray? {
         val b = u.unify(ab, aboffset, len)
         aboffset += len
@@ -317,6 +326,13 @@ public class MicroCache2 : MicroCache {
                 position.latitude < latBase + cellsize
     }
 
+    /**
+     * Encodes this micro-cache into the given buffer.
+     *
+     * @param buffer byte array to encode into
+     * @return the size of the encoded data
+     * @throws IllegalStateException if a self-referencing node is encountered
+     */
     public override fun encodeMicroCache(buffer: ByteArray): Int {
         val idMap = mutableMapOf<Long, Int>()
         for (n in 0..<size) { // loop over nodes
@@ -453,7 +469,7 @@ public class MicroCache2 : MicroCache {
                     if (isInternal) {
                         val nodeIdx = idx
                         if (dodebug) println("*** target nodeIdx=$nodeIdx")
-                        if (nodeIdx == n) throw RuntimeException("ups: self ref?")
+                        if (nodeIdx == n) throw CacheStateException("self reference in node encoding")
                         nodeIdxDiff.encodeSignedValue(nodeIdx - n)
                         if (dostats) bc.assignBits("nodeIdx")
                     } else {

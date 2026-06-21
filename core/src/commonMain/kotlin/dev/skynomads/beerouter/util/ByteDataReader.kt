@@ -20,6 +20,9 @@ public open class ByteDataReader(
     }
 
 
+    /**
+     * @throws IndexOutOfBoundsException if fewer than 4 bytes remain
+     */
     public fun readInt(): Int {
         val i3 = ab[aboffset++].toInt() and 0xff
         val i2 = ab[aboffset++].toInt() and 0xff
@@ -28,6 +31,9 @@ public open class ByteDataReader(
         return (i3 shl 24) + (i2 shl 16) + (i1 shl 8) + i0
     }
 
+    /**
+     * @throws IndexOutOfBoundsException if fewer than 8 bytes remain
+     */
     public fun readLong(): Long {
         val i7 = (ab[aboffset++].toInt() and 0xff).toLong()
         val i6 = (ab[aboffset++].toInt() and 0xff).toLong()
@@ -40,15 +46,24 @@ public open class ByteDataReader(
         return (i7 shl 56) + (i6 shl 48) + (i5 shl 40) + (i4 shl 32) + (i3 shl 24) + (i2 shl 16) + (i1 shl 8) + i0
     }
 
+    /**
+     * @throws IndexOutOfBoundsException if no bytes remain
+     */
     public fun readBoolean(): Boolean {
         val i0 = ab[aboffset++].toInt() and 0xff
         return i0 != 0
     }
 
+    /**
+     * @throws IndexOutOfBoundsException if no bytes remain
+     */
     public fun readByte(): Byte {
         return (ab[aboffset++].toInt() and 0xff).toByte()
     }
 
+    /**
+     * @throws IndexOutOfBoundsException if fewer than 2 bytes remain
+     */
     public fun readShort(): Short {
         val i1 = ab[aboffset++].toInt() and 0xff
         val i0 = ab[aboffset++].toInt() and 0xff
@@ -60,12 +75,16 @@ public open class ByteDataReader(
          * Read a size value and return a pointer to the end of a data section of that size
          *
          * @return the pointer to the first byte after that section
+         * @throws IndexOutOfBoundsException if reading the size exceeds the buffer
          */
         get() {
             val size = readVarLengthUnsigned()
             return aboffset + size
         }
 
+    /**
+     * @throws IndexOutOfBoundsException if [endPointer] exceeds the buffer bounds
+     */
     public fun readDataUntil(endPointer: Int): ByteArray? {
         val size = endPointer - aboffset
         if (size == 0) {
@@ -76,6 +95,9 @@ public open class ByteDataReader(
         return data
     }
 
+    /**
+     * @throws IndexOutOfBoundsException if reading the length or payload exceeds the buffer
+     */
     public fun readVarBytes(): ByteArray? {
         val len = readVarLengthUnsigned()
         if (len == 0) {
@@ -86,11 +108,17 @@ public open class ByteDataReader(
         return bytes
     }
 
+    /**
+     * @throws IndexOutOfBoundsException if reading the var-length exceeds the buffer
+     */
     public fun readVarLengthSigned(): Int {
         val v = readVarLengthUnsigned()
         return if ((v and 1) == 0) v shr 1 else -(v shr 1)
     }
 
+    /**
+     * @throws IndexOutOfBoundsException if reading the var-length exceeds the buffer
+     */
     public fun readVarLengthUnsigned(): Int {
         var b: Byte
         var v = (ab[aboffset++].also { b = it }).toInt() and 0x7f
@@ -105,6 +133,9 @@ public open class ByteDataReader(
         return v
     }
 
+    /**
+     * @throws IndexOutOfBoundsException if [ta] cannot be fully read from the remaining buffer
+     */
     public fun readFully(ta: ByteArray) {
         ab.copyInto(ta, 0, aboffset, aboffset + ta.size)
         aboffset += ta.size

@@ -21,6 +21,9 @@ public data class Position(
     /** Unique ID derived from coordinates. Upper 32 bits = longitude, lower 32 bits = latitude. */
     public val id: Long = computeId(longitude, latitude)
 
+    /**
+     * @throws IllegalArgumentException if [longitude] or [latitude] is NaN
+     */
     public constructor(longitude: Double, latitude: Double) : this(
         longitude = encodeCoordinate(longitude, LONGITUDE_OFFSET),
         latitude = encodeCoordinate(latitude, LATITUDE_OFFSET),
@@ -39,6 +42,9 @@ public data class Position(
         public fun computeId(longitude: Int, latitude: Int): Long =
             (longitude.toLong() shl 32) or (latitude.toLong() and 0xFFFFFFFFL)
 
+        /**
+         * @throws IllegalArgumentException if [longitude] or [latitude] is NaN
+         */
         public fun fromDegrees(longitude: Double, latitude: Double, altitude: Short = UNSET_ELEVATION): Position =
             Position(
                 longitude = encodeCoordinate(longitude, LONGITUDE_OFFSET),

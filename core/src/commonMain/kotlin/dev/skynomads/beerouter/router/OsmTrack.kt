@@ -98,6 +98,10 @@ public class OsmTrack {
         }
     }
 
+    /**
+     * @throws IllegalArgumentException if [endPoint] is null
+     * @throws IOException if an I/O error occurs while writing to the sink
+     */
     public fun writeBinary(sink: Sink) {
         requireNotNull(endPoint).writeToStream(sink)
         sink.writeInt(nodes.size)
@@ -111,6 +115,9 @@ public class OsmTrack {
         sink.writeLong(profileTimestamp)
     }
 
+    /**
+     * Adds all nodes from another track and rebuilds the node map.
+     */
     public fun addNodes(t: OsmTrack) {
         for (n in t.nodes) addNode(n)
         buildMap()
@@ -218,6 +225,9 @@ public class OsmTrack {
         // sendSpeedProfile = rc.keyValues != null && rc.keyValues.containsKey( "vmax" );
     }
 
+    /**
+     * @throws IllegalStateException if [nogopoints] contains an invalid OsmNogoPolygon
+     */
     public fun processVoiceHints(rc: RoutingContext) {
         voiceHints = VoiceHintList()
         voiceHints.setTransportMode(rc.global.carMode, rc.global.bikeMode)
@@ -345,6 +355,18 @@ public class OsmTrack {
     }
 
     public companion object {
+        /**
+         * Reads a track from a binary source.
+         *
+         * @param source the binary source to read from
+         * @param newEp the expected endpoint waypoint
+         * @param nogoChecksums the nogo checksums to validate against
+         * @param profileChecksum the profile checksum to validate against
+         * @param debugInfo optional debug info string builder
+         * @return the read track, or null if validation fails
+         * @throws IOException if an I/O error occurs while reading from the source
+         * @throws IllegalArgumentException if the endpoint waypoint is missing from the stream
+         */
         public fun readBinary(
             source: Source,
             newEp: OsmNodeNamed,

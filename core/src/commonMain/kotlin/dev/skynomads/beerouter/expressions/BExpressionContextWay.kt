@@ -81,6 +81,14 @@ public class BExpressionContextWay : BExpressionContext, TagValueValidator {
      */
     public constructor(hashSize: Int, meta: BExpressionMetaData) : super("way", hashSize, meta)
 
+    /**
+     * Determine the access type for the given tag value set.
+     *
+     * @param tagValueSet the tag value set
+     * @return the access type (0=none, 1=restricted, 2=full)
+     * @throws NullPointerException if tagValueSet is null
+     * @throws IllegalArgumentException if expression evaluation fails
+     */
     override fun accessType(tagValueSet: ByteArray?): Int {
         evaluate(false, tagValueSet!!)
         var minCostFactor = this.costfactor
@@ -94,6 +102,11 @@ public class BExpressionContextWay : BExpressionContext, TagValueValidator {
         return if (minCostFactor < 9999f) 2 else if (decodeForbidden) (if (minCostFactor < 10000f) 1 else 0) else 0
     }
 
+    /**
+     * Set whether decoding is forbidden for restricted ways.
+     *
+     * @param decodeForbidden true if decoding is forbidden
+     */
     override fun setDecodeForbidden(decodeForbidden: Boolean) {
         this.decodeForbidden = decodeForbidden
     }

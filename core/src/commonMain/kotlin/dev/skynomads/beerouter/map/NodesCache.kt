@@ -12,6 +12,7 @@ import dev.skynomads.beerouter.expressions.BExpressionContextWay
 import dev.skynomads.beerouter.geo.Position
 import dev.skynomads.beerouter.geo.latitudeFromId
 import dev.skynomads.beerouter.geo.longitudeFromId
+import dev.skynomads.beerouter.router.exceptions.DataFileNotFoundException
 
 public class NodesCache(
     private val mapSource: MapSource,
@@ -134,15 +135,27 @@ public class NodesCache(
         }
     }
 
+    /**
+     * @throws DataFileNotFoundException if an error occurs while loading the segment
+     */
     public fun loadSegmentFor(position: Position): Int = loadSegmentFor(position.longitude, position.latitude)
 
+    /**
+     * @throws DataFileNotFoundException if an error occurs while loading the segment
+     */
     public fun loadSegmentFor(lon: Int, lat: Int): Int {
         val mc = getSegmentFor(lon, lat)
         return mc?.size ?: 0
     }
 
+    /**
+     * @throws DataFileNotFoundException if an error occurs while loading the segment
+     */
     public fun getSegmentFor(position: Position): MicroCache? = getSegmentFor(position.longitude, position.latitude)
 
+    /**
+     * @throws DataFileNotFoundException if an error occurs while loading the segment
+     */
     public fun getSegmentFor(lon: Int, lat: Int): MicroCache? {
         try {
             val lonDegree = lon / 1000000
@@ -202,7 +215,7 @@ public class NodesCache(
         } catch (re: RuntimeException) {
             throw re
         } catch (e: Exception) {
-            throw RuntimeException("error reading datafile $currentFileName: $e", e)
+            throw DataFileNotFoundException("error reading datafile $currentFileName", e)
         }
     }
 
@@ -212,6 +225,7 @@ public class NodesCache(
      * but also the actual data
      *
      * @return true if successfull, false if node is still hollow
+     * @throws DataFileNotFoundException if an error occurs while resolving the node
      */
     public fun obtainNonHollowNode(node: OsmNode): Boolean {
         if (!node.isHollow) return true
@@ -241,6 +255,8 @@ public class NodesCache(
 
     /**
      * make sure all link targets of the given node are non-hollow
+     *
+     * @throws DataFileNotFoundException if an error occurs while resolving a link target
      */
     public fun expandHollowLinkTargets(n: OsmNode) {
         var link = n.firstlink
@@ -274,6 +290,7 @@ public class NodesCache(
      *
      * @param id the id of the node to load
      * @return the fully expanded node for id, or null if it was not found
+     * @throws DataFileNotFoundException if an error occurs while loading the node
      */
     public fun getStartNode(id: Long): OsmNode? {
         // initialize the start-node
@@ -298,6 +315,10 @@ public class NodesCache(
         return existing
     }
 
+    /**
+     * @throws IllegalArgumentException if waypoints are empty or a required data file is not found
+     * @throws DataFileNotFoundException if an error occurs while loading map data
+     */
     public fun matchWaypointsToNodes(
         unmatchedWaypoints: MutableList<MatchedWaypoint>,
         maxDistance: Double,

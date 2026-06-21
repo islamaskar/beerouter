@@ -1,6 +1,7 @@
 package dev.skynomads.beerouter.codec
 
 import dev.skynomads.beerouter.util.BitCoderContext
+import dev.skynomads.beerouter.router.exceptions.DataCorruptionException
 
 /**
  * Encoder/Decoder for way-/node-descriptions
@@ -18,6 +19,12 @@ public class TagValueCoder {
     private var pass = 0
     private var nextTagValueSetId = 0
 
+    /**
+     * Encode a tag value set.
+     *
+     * @param data the tag value data
+     * @throws IllegalArgumentException if an unknown tag value set is encountered in pass 3
+     */
     public fun encodeTagValueSet(data: ByteArray?) {
         if (pass == 1) {
             return
@@ -38,6 +45,11 @@ public class TagValueCoder {
         }
     }
 
+    /**
+     * Decode a tag value set.
+     *
+     * @return the decoded tag value wrapper, or null
+     */
     public fun decodeTagValueSet(): TagValueWrapper? {
         var node = tree
         while (node is TreeNode) {
@@ -48,6 +60,11 @@ public class TagValueCoder {
         return node as TagValueWrapper?
     }
 
+    /**
+     * Encode the tag value dictionary.
+     *
+     * @param bc the bit coder context
+     */
     public fun encodeDictionary(bc: BitCoderContext) {
         if (++pass == 3) {
             if (identityMap.isEmpty()) {
@@ -232,7 +249,7 @@ public class TagValueCoder {
                     a.id < b.id -> -1
                     a.id > b.id -> 1
                     a !== b -> {
-                        throw RuntimeException("identity corruption!")
+                        throw DataCorruptionException("identity corruption!")
                     }
 
                     else -> 0

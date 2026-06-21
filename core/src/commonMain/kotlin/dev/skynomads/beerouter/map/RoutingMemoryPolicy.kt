@@ -17,8 +17,14 @@ public data class RoutingMemoryPolicy public constructor(
     public val totalHardLimitBytes: Long = graphHardLimitBytes + tileCacheBudgetBytes
 
     public companion object {
+        /**
+         * @throws IllegalArgumentException if the default total hard limit is invalid
+         */
         public fun default(): RoutingMemoryPolicy = withTotalHardLimitMegabytes(128)
 
+        /**
+         * @throws IllegalArgumentException if [totalHardLimitMegabytes] is not positive
+         */
         public fun withTotalHardLimitMegabytes(totalHardLimitMegabytes: Int): RoutingMemoryPolicy {
             require(totalHardLimitMegabytes > 0) { "totalHardLimitMegabytes must be positive" }
             val hardLimitBytes = totalHardLimitMegabytes * MEGABYTE

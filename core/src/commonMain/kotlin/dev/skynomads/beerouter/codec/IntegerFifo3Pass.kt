@@ -25,6 +25,8 @@ public class IntegerFifo3Pass(capacity: Int) {
 
     /**
      * writes to the fifo in pass2
+     *
+     * @throws OutOfMemoryError if the underlying array cannot be resized
      */
     public fun add(value: Int) {
         if (pass == 2) {

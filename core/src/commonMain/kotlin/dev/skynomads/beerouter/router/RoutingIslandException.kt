@@ -1,3 +1,8 @@
 package dev.skynomads.beerouter.router
 
-public class RoutingIslandException : RuntimeException()
+import dev.skynomads.beerouter.router.exceptions.RoutingException
+
+public class RoutingIslandException(
+    message: String = "routing island detected",
+    cause: Throwable? = null,
+) : RoutingException(message, cause)

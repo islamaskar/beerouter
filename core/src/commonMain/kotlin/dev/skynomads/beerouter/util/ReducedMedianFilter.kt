@@ -29,6 +29,9 @@ public class ReducedMedianFilter(size: Int) {
         nsamples++
     }
 
+    /**
+     * @throws IllegalArgumentException if the total weight is insufficient to remove the requested fraction
+     */
     public fun edgeReducedMedian(fraction: Double): Double {
         removeEdgeWeight((1.0 - fraction) / 2.0, true)
         removeEdgeWeight((1.0 - fraction) / 2.0, false)

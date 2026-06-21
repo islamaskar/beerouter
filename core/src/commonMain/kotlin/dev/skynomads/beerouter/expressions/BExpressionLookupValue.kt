@@ -15,6 +15,11 @@ public class BExpressionLookupValue(public val value: String) {
 
     override fun toString(): String = value
 
+    /**
+     * Add an alias for this lookup value.
+     *
+     * @param alias the alias to add
+     */
     public fun addAlias(alias: String) {
         aliases.add(alias)
     }
@@ -29,5 +34,11 @@ public class BExpressionLookupValue(public val value: String) {
 
     override fun hashCode(): Int = value.hashCode()
 
+    /**
+     * Check if the given string matches this lookup value or any of its aliases.
+     *
+     * @param s the string to match
+     * @return true if the string matches
+     */
     public fun matches(s: String?): Boolean = value == s || s in aliases
 }

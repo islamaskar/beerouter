@@ -84,6 +84,9 @@ public open class OsmNodeNamed : OsmNode {
     }
 
     public companion object {
+        /**
+         * @throws IllegalArgumentException if the input string does not contain at least three comma-separated parts
+         */
         public fun decodeNogo(s: String): OsmNodeNamed {
             val parts = s.split(',', limit = 4)
             require(parts.size >= 3) { "invalid nogo format: $s" }

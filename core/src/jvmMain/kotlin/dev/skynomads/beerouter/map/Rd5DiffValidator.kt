@@ -5,6 +5,7 @@
  */
 package dev.skynomads.beerouter.map
 
+import dev.skynomads.beerouter.router.exceptions.DataCorruptionException
 import kotlinx.io.files.Path
 import kotlinx.io.files.SystemFileSystem
 
@@ -45,7 +46,7 @@ public object Rd5DiffValidator {
             val md5Cmp = Rd5DiffManager.getMD5(fcmp)
 
             if (md5Cmp != md5New) {
-                throw RuntimeException("**************** md5 mismatch!! *****************")
+                throw DataCorruptionException("md5 mismatch in $name")
             }
         }
     }

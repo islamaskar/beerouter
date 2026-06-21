@@ -41,7 +41,10 @@ internal class SearchBoundary(n: OsmNode, private val radius: Int, val direction
     private val searchDirection: Direction = Direction.fromId(direction)
 
     /**
+     * @param n origin node
      * @param radius Search radius in meters.
+     * @param direction search direction
+     * @throws IllegalArgumentException if direction is not a valid direction ID
      */
     init {
         val origin = tileOrigin(n.position)

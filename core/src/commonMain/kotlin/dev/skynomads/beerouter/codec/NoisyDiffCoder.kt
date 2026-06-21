@@ -31,6 +31,8 @@ public class NoisyDiffCoder {
 
     /**
      * encodes a signed int (pass3 only, stats collection in pass2)
+     *
+     * @throws IllegalStateException if pass state is invalid
      */
     public fun encodeSignedValue(value: Int) {
         if (pass == 3) {
@@ -42,6 +44,8 @@ public class NoisyDiffCoder {
 
     /**
      * decodes a signed int
+     *
+     * @throws IllegalStateException if the underlying coder context is invalid
      */
     public fun decodeSignedValue(): Int {
         return bc.decodeNoisyDiff(noisybits)
@@ -50,6 +54,9 @@ public class NoisyDiffCoder {
     /**
      * Starts a new encoding pass and (in pass3) calculates the noisy-bit count
      * from the stats collected in pass2 and writes that to the given context
+     *
+     * @param bc the stat coder context
+     * @throws IllegalStateException if pass state is invalid
      */
     public fun encodeDictionary(bc: StatCoderContext) {
         if (++pass == 3) {

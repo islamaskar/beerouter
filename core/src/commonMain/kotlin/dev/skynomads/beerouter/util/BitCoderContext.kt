@@ -27,6 +27,7 @@ public open class BitCoderContext(private var ab: ByteArray) {
      * `001 -> 3` + following 2-bit word ( 3..6 )
      * `0001 -> 7` + following 3-bit word ( 7..14 ) etc.
      *
+     * @throws IndexOutOfBoundsException if the buffer is too small
      * @see .decodeVarBits
      */
     public fun encodeVarBits2(value: Int) {
@@ -41,6 +42,9 @@ public open class BitCoderContext(private var ab: ByteArray) {
         encodeBounded(range, value)
     }
 
+    /**
+     * @throws IndexOutOfBoundsException if the buffer is too small
+     */
     public fun encodeVarBits(value: Int) {
         if ((value and 0xfff) == value) {
             flushBuffer()
@@ -52,6 +56,7 @@ public open class BitCoderContext(private var ab: ByteArray) {
     }
 
     /**
+     * @throws IndexOutOfBoundsException if reading beyond the buffer
      * @see .encodeVarBits
      */
     public fun decodeVarBits2(): Int {
@@ -62,6 +67,9 @@ public open class BitCoderContext(private var ab: ByteArray) {
         return range + decodeBounded(range)
     }
 
+    /**
+     * @throws IndexOutOfBoundsException if reading beyond the buffer
+     */
     public fun decodeVarBits(): Int {
         fillBuffer()
         val b12 = b and 0xfff
@@ -98,6 +106,9 @@ public open class BitCoderContext(private var ab: ByteArray) {
         return decodeVarBits2() // no chance, use the slow one
     }
 
+    /**
+     * @throws IndexOutOfBoundsException if the buffer is too small
+     */
     public fun encodeBit(value: Boolean) {
         if (bits > 31) {
             ab[++idx] = (b and 0xff).toByte()
@@ -110,6 +121,9 @@ public open class BitCoderContext(private var ab: ByteArray) {
         bits++
     }
 
+    /**
+     * @throws IndexOutOfBoundsException if reading beyond the buffer
+     */
     public fun decodeBit(): Boolean {
         if (bits == 0) {
             bits = 8
@@ -126,6 +140,8 @@ public open class BitCoderContext(private var ab: ByteArray) {
      * For max = 2^n-1, this just encodes n bits, but in general
      * this is variable length encoding, with the shorter codes
      * for the central value range
+     *
+     * @throws IndexOutOfBoundsException if the buffer is too small
      */
     public fun encodeBounded(max: Int, value: Int) {
         var max = max
@@ -144,6 +160,7 @@ public open class BitCoderContext(private var ab: ByteArray) {
     /**
      * decode an integer in the range 0..max (inclusive).
      *
+     * @throws IndexOutOfBoundsException if reading beyond the buffer
      * @see .encodeBounded
      */
     public fun decodeBounded(max: Int): Int {
@@ -162,6 +179,9 @@ public open class BitCoderContext(private var ab: ByteArray) {
         return value
     }
 
+    /**
+     * @throws IndexOutOfBoundsException if reading beyond the buffer
+     */
     public fun decodeBits(count: Int): Int {
         fillBuffer()
         val mask = -0x1 ushr (32 - count)
@@ -171,6 +191,9 @@ public open class BitCoderContext(private var ab: ByteArray) {
         return value
     }
 
+    /**
+     * @throws IndexOutOfBoundsException if reading beyond the buffer
+     */
     public fun decodeBitsReverse(count: Int): Int {
         var count = count
         fillBuffer()
@@ -208,6 +231,7 @@ public open class BitCoderContext(private var ab: ByteArray) {
     /**
      * flushes and closes the (write-mode) context
      *
+     * @throws IndexOutOfBoundsException if the buffer is too small
      * @return the encoded length in bytes
      */
     public fun closeAndGetEncodedLength(): Int {
@@ -226,6 +250,9 @@ public open class BitCoderContext(private var ab: ByteArray) {
 
     public var readingBitPosition: Int
         get() = (idx shl 3) + 8 - bits
+        /**
+         * @throws IndexOutOfBoundsException if the bit position is out of the buffer bounds
+         */
         set(pos) {
             idx = pos ushr 3
             bits = (idx shl 3) + 8 - pos

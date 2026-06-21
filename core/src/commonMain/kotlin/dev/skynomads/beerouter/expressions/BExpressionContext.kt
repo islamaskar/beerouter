@@ -6,6 +6,8 @@ import dev.skynomads.beerouter.util.Crc32.crc
 import dev.skynomads.beerouter.util.IByteArrayUnifier
 import kotlin.math.abs
 import kotlin.random.Random
+import dev.skynomads.beerouter.router.exceptions.CacheStateException
+import dev.skynomads.beerouter.router.exceptions.ExpressionParseException
 
 public abstract class BExpressionContext protected constructor(
     context: String?,
@@ -86,12 +88,21 @@ public abstract class BExpressionContext protected constructor(
 
     /**
      * encode internal lookup data to a byte array
+     *
+     * @throws IllegalArgumentException if lookup data is not valid for encoding
      */
     public fun encode(): ByteArray? {
         require(lookupDataValid) { "internal error: encoding undefined data?" }
         return encode(lookupData)
     }
 
+    /**
+     * encode a given lookup data array to a byte array
+     *
+     * @param ld the lookup data array
+     * @return the encoded byte array
+     * @throws IllegalStateException if encoding verification fails
+     */
     public fun encode(ld: IntArray): ByteArray? {
         val ctx = ctxEndode
         ctx.reset()
@@ -124,7 +135,7 @@ public abstract class BExpressionContext protected constructor(
         val ld2 = IntArray(lookupValues.size)
         decode(ld2, false, ab)
         for (inum in 1..<lookupValues.size) {
-            if (ld2[inum] != ld[inum]) throw RuntimeException(
+            if (ld2[inum] != ld[inum]) throw CacheStateException(
                 "assertion failed encoding inum=" + inum + " val=" + ld[inum] + " " + getKeyValueDescription(
                     false,
                     ab
@@ -137,6 +148,8 @@ public abstract class BExpressionContext protected constructor(
 
     /**
      * decode byte array to internal lookup data
+     *
+     * @param ab the byte array to decode
      */
     public fun decode(ab: ByteArray) {
         decode(lookupData, false, ab)
@@ -145,6 +158,10 @@ public abstract class BExpressionContext protected constructor(
 
     /**
      * decode a byte-array into a lookup data array
+     *
+     * @param ld the lookup data array
+     * @param inverseDirection whether to decode in inverse direction
+     * @param ab the byte array to decode
      */
     public fun decode(ld: IntArray, inverseDirection: Boolean, ab: ByteArray) {
         val ctx = ctxDecode
@@ -168,6 +185,13 @@ public abstract class BExpressionContext protected constructor(
         while (inum < ld.size) ld[inum++] = 0
     }
 
+    /**
+     * Get a description of the key-value pairs in the given byte array.
+     *
+     * @param inverseDirection whether to decode in inverse direction
+     * @param ab the byte array to decode
+     * @return a string description of the key-value pairs
+     */
     public fun getKeyValueDescription(inverseDirection: Boolean, ab: ByteArray): String {
         decode(lookupData, inverseDirection, ab)
         return lookupValues.indices.mapNotNull { inum ->
@@ -178,6 +202,13 @@ public abstract class BExpressionContext protected constructor(
         }.joinToString(" ")
     }
 
+    /**
+     * Get a map of key-value pairs from the given byte array.
+     *
+     * @param inverseDirection whether to decode in inverse direction
+     * @param ab the byte array to decode
+     * @return a map of key-value pairs
+     */
     public fun getMap(inverseDirection: Boolean, ab: ByteArray): Map<String, String> {
         val res: MutableMap<String, String> = mutableMapOf()
         decode(lookupData, inverseDirection, ab)
@@ -193,20 +224,40 @@ public abstract class BExpressionContext protected constructor(
         return res
     }
 
+    /**
+     * Get the lookup key index for the given name.
+     *
+     * @param name the lookup name
+     * @return the lookup key index, or -1 if not found
+     */
     public fun getLookupKey(name: String?): Int {
         return try {
             lookupNumbers[name]!!
-        } catch (e: Exception) {
+        } catch (_: NullPointerException) {
             -1
         }
     }
 
+    /**
+     * Get the lookup value for the given key.
+     *
+     * @param key the lookup key index
+     * @return the lookup value as a float, or NaN if not found
+     */
     public fun getLookupValue(key: Int): Float {
         val `val` = lookupData[key]
         if (`val` == 0) return Float.NaN
         return (`val` - 1000) / 100f
     }
 
+    /**
+     * Get the lookup value for the given key from a byte array.
+     *
+     * @param inverseDirection whether to decode in inverse direction
+     * @param ab the byte array to decode
+     * @param key the lookup key index
+     * @return the lookup value as a float, or NaN if not found
+     */
     public fun getLookupValue(inverseDirection: Boolean, ab: ByteArray, key: Int): Float {
         decode(lookupData, inverseDirection, ab)
         val `val` = lookupData[key]
@@ -248,6 +299,12 @@ public abstract class BExpressionContext protected constructor(
         lookupIdxUsed = BooleanArray(lookupValues.size)
     }
 
+    /**
+     * Evaluate the expressions with the given lookup data.
+     *
+     * @param lookupData2 the lookup data array
+     * @throws IllegalStateException if the expression list is not initialized
+     */
     public fun evaluate(lookupData2: IntArray) {
         lookupData = lookupData2
         evaluate()
@@ -419,6 +476,7 @@ public abstract class BExpressionContext protected constructor(
 
     /**
      * @return a new lookupData array, or null if no metadata defined
+     * @throws IllegalStateException if lookup data is not frozen
      */
     public fun createNewLookupData(): IntArray? {
         if (lookupDataFrozen) {
@@ -429,6 +487,10 @@ public abstract class BExpressionContext protected constructor(
 
     /**
      * generate random values for regression testing
+     *
+     * @param rnd the random number generator
+     * @return a new lookup data array with random values
+     * @throws IllegalStateException if lookup data is not frozen
      */
     public fun generateRandomValues(rnd: Random): IntArray {
         val data = createNewLookupData()!!
@@ -444,15 +506,21 @@ public abstract class BExpressionContext protected constructor(
         return data
     }
 
+    /**
+     * Assert that all variables are equal to the given context.
+     *
+     * @param other the other expression context
+     * @throws IllegalStateException if variable counts or values mismatch
+     */
     public fun assertAllVariablesEqual(other: BExpressionContext) {
         val variableData = requireNotNull(variableData)
         val otherVariableData = requireNotNull(other.variableData)
         val nv = variableData.size
         val nv2 = otherVariableData.size
-        if (nv != nv2) throw RuntimeException("mismatch in variable-count: $nv<->$nv2")
+        if (nv != nv2) throw CacheStateException("mismatch in variable-count: $nv<->$nv2")
         for (i in 0..<nv) {
             if (variableData[i] != otherVariableData[i]) {
-                throw RuntimeException(
+                throw CacheStateException(
                     "mismatch in variable " + variableName(i) + " " + variableData[i] + "<->" + otherVariableData[i]
                             + "\ntags = " + getKeyValueDescription(false, requireNotNull(encode()))
                 )
@@ -460,17 +528,30 @@ public abstract class BExpressionContext protected constructor(
         }
     }
 
+    /**
+     * Get the variable name for the given index.
+     *
+     * @param idx the variable index
+     * @return the variable name
+     * @throws IllegalStateException if no variable exists for the given index
+     */
     public fun variableName(idx: Int): String? {
         for (e in variableNumbers.entries) {
             if (e.value == idx) {
                 return e.key
             }
         }
-        throw RuntimeException("no variable for index$idx")
+        throw CacheStateException("no variable for index$idx")
     }
 
     /**
      * add a new lookup-value for the given name to the given lookupData array.
+     *
+     * @param name the lookup name
+     * @param value the lookup value
+     * @param lookupData2 the lookup data array, or null
+     * @return the new lookup value, or null if not added
+     * @throws NumberFormatException if value parsing fails for numeric conversions
      */
     public fun addLookupValue(
         name: String?,
@@ -601,7 +682,7 @@ public abstract class BExpressionContext protected constructor(
                             value = value.substringBefore("(")
                         }
                         lookupData2[num] = 1000 + (abs(value.toFloat()) * 100f).toInt()
-                    } catch (e: Exception) {
+                    } catch (e: NumberFormatException) {
                         println("error for $name  $org trans $value ${e.message}")
                         lookupData2[num] = 0
                     }
@@ -633,6 +714,10 @@ public abstract class BExpressionContext protected constructor(
 
     /**
      * add a value-index to internal array
+     *
+     * @param name the lookup name
+     * @param valueIndex the value index
+     * @throws IllegalArgumentException if the value index is out of range
      */
     public fun addLookupValue(name: String?, valueIndex: Int) {
         val num = lookupNumbers[name] ?: return
@@ -644,6 +729,10 @@ public abstract class BExpressionContext protected constructor(
 
     /**
      * special hack for yes/proposed relations
+     *
+     * @param name the lookup name
+     * @param valueIndex the value index
+     * @throws IllegalArgumentException if the value index is out of range
      */
     public fun addSmallestLookupValue(name: String?, valueIndex: Int) {
         var valueIndex = valueIndex
@@ -661,11 +750,25 @@ public abstract class BExpressionContext protected constructor(
         lookupData[num] = valueIndex
     }
 
+    /**
+     * Get a boolean lookup value.
+     *
+     * @param name the lookup name
+     * @return true if the lookup value equals 2
+     */
     public fun getBooleanLookupValue(name: String?): Boolean {
         val num = lookupNumbers[name]
         return num != null && lookupData[num] == 2
     }
 
+    /**
+     * Get the output variable index for the given name.
+     *
+     * @param name the variable name
+     * @param mustExist whether the variable must exist
+     * @return the output variable index
+     * @throws IllegalArgumentException if the variable does not exist and mustExist is true, or if accessing a global variable incorrectly
+     */
     public fun getOutputVariableIndex(name: String?, mustExist: Boolean): Int {
         val idx = getVariableIdx(name, false)
         if (idx < 0) {
@@ -683,19 +786,48 @@ public abstract class BExpressionContext protected constructor(
         return nBuildInVars++
     }
 
+    /**
+     * Set the foreign context for this expression context.
+     *
+     * @param foreignContext the foreign context
+     */
     public fun setForeignContext(foreignContext: BExpressionContext) {
         this.foreignContext = foreignContext
     }
 
+    /**
+     * Get the value of a foreign variable.
+     *
+     * @param foreignIndex the foreign variable index
+     * @return the foreign variable value
+     * @throws NullPointerException if no foreign context is set
+     */
     public fun getForeignVariableValue(foreignIndex: Int): Float {
         return foreignContext!!.getBuildInVariable(foreignIndex)
     }
 
+    /**
+     * Get the index of a foreign variable.
+     *
+     * @param context the foreign context name
+     * @param name the variable name
+     * @return the foreign variable index
+     * @throws IllegalArgumentException if the foreign context is not set or mismatched
+     */
     public fun getForeignVariableIdx(context: String, name: String?): Int {
         require(!(foreignContext == null || context != foreignContext!!.context)) { "unknown foreign context: $context" }
         return foreignContext!!.getOutputVariableIndex(name, true)
     }
 
+    /**
+     * Parse a profile from the given content.
+     *
+     * @param content the profile content
+     * @param readOnlyContext the read-only context, or null
+     * @param keyValues the key-value pairs to inject
+     * @throws ExpressionParseException if parsing fails
+     * @throws IllegalArgumentException if the profile is empty or invalid
+     */
     public fun parseProfile(
         content: String,
         readOnlyContext: String?,
@@ -729,9 +861,9 @@ public abstract class BExpressionContext protected constructor(
                 requireNotNull(variableData)[i] = requireNotNull(readOnlyData)[i]
             }
         } catch (e: IllegalArgumentException) {
-            throw IllegalArgumentException("ParseException at line $linenr: ${e.message}")
+            throw ExpressionParseException("ParseException at line $linenr: ${e.message}", e)
         } catch (e: Exception) {
-            throw RuntimeException(e)
+            throw ExpressionParseException("ParseException at line $linenr", e)
         }
         require(requireNotNull(expressionList).isNotEmpty()) {
             "Profile does not contain expressions for context $context (old version?)"
@@ -758,6 +890,13 @@ public abstract class BExpressionContext protected constructor(
         return result
     }
 
+    /**
+     * Set the value of a variable.
+     *
+     * @param name the variable name
+     * @param value the value to set
+     * @param create whether to create the variable if it does not exist
+     */
     public fun setVariableValue(name: String?, value: Float, create: Boolean) {
         var num = variableNumbers[name]
         if (num != null) {
@@ -774,15 +913,35 @@ public abstract class BExpressionContext protected constructor(
         }
     }
 
+    /**
+     * Get the value of a variable, or a default value if not found.
+     *
+     * @param name the variable name
+     * @param defaultValue the default value to return if not found
+     * @return the variable value, or the default value
+     */
     public fun getVariableValue(name: String?, defaultValue: Float): Float {
         val num = variableNumbers[name]
         return if (num == null) defaultValue else getVariableValue(num)
     }
 
+    /**
+     * Get the value of a variable by index.
+     *
+     * @param variableIdx the variable index
+     * @return the variable value
+     */
     public fun getVariableValue(variableIdx: Int): Float {
         return requireNotNull(variableData)[variableIdx]
     }
 
+    /**
+     * Get the index of a variable.
+     *
+     * @param name the variable name
+     * @param create whether to create the variable if it does not exist
+     * @return the variable index, or -1 if not found and create is false
+     */
     public fun getVariableIdx(name: String?, create: Boolean): Int {
         var num = variableNumbers[name]
         if (num == null) {
@@ -797,6 +956,13 @@ public abstract class BExpressionContext protected constructor(
         return num
     }
 
+    /**
+     * Get the lookup match for the given name index and value index array.
+     *
+     * @param nameIdx the name index
+     * @param valueIdxArray the value index array
+     * @return 1.0f if a match is found, 0.0f otherwise
+     */
     public fun getLookupMatch(nameIdx: Int, valueIdxArray: IntArray): Float {
         for (i in valueIdxArray.indices) {
             if (lookupData[nameIdx] == valueIdxArray[i]) {
@@ -806,29 +972,62 @@ public abstract class BExpressionContext protected constructor(
         return 0.0f
     }
 
+    /**
+     * Get the lookup name index for the given name.
+     *
+     * @param name the lookup name
+     * @return the lookup name index, or -1 if not found
+     */
     public fun getLookupNameIdx(name: String?): Int {
         val num = lookupNumbers[name]
         return num ?: -1
     }
 
+    /**
+     * Mark a lookup index as used.
+     *
+     * @param idx the lookup index
+     * @throws IndexOutOfBoundsException if the index is out of bounds
+     */
     public fun markLookupIdxUsed(idx: Int) {
         lookupIdxUsed[idx] = true
     }
 
+    /**
+     * Check if a lookup index is used.
+     *
+     * @param idx the lookup index
+     * @return true if the index is used
+     */
     public fun isLookupIdxUsed(idx: Int): Boolean {
         return idx < lookupIdxUsed.size && lookupIdxUsed[idx]
     }
 
+    /**
+     * Mark all tags as used.
+     */
     public fun setAllTagsUsed() {
         for (i in lookupIdxUsed.indices) {
             lookupIdxUsed[i] = true
         }
     }
 
+    /**
+     * Get a comma-separated list of used tag names.
+     *
+     * @return the used tag list
+     */
     public fun usedTagList(): String = lookupValues.indices
         .filter { lookupIdxUsed[it] }
         .joinToString(",") { lookupNames[it] ?: "" }
 
+    /**
+     * Get the index of a lookup value for the given name index and value.
+     *
+     * @param nameIdx the name index
+     * @param value the value string
+     * @return the lookup value index, or -1 if not found
+     */
     public fun getLookupValueIdx(nameIdx: Int, value: String?): Int {
         val values = lookupValues[nameIdx]!!
         for (i in values.indices) {
@@ -837,6 +1036,11 @@ public abstract class BExpressionContext protected constructor(
         return -1
     }
 
+    /**
+     * Parse the next token from the content.
+     *
+     * @return the parsed token, or null if end of content
+     */
     public fun parseToken(): String? {
         while (true) {
             val token = _parseToken()
@@ -936,6 +1140,13 @@ public abstract class BExpressionContext protected constructor(
         }
     }
 
+    /**
+     * Assign a value to a variable.
+     *
+     * @param variableIdx the variable index
+     * @param value the value to assign
+     * @return the assigned value
+     */
     public fun assign(variableIdx: Int, value: Float): Float {
         requireNotNull(variableData)[variableIdx] = value
         return value
@@ -957,6 +1168,12 @@ public abstract class BExpressionContext protected constructor(
         }
     }
 
+    /**
+     * Check if a start way is allowed.
+     *
+     * @param ab the byte array to check
+     * @return true if the start way is allowed
+     */
     public fun checkStartWay(ab: ByteArray?): Boolean {
         if (ab == null) return true
         ld2.fill(0)
@@ -971,6 +1188,9 @@ public abstract class BExpressionContext protected constructor(
         return true
     }
 
+    /**
+     * Free the no-start-ways array.
+     */
     public fun freeNoWays() {
         noStartWays = IntArray(0)
     }

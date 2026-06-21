@@ -10,10 +10,23 @@ public class BExpressionMetaData {
 
     private val listeners: MutableMap<String?, BExpressionContext> = HashMap()
 
+    /**
+     * Register a listener for the given context.
+     *
+     * @param context the context name
+     * @param ctx the expression context
+     */
     public fun registerListener(context: String?, ctx: BExpressionContext) {
         listeners[context] = ctx
     }
 
+    /**
+     * Read metadata from the given content string.
+     *
+     * @param content the metadata content
+     * @throws NumberFormatException if version numbers are malformed
+     * @throws IllegalArgumentException if metadata parsing fails
+     */
     public fun readMetaData(content: String) {
         var ctx: BExpressionContext? = null
 

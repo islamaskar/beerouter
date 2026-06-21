@@ -27,6 +27,10 @@ public class PoiFinder(
         lookupMinorVersion = meta.lookupMinorVersion.toInt()
     }
 
+    /**
+     * @throws IOException if an I/O error occurs while reading map data
+     * @throws IllegalStateException if an unsupported cache version is encountered
+     */
     public fun find(query: PoiQuery): List<PoiResult> {
         val results = mutableListOf<PoiResult>()
         val seenNodeIds = mutableSetOf<Long>()

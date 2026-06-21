@@ -98,7 +98,7 @@ public class PhysicalFile(
                     val lv = dis.readLong()
                     (lv shr 48).toInt()
                 }
-            } catch (e: Exception) {
+            } catch (_: IOException) {
                 -1
             }
         }
@@ -107,6 +107,7 @@ public class PhysicalFile(
          * Checks the integrity of the file using the build-in checksums
          *
          * @return the error message if file corrupt, else null
+         * @throws IOException if an I/O error occurs or the file is corrupt
          */
         public fun checkFileIntegrity(
             fileName: String,
