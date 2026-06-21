@@ -2,9 +2,6 @@
 
 IMAGE ?= beerouter
 
-IMAGE ?= beerouter
-
-
 image:
 	podman build . -t $(IMAGE)
 
