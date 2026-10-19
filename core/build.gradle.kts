@@ -1,3 +1,5 @@
+import org.jetbrains.kotlin.gradle.plugin.mpp.apple.XCFramework
+
 fun Project.trimmedGradleProperty(name: String): String? =
     providers.gradleProperty(name).orNull?.trim()?.takeIf { it.isNotEmpty() }
 
@@ -34,6 +36,19 @@ kotlin {
     }
 
     linuxX64()
+    // PedalQ: iPhone and its simulator, as one static PedalqRouting.xcframework (tests run on the
+    // "PedalQ iPhone" simulator)
+    val pedalq = XCFramework("PedalqRouting")
+    iosArm64 { binaries.framework { baseName = "PedalqRouting"; isStatic = true; pedalq.add(this) } }
+    iosSimulatorArm64 {
+        binaries.framework { baseName = "PedalqRouting"; isStatic = true; pedalq.add(this) }
+        testRuns.named("test") { deviceId = "AB693D77-1A6F-42AD-B36E-2CFE8F049EAA" }
+    }
+    // PedalQ spike: iPhone and the iPhone simulator; tests run on the "PedalQ iPhone" simulator
+    iosArm64()
+    iosSimulatorArm64 {
+        testRuns.named("test") { deviceId = "AB693D77-1A6F-42AD-B36E-2CFE8F049EAA" }
+    }
 
     sourceSets {
         val commonMain by getting {

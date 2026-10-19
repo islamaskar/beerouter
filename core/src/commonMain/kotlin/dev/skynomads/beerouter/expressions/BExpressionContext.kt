@@ -1,6 +1,5 @@
 package dev.skynomads.beerouter.expressions
 
-import androidx.collection.LruCache
 import dev.skynomads.beerouter.util.BitCoderContext
 import dev.skynomads.beerouter.util.Crc32.crc
 import dev.skynomads.beerouter.util.IByteArrayUnifier
@@ -46,13 +45,13 @@ public abstract class BExpressionContext protected constructor(
 
     private var variableData: FloatArray? = null
 
-    private var cache: LruCache<ByteArrayKeyBase, CacheNode>? = null
-    private var identityCache: LruCache<ByteArray, CacheNode>? = null
+    private var cache: EvalCache<ByteArrayKeyBase, CacheNode>? = null
+    private var identityCache: EvalCache<ByteArray, CacheNode>? = null
 
     private val probeVarSet = VarWrapper()
     private val byteArrayProbeKey = ProbeByteArrayKey()
 
-    private var resultVarCache: LruCache<FloatArrayKey, VarWrapper>? = null
+    private var resultVarCache: EvalCache<FloatArrayKey, VarWrapper>? = null
     private var expressionList: MutableList<BExpression?>? = null
 
     public var minWriteIdx: Int = 0
@@ -1162,9 +1161,9 @@ public abstract class BExpressionContext protected constructor(
         meta.registerListener(context, this)
 
         if (hashSize > 0) {
-            cache = LruCache(hashSize)
-            identityCache = LruCache(hashSize)
-            resultVarCache = LruCache(4096)
+            cache = EvalCache(hashSize)
+            identityCache = EvalCache(hashSize)
+            resultVarCache = EvalCache(4096)
         }
     }
 
@@ -1251,4 +1250,16 @@ public abstract class BExpressionContext protected constructor(
             return "$whole.$frac"
         }
     }
+}
+
+
+/**
+ * The expression caches (PedalQ, for iOS): androidx.collection's LruCache throws "Have object
+ * hashCodes changed?" inside Kotlin/Native's HashMap rehash under this load (fine on the JVM).
+ * A plain map that empties when full keeps the hit rate high enough and is the same on every target.
+ */
+internal class EvalCache<K : Any, V : Any>(private val max: Int) {
+    private val map = HashMap<K, V>(max * 2)
+    operator fun get(key: K): V? = map[key]
+    fun put(key: K, value: V): V? { if (map.size >= max) map.clear(); return map.put(key, value) }
 }
